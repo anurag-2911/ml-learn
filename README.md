@@ -1,6 +1,6 @@
 # ML Zero to Hero
 
-**A project-based curriculum that takes you from zero programming knowledge to building GPTs, RAG systems, and AI agents — by building small projects, never by grinding through books.**
+**A project-based curriculum that takes you from zero programming knowledge to building GPTs, RAG systems, and AI agents — by building small projects**
 
 Inspired by Andrej Karpathy's [Neural Networks: Zero to Hero](https://www.youtube.com/playlist?list=PLAqhIrjkxbuWI23v9cThsA9GvCAUhRvKZ) — the deep learning phases follow his videos directly, and the *entire* curriculum follows his philosophy: **you understand what you build from scratch.**
 
@@ -126,26 +126,6 @@ Ship models like an engineer, then build the hero project that proves the whole 
 **Final milestone:** a shipped, original AI project with a public demo and a write-up — your credential.
 
 ---
-
-## Timeline
-
-At **8–10 hours/week** the full journey takes roughly **12–18 months**. Full-time, 4–6 months. It's a marathon by design — depth over speed. The phase estimates above assume you do every project; going faster by skimming defeats the purpose.
-
-**Suggested weekly rhythm:** 3–4 sessions of 2–3 hours. End every session with a git commit, even mid-project. Start every session by re-reading your last checkpoint.
-
-## What you'll have built by the end
-
-An autograd engine, a NumPy neural network, a spam filter, a decision-tree forest, a Kaggle submission, a CNN, a deployed image classifier, a Shakespeare-writing LSTM, word2vec, a BPE tokenizer, **your own GPT trained on a corpus you chose**, a RAG app over your own documents, a LoRA fine-tuned model, an AI agent, a Dockerized model API, and one substantial capstone — all in this repo, all built by you.
-
-## FAQ
-
-**Do I need to be good at math?** No. Phase 1 teaches the math ML actually uses, by coding it. If you can code a loop, you can learn the math here.
-
-**Do I need a GPU?** Not until lesson 26, and even then Google Colab and Kaggle notebooks give you free GPUs that are plenty for every lesson. Lessons that benefit from GPUs say so and give the free option. (Renting a GPU for a few dollars is an option for lesson 33's stretch goal.)
-
-**What if I already know some Python?** Skim phase 0's lessons, but *do* the projects for 05–07 (NumPy/pandas/viz) — they are the foundation everything else stands on.
-
-**Can I use ChatGPT/Claude while learning?** Yes — for hints, explanations, and debugging help. Not for writing your project code. You are training your own neural network here; don't outsource its gradient updates.
 
 **Where do I ask for help?** Each lesson has an "If you get stuck" section. Beyond that: the r/learnmachinelearning community, Stack Overflow, and AI assistants (for hints!).
 
