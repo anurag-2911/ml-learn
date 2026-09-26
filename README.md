@@ -11,15 +11,8 @@ Inspired by Andrej Karpathy's [Neural Networks: Zero to Hero](https://www.youtub
 - **42 lessons in 8 phases.** Each lesson is one markdown file built around 2–3 small projects with milestone checklists, verifiable checkpoints, hints, and a "skills unlocked" self-test.
 - **You build everything.** Concepts are explained inside the projects, exactly when you need them. No lesson asks you to read a textbook chapter first.
 - **From scratch first, framework second.** You'll write your own kNN, linear regression, decision tree, autograd engine, neural network, tokenizer, and GPT — *then* use scikit-learn and PyTorch, understanding exactly what they automate.
-- **Your code lives in `work/`.** For each lesson, create `work/<NN>-<slug>/` (e.g. `work/12-linear-regression/`) and build there. The lesson files are your guide; the `work/` folders are your portfolio.
+- **Your code lives in `work/`.** For each lesson, create `work/<NN>-<slug>/` (e.g. `work/12-linear-regression/`) and build there. The lesson files guide you; the `work/` folders are your portfolio.
 - **Track yourself in [PROGRESS.md](PROGRESS.md).** Check off lessons as you complete them. Commit and push your work after every session — your git history becomes the story of your journey.
-
-**Rules of the game**
-1. Type every line of code yourself. Never copy-paste. (This is the Karpathy rule and it is non-negotiable.)
-2. Attempt every milestone before opening the hints.
-3. Use AI assistants for *hints* and *explanations*, not for solutions.
-4. Don't skip checkpoints — they are how you know you actually got it.
-5. Stuck for more than a day on one milestone? Take the hint, move on, revisit later. Momentum beats perfection.
 
 ---
 
@@ -63,9 +56,9 @@ Build every classic algorithm from scratch, then wield scikit-learn like a pro. 
 | 19 | [Feature Engineering and Pipelines](phase-2-classical-ml/19-feature-engineering-pipelines.md) | 1 week |
 | 20 | [Capstone: End-to-End ML Project (Kaggle)](phase-2-classical-ml/20-end-to-end-ml-project.md) | 2 weeks |
 
-**Milestone:** after lesson 20 you are a working junior ML practitioner.
+**Milestone:** After lesson 20, you are a working junior ML practitioner.
 
-### Phase 3 — Deep Learning *(≈ 8–10 weeks)* — the Karpathy arc begins
+### Phase 3 — Deep Learning *(≈ 8–10 weeks)* 
 Build backpropagation from scratch (micrograd), a neural net in raw NumPy, then master PyTorch and computer vision.
 
 | # | Lesson | Time |
@@ -79,9 +72,8 @@ Build backpropagation from scratch (micrograd), a neural net in raw NumPy, then 
 | 27 | [Transfer Learning: A Custom Image Classifier + Demo](phase-3-deep-learning/27-transfer-learning-vision-project.md) | 1 week |
 
 **Milestone:** after lesson 27 you have *shipped* a working AI product with a public demo.
-*((K) = follows a Karpathy Zero to Hero video directly)*
 
-### Phase 4 — NLP and Transformers *(≈ 8–9 weeks)* — the Karpathy arc, summit
+### Phase 4 — NLP and Transformers *(≈ 8–9 weeks)*
 From counting letter pairs to building and training your own GPT.
 
 | # | Lesson | Time |
@@ -93,8 +85,7 @@ From counting letter pairs to building and training your own GPT.
 | 32 | [Tokenization: Build the GPT Tokenizer](phase-4-nlp-transformers/32-tokenization-bpe.md) (K) | 1 week |
 | 33 | [Train Your Own GPT (nanoGPT)](phase-4-nlp-transformers/33-train-your-own-gpt.md) (K) | 2 weeks |
 
-**Milestone:** after lesson 33 you understand, end to end, how the engines of modern AI are built — because you built one.
-*((K) = follows a Karpathy Zero to Hero video directly)*
+**Milestone:** After lesson 33, you understand, end to end, how the engines of modern AI are built — because you built one.
 
 ### Phase 5 — Modern AI: LLMs in Practice *(≈ 5–7 weeks)*
 Build *with* large models: APIs and prompting, RAG, fine-tuning with LoRA, and AI agents.
@@ -127,7 +118,7 @@ Ship models like an engineer, then build the hero project that proves the whole 
 
 ---
 
-**Where do I ask for help?** Each lesson has an "If you get stuck" section. Beyond that: the r/learnmachinelearning community, Stack Overflow, and AI assistants (for hints!).
+
 
 ---
 
