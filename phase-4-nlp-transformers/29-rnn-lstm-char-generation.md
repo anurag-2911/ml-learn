@@ -1,0 +1,170 @@
+# 29 · RNNs and LSTMs: Networks with Memory
+
+**Phase 4 — NLP and Transformers** · Estimated time: 1-2 weeks · Prerequisites: [24 · PyTorch Fundamentals](../phase-3-deep-learning/24-pytorch-fundamentals.md), [25 · The Dark Arts of Training Deep Networks](../phase-3-deep-learning/25-training-deep-nets.md), [28 · Language Models 101: makemore](28-language-models-makemore.md)
+
+> Every network you have built so far has amnesia: it sees one input, makes one prediction, and forgets everything. But language, music, and time series are *sequences* — what comes next depends on what came before. This week you give a network memory. You will train a character-level LSTM on the complete works of Shakespeare and literally watch it learn to write: random noise at first, then real English words, then dialogue with character names and stage directions. Honest history note: transformers (lesson 31) replaced RNNs for most of this — but RNNs teach you to *think in sequences*, and once you have felt their limits, attention will feel earned rather than magic.
+
+## What you will build
+
+- **A Shakespeare generator** — a character-level LSTM trained on Tiny Shakespeare, plus saved text samples from epoch 1, 5, and 20 showing it going from gibberish to Shakespeare-shaped dialogue.
+- **A temperature dial** — a sampling function with a temperature knob, and a short write-up comparing generations at 0.3, 0.8, and 1.5 (the same knob every LLM API exposes, as you will see in lesson 34).
+- **A surname nationality classifier** — a char-RNN that reads a name letter by letter and predicts its language of origin, evaluated with a confusion matrix from your lesson-14 metrics library.
+
+## Concepts you will learn by doing
+
+- **Hidden state** — a vector the network carries from step to step; its "memory" of everything seen so far.
+- **RNN cell mechanics** — the *same* weights are applied at every time step; only the hidden state changes.
+- **Backprop through time (BPTT)** — unroll the loop into one long chain of operations, then backprop through it like any other network.
+- **Vanishing gradients over long sequences** — why plain RNNs forget (the same multiplied-gradients problem from lesson 25, now multiplied once per time step).
+- **LSTM/GRU gating** — learned gates that decide what to keep, what to forget, and what to output, keeping gradients alive.
+- **Sampling with temperature** — scaling the logits before softmax to trade safety for creativity.
+- **`nn.RNN` / `nn.LSTM` in PyTorch** — the batteries-included recurrent layers and their (slightly weird) tensor shapes.
+
+## Before you start
+
+Check you can still do these — if not, revisit the linked lessons:
+
+- Build and train a model with your lesson-24 training-loop template (model, loss, optimizer, loop).
+- Explain what cross-entropy loss measures (lesson 13/24) and what a learning-rate that is too high looks like (lesson 25).
+- You built bigram and MLP name-generators in lesson 28 — this lesson is that idea with real memory.
+
+Set up the work folder and data (venv lives at the repo root):
+
+```bash
+cd ~/ml/ml-learn
+source .venv/bin/activate
+pip install torch matplotlib        # both likely installed since lesson 24
+mkdir -p work/29-rnn-lstm
+cd work/29-rnn-lstm
+wget -O input.txt https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt
+wc -c input.txt    # should print about 1115394 (~1.1 MB)
+```
+
+For Project 3, grab the surname dataset used by the official PyTorch tutorial:
+
+```bash
+cd ~/ml/ml-learn/work/29-rnn-lstm
+wget https://download.pytorch.org/tutorial/data.zip
+sudo apt-get install -y unzip   # only if unzip is missing
+unzip data.zip                  # creates data/names/*.txt — 18 files, one language each
+```
+
+If that link ever moves, the zip is linked from the top of the [char-RNN classification tutorial](https://pytorch.org/tutorials/intermediate/char_rnn_classification_tutorial.html).
+
+One assigned reading this week — it is short and a genuine joy: Karpathy's [The Unreasonable Effectiveness of Recurrent Neural Networks](https://karpathy.github.io/2015/05/21/rnn-effectiveness/). Read it *after* Project 1's first milestone, so the generated samples in the post mean something to you.
+
+Everything trains fine on CPU if you keep the model modest (hidden size 128-256). Expect minutes per epoch, not seconds.
+
+## Project 1 — Tiny Shakespeare
+
+**Goal:** Train a character-level LSTM that predicts the next character of Shakespeare, then sample from it and watch its writing improve as training progresses.
+
+**Milestones**
+
+- [ ] Load `input.txt` into one Python string. Build the vocabulary: the sorted list of unique characters, plus two dicts `stoi` (char → int) and `itos` (int → char), exactly like lesson 28. Encode the whole text as one long tensor of ints. Checkpoint: vocab size is 65, and `itos[stoi['a']] == 'a'`.
+- [ ] Build the data pipeline: a function that returns a batch of random `(chunk, target)` pairs, where `chunk` is `seq_len` consecutive encoded characters and `target` is the same window shifted one character right. That shift is the whole supervision trick: at every position, the label is simply "the next character". Checkpoint: decode one pair and see the target text is the input text moved over by one letter.
+
+```python
+def get_batch(data, batch_size=64, seq_len=100):
+    ix = torch.randint(len(data) - seq_len - 1, (batch_size,))
+    x = torch.stack([data[i : i + seq_len] for i in ix])
+    y = torch.stack([data[i + 1 : i + seq_len + 1] for i in ix])
+    return x, y   # both shape (batch_size, seq_len)
+```
+
+- [ ] Define the model as an `nn.Module` with three layers: `nn.Embedding(vocab_size, emb_dim)` to turn char ids into vectors, `nn.LSTM(emb_dim, hidden_size, batch_first=True)`, and `nn.Linear(hidden_size, vocab_size)` to produce logits for every position. `forward` should accept and return the hidden state so you can carry memory between calls. Start with `emb_dim=64, hidden_size=256`. Checkpoint: feeding a `(64, 100)` batch returns logits of shape `(64, 100, 65)`.
+- [ ] Before training, compute the loss on one batch. Checkpoint: it is close to `ln(65) ≈ 4.17` — the loss of pure random guessing over 65 characters. (Same sanity check you learned in lesson 25.)
+- [ ] Train with your lesson-24 loop: cross-entropy on the logits (you will need to reshape `(B, T, 65)` → `(B*T, 65)` and targets to `(B*T,)`), Adam with `lr=3e-3`, and define one "epoch" as `len(data) // (batch_size * seq_len)` batches — one full pass worth of text. Print the loss every 100 steps. Checkpoint: loss drops below 2.0 within the first epoch and keeps falling; below ~1.5 after 20 epochs is a good run.
+- [ ] Pause and appreciate what the machinery is doing: the LSTM applies the *same* weights at every one of the 100 time steps, passing a hidden vector forward — and backprop *unrolls* that loop into a 100-layer-deep chain and pushes gradients back through it. That is backprop through time. A plain `nn.RNN` multiplies the gradient by roughly the same matrix at each of those steps, so it shrinks toward zero — the vanishing-gradient problem from lesson 25, once per character. The LSTM's gates (little learned sigmoids deciding "keep this, forget that") give gradients a protected path, which is why it can remember an opening quote 80 characters later.
+- [ ] Write a `sample(model, length)` function: start from a newline character, run one step, softmax the logits into probabilities, pick the next char with `torch.multinomial`, feed it back in, and — crucially — keep passing the hidden state forward. Wrap it in `torch.no_grad()`. Checkpoint: it returns text without crashing, even from an untrained model (it will be noise).
+- [ ] Generate and save a ~1000-character sample after epoch 1, epoch 5, and epoch 20 into `samples_epoch01.txt`, `samples_epoch05.txt`, `samples_epoch20.txt`. Checkpoint: epoch 1 is gibberish with maybe short real words; epoch 5 has mostly real English words and line structure; epoch 20 has Shakespeare-shaped dialogue — CAPITALIZED speaker names followed by colons, and stage directions like "Enter ..." — even though the sentences are nonsense.
+- [ ] Put the three samples side by side in a short note in your work folder: what did it learn first — spelling, words, or structure? (Now read the Karpathy blog post if you haven't; his samples section will feel like déjà vu.)
+
+<details><summary>Hints</summary>
+
+- With `batch_first=True`, `nn.LSTM` takes input `(batch, seq, features)` and its hidden state is a *tuple* `(h, c)` of two tensors shaped `(num_layers, batch, hidden_size)`. Passing `None` as the hidden state means "start from zeros" — fine for training on random chunks.
+- The reshape for the loss: `loss = F.cross_entropy(logits.reshape(-1, vocab_size), y.reshape(-1))`. Cross-entropy averages over all batch × time positions at once.
+- If you ever carry a hidden state across training batches, call `.detach()` on it first — otherwise PyTorch tries to backprop into the previous batch's graph and throws a "backward through the graph a second time" error. (With independent random chunks and `None`, you dodge this entirely.)
+- During sampling the input is one character at a time: shape `(1, 1)`. Take the logits at the last (only) time step: `logits[:, -1, :]`.
+
+</details>
+
+**Definition of done:** Three saved sample files showing clear progression from noise to structured pseudo-Shakespeare, and a training run whose final loss is under ~1.6.
+
+## Project 2 — The temperature dial
+
+**Goal:** Add a temperature parameter to your sampler and see, in your own generated text, the trade-off between boring-and-safe and creative-and-unhinged.
+
+**Milestones**
+
+- [ ] Modify `sample()` to accept `temperature`: divide the logits by it *before* softmax — `probs = F.softmax(logits / temperature, dim=-1)`. Temperature below 1 sharpens the distribution (the top choice gets even more likely); above 1 flattens it (long-shot characters get a real chance); exactly 1 is your Project 1 sampler unchanged.
+- [ ] Using your best epoch-20 model, generate ~500 characters at temperature 0.3, 0.8, and 1.5. Save all three to `temperature_comparison.txt`. Checkpoint: 0.3 is repetitive and safe — correctly spelled, common words, loops in phrasing; 0.8 reads best; 1.5 is chaotic, with misspelled and invented words.
+- [ ] Write 3-4 sentences in that file describing the trade-off in your own words: what do you gain and lose as you turn the dial up? When would you want each setting?
+- [ ] File this away: `temperature` in the OpenAI/Anthropic/every-LLM API (lesson 34) is *exactly this line of code*. You now know what the knob physically does to the probabilities.
+
+<details><summary>Hints</summary>
+
+- Temperature 0.3 makes small logit gaps huge after division — think about what dividing by a small number does to the *differences* between logits before the softmax exponentiates them.
+- Try temperature 0.01 for fun: it becomes nearly deterministic, almost `argmax` at every step. Watch it get stuck in a loop.
+
+</details>
+
+**Definition of done:** `temperature_comparison.txt` contains three clearly different generations plus your written comparison of the trade-off.
+
+## Project 3 — Name nationality classifier
+
+**Goal:** Flip from generation to sequence *classification*: read a surname one character at a time and predict which of 18 languages it comes from — same recurrent machinery, different head.
+
+**Milestones**
+
+- [ ] Load `data/names/*.txt`: each file is a language, each line a surname. Normalize the names to plain ASCII (the tutorial page shows a `unicodeToAscii` helper using the `unicodedata` module — understand it, then type your own). Build the char vocabulary from the data and a `label` int for each language. Checkpoint: 18 languages, ~20,000 names total, and "Ślusàrski" normalizes to "Slusarski".
+- [ ] Shuffle and split 80/20 into train and test sets *before* looking at accuracy — the lesson-14 rules still apply. Note the classes are very imbalanced (Russian and English are huge, Korean is tiny); record the class counts.
+- [ ] Build the classifier: embedding → `nn.LSTM` → take the hidden state after the *last* character → `nn.Linear(hidden_size, 18)`. Key difference from Project 1: one prediction per *sequence*, not per step — the final hidden vector is a summary of the whole name. Train with cross-entropy; the simplest correct version processes one name at a time (batching variable-length names needs padding — skip it or see the stretch goal). Checkpoint: initial loss ≈ `ln(18) ≈ 2.89`, and it falls steadily.
+- [ ] Evaluate on the test set with your lesson-14 metrics library: overall accuracy plus an 18×18 confusion matrix, rendered with `matplotlib.pyplot.matshow` (lesson 7 skills). Checkpoint: accuracy above 0.5 — miles above the 1/18 ≈ 5.5% random baseline — and the matrix has a bright diagonal.
+- [ ] Read the confusion matrix like a detective: which pairs get confused? Checkpoint: you can name at least two confusable pairs and explain them (e.g. English/Scottish share spelling patterns; Spanish/Portuguese/Italian blur together) and two easy classes (Korean, Greek — distinctive romanization).
+- [ ] Try your own surname and five friends' names. Does the model's guess make sense? Print the top-3 predictions with their probabilities, not just the winner.
+
+<details><summary>Hints</summary>
+
+- For one-name-at-a-time training, a name of length L becomes input shape `(1, L)` after encoding. `nn.LSTM` returns `output, (h, c)` — for the last layer's final hidden state use `h[-1]`, shape `(1, hidden_size)`.
+- One name per optimizer step is noisy; a smaller learning rate (`1e-3`) and 2-3 passes over the training set help. Or accumulate loss over 32 names before calling `backward()` — a poor man's batch.
+- If accuracy looks great but the matrix shows everything predicted as "Russian", you are watching class imbalance from lesson 14 in the wild. Balanced sampling (draw a random language, then a random name from it, like the tutorial does) fixes it — at the price of *per-class* fairness over raw accuracy.
+
+</details>
+
+**Definition of done:** Test accuracy above 0.5 with a plotted confusion matrix, plus a few sentences naming the confusable language pairs and why.
+
+## Stretch goals
+
+- **GRU shootout** — swap `nn.LSTM` for `nn.GRU` (a simpler gated cell: two gates instead of three, no separate cell state) in Project 1. Same epochs, compare final loss and sample quality.
+- **Build the LSTM cell yourself** — implement one LSTM step from `nn.Linear` and sigmoids/tanh (forget gate, input gate, output gate, cell state), and verify it against `nn.LSTMCell` on the same weights. This is the micrograd spirit from lesson 22 applied here.
+- **Your own corpus** — retrain Project 1 on any plain-text you love: song lyrics, a favorite public-domain book, your own code. Watching it learn *your* text's structure never gets old.
+- **Proper batching for Project 3** — pad names to equal length within a batch and use `torch.nn.utils.rnn.pack_padded_sequence` so the LSTM ignores the padding. Fiddly, instructive, and much faster.
+
+## If you get stuck
+
+- **Shape errors around the LSTM** are this lesson's #1 time sink. Print `x.shape` before and after every layer. Ninety percent of the time you forgot `batch_first=True`, or forgot the hidden state is a tuple `(h, c)`.
+- **"Trying to backward through the graph a second time"** — you carried a hidden state between batches without `.detach()`. See Project 1 hints.
+- **Loss goes to NaN or explodes** — learning rate too high, or exploding gradients (lesson 25). Drop `lr` to `1e-3` and add `torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)` after `backward()`.
+- **Samples repeat one character forever** — you used `argmax` instead of `torch.multinomial`, or forgot to pass the hidden state forward between sampling steps.
+- Standing advice: read the traceback from the bottom up; print shapes and a few actual values, not just "it's wrong"; when truly stuck ask an AI assistant for a *hint*, never the solution; and type every line yourself — no pasting.
+
+## Resources
+
+- [The Unreasonable Effectiveness of Recurrent Neural Networks](https://karpathy.github.io/2015/05/21/rnn-effectiveness/) — the classic Karpathy post; your one assigned reading, with famous generated samples (Shakespeare, LaTeX, Linux source).
+- [PyTorch char-RNN classification tutorial](https://pytorch.org/tutorials/intermediate/char_rnn_classification_tutorial.html) — source of Project 3's dataset and the `unicodeToAscii` idea; peek at its approach *after* attempting your own.
+- `nn.LSTM` API reference — search "nn.LSTM" in the docs at [pytorch.org](https://pytorch.org) for exact input/output shapes and the meaning of `num_layers`.
+
+## Skills unlocked
+
+- [ ] I can explain what a hidden state is and why sequence models need one.
+- [ ] I can describe how an RNN applies the same weights at every time step, and what backprop through time unrolls.
+- [ ] I can explain why plain RNNs forget over long sequences and how LSTM gates keep gradients alive.
+- [ ] I can build a `(chunk, shifted-chunk)` next-character data pipeline from raw text.
+- [ ] I can train an `nn.LSTM` model in PyTorch and sanity-check its starting loss against `ln(vocab_size)`.
+- [ ] I can sample from a language model with temperature and predict how the output changes as I turn the dial.
+- [ ] I can use the final hidden state for sequence classification and read the resulting confusion matrix.
+
+## Next up
+
+Your LSTM turned characters into vectors with `nn.Embedding` without asking why that works — next you'll discover that these learned vectors *are meaning as geometry*, by building word2vec from scratch: [30 · Embeddings: Meaning as Geometry (word2vec from Scratch)](30-embeddings-word2vec.md).
