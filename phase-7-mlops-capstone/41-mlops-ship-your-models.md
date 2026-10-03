@@ -62,13 +62,15 @@ mkdir -p work/41-mlops-ship-your-models
 cd work/41-mlops-ship-your-models
 ```
 
+**Keep data out of git.** Run from this folder, the lesson-26 CIFAR script downloads its 170 MB archive into `data/` here again, over GitHub's 100 MB file limit, and any copy of the lesson-20 Kaggle data (including Part B's drifted copy) must stay out of the public fork too. In this folder, run `printf 'data/\n*.csv\n' > .gitignore`. Checkpoint: `git check-ignore data/cifar-10-python.tar.gz train.csv` prints both names.
+
 ## Project 1 — Instrument a training run
 
 **Goal:** Retrain a model built in an earlier lesson, but this time log every parameter, metric and output file to an experiment tracker. Then run 4+ variations and compare them on a dashboard. With every run logged, a question like "which settings got 82%?" always has an answer.
 
 **Milestones**
 
-- [ ] Copy the lesson-26 CIFAR training script (or the lesson-20 training code) into `work/41-mlops-ship-your-models/train.py` as a plain Python script, not a notebook. Make the key hyperparameters (learning rate, batch size, epochs) command-line arguments using `argparse` (Python's built-in library for reading command-line options). Checkpoint: `python train.py --lr 0.001 --epochs 2` runs a short training and prints a final accuracy.
+- [ ] Copy the lesson-26 CIFAR training script (or the lesson-20 training code) into `work/41-mlops-ship-your-models/train.py` as a plain Python script, not a notebook. Make the key hyperparameters (learning rate, batch size, epochs) command-line arguments using `argparse` (Python's built-in library for reading command-line options). Checkpoint: `python train.py --lr 0.001 --epochs 2` runs a short training and prints a final accuracy. For the lesson-20 model, which has no epochs, batch size or accuracy, make its own settings the arguments instead (for example `--alpha` for Ridge, or `--learning-rate` and `--max-depth` for gradient boosting), print the cross-validated RMSE, and log it as `cv_rmse` (without `step=`) wherever this project says `val_accuracy`.
 - [ ] Write down, honestly, everything someone would need to reproduce the best lesson-26 result: exact code version, hyperparameters, random seed, library versions, data version. Notice how much of it had to be recalled from memory. That gap is why **reproducibility** (the ability to rerun an experiment and get the same result) is the first problem MLOps solves.
 - [ ] Pick a tracker. **MLflow** (https://mlflow.org) runs locally, so nothing leaves the machine. **Weights & Biases** (https://wandb.ai) is a hosted dashboard with a free tier, and it needs an account. The rest of the milestones assume MLflow; the W&B API is nearly one-to-one.
 - [ ] Add tracking to `train.py`: a **param** is a chosen input (learning rate), a **metric** is a measured number (loss, accuracy), and an **artifact** is an output file (the model, a plot). Skeleton:
@@ -83,7 +85,7 @@ cd work/41-mlops-ship-your-models
       mlflow.log_metric("val_accuracy", val_acc, step=epoch)
   ```
 
-  Checkpoint: after one run, a `mlruns/` folder exists next to the script.
+  Checkpoint: after one run, an `mlflow.db` file (MLflow's local database of runs) exists next to the script. (An `mlruns/` folder appears beside it later, once a file is logged as an artifact.)
 - [ ] Serialize the model correctly and log it as an artifact. **Serialization** means saving a live Python object to a file. For PyTorch, save `model.state_dict()` (just the weights; rebuild the architecture in code when loading), not the whole model object. For scikit-learn, use `joblib.dump(pipeline, "model.joblib")` and save the *whole pipeline* including preprocessing, not just the estimator. Log the file with `mlflow.log_artifact(...)`. Checkpoint: the saved file loads in a fresh Python session and predicts on one example.
 - [ ] Launch the dashboard with `mlflow ui --port 5001` and open http://localhost:5001 in a browser (on Windows, WSL2 forwards localhost to Windows automatically). MLflow's default port, 5000, is used by AirPlay on Macs, so this lesson uses 5001 everywhere. Checkpoint: the run appears with its params and a metric curve.
 - [ ] Run at least 4 experiments that vary something meaningful, e.g. lr ∈ {0.01, 0.001}, batch size ∈ {32, 128}. Select all runs in the UI and click Compare. Checkpoint: a chart shows val_accuracy across runs, and it is clear which run won and what its exact settings were.
@@ -92,7 +94,7 @@ cd work/41-mlops-ship-your-models
 <details><summary>Hints</summary>
 
 - Training too slow for 4 runs? Shrink the job: 2–3 epochs and/or a 10% subset of CIFAR is fine. The aim here is to practice tracking, not to chase accuracy.
-- `mlflow ui` must be run from the directory that contains `mlruns/`, otherwise the dashboard looks empty.
+- `mlflow ui` must be run from the directory that contains `mlflow.db`; started anywhere else, it creates a new, empty database and the dashboard looks empty.
 - Log the metric *inside* the epoch loop with `step=epoch` to get curves instead of single points.
 - W&B instead? `wandb.init(config=...)`, `wandb.log({...})`, and the dashboard is on their website after `wandb login`.
 
@@ -110,7 +112,7 @@ cd work/41-mlops-ship-your-models
 
 *Stage 1 — freeze the environment*
 
-- [ ] Create a fresh folder `work/41-mlops-ship-your-models/service/` and put the serialized model to be served inside it (retrain and serialize the lesson-20 model here if Project 1 tracked the CNN). Write `requirements.txt` listing only what serving needs (fastapi, uvicorn, pydantic, plus torch or scikit-learn/joblib), then pin versions using the ones `pip freeze` reports. Pinning means writing `fastapi==...` so that the exact same versions install anywhere. Checkpoint: `pip install -r requirements.txt` succeeds in a brand-new throwaway venv.
+- [ ] Create a fresh folder `work/41-mlops-ship-your-models/service/` and put the serialized model to be served inside it (retrain and serialize the lesson-20 model here if Project 1 tracked the CNN). Write `requirements.txt` listing only what serving needs (fastapi, uvicorn, pydantic, plus every package the app and the saved model import: scikit-learn, joblib and pandas for the lesson-20 pipeline, which picks columns by name and so needs a pandas DataFrame, plus xgboost or lightgbm if the pipeline uses one; or torch, torchvision, pillow and python-multipart for the CNN, since FastAPI needs python-multipart for file uploads), then pin versions using the ones `pip freeze` reports. Pinning means writing `fastapi==...` so that the exact same versions install anywhere. Checkpoint: `pip install -r requirements.txt` succeeds in a brand-new throwaway venv.
 
 *Stage 2 — the API works*
 
@@ -181,6 +183,7 @@ cd work/41-mlops-ship-your-models
 - To serve the CNN anyway, swap the pydantic schema for FastAPI's file-upload pattern: `from fastapi import File, UploadFile`, then `@app.post("/predict")` with `async def predict(file: UploadFile = File(...))`, read the bytes with `await file.read()`, open them with PIL (`Image.open(io.BytesIO(data))`), apply the model's test-time transforms and predict. Test it with `curl -F "file=@some_image.png" http://localhost:8000/predict`. Note that `-F` sends a form upload, not a JSON body.
 - `--host 0.0.0.0` in the CMD matters: it makes the server listen on all network interfaces so traffic from outside the container can reach it. The default `127.0.0.1` only listens inside.
 - Container builds but curl hangs? Check the `-p 8000:8000` port mapping and that the CMD actually starts uvicorn (`docker logs CONTAINER-ID`, with the ID from `docker ps -a`).
+- Container stops at once with `libgomp.so.1: cannot open shared object file`? The model uses LightGBM, which needs the OpenMP library that the slim image lacks (the same `libgomp1` package that lesson 20 installs on Ubuntu). Add `RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 && rm -rf /var/lib/apt/lists/*` to the `Dockerfile` right after the `FROM` line.
 
 </details>
 
@@ -194,7 +197,7 @@ cd work/41-mlops-ship-your-models
 
 *Part A — public demo*
 
-- [ ] Build `demo.py`: a Gradio interface (the same library used in lesson 27) that takes the model's inputs via simple widgets and shows the prediction. Checkpoint: `python demo.py` opens a working local demo in the browser.
+- [ ] Build `demo.py`: a Gradio interface (the same library used in lesson 27) that takes the model's inputs via simple widgets and shows the prediction. Checkpoint: `python demo.py` prints a local URL, and opening the printed `http://127.0.0.1:7860` in a browser shows a working demo (on Windows, WSL2 forwards it automatically).
 - [ ] Deploy it to Hugging Face Spaces (free, needs the HF account): create a new Space at https://huggingface.co, choose the Gradio SDK, and push `demo.py`, the model file and a `requirements.txt` to it with git, exactly as in lesson 27. Before pushing, edit the settings block between the `---` lines at the top of the Space's `README.md`. Set `app_file: demo.py`, because the Space runs the file named there. Add the line `python_version: "3.13"`, because Spaces use Python 3.10 unless told otherwise, which is too old for the package versions in the venv. Checkpoint: the public URL works. Send it to a friend and have them get a prediction on their phone.
 
 *Part B — drift drill*
@@ -212,7 +215,7 @@ cd work/41-mlops-ship-your-models
 
 <details><summary>Hints</summary>
 
-- Spaces builds fail most often on `requirements.txt`: it must list every import that `demo.py` makes, including joblib or torch.
+- Spaces builds fail most often on `requirements.txt`: it must list every import that `demo.py` makes *and* every package the saved model needs to load: for the tabular model `scikit-learn`, `joblib` and `pandas`, plus `xgboost` or `lightgbm` if the pipeline uses one (pinned to the same versions as `service/requirements.txt`), for the CNN `torch` and `torchvision`.
 - Keep the drift math honest: compute train mean/std once from the training set and save them (e.g. to JSON). The check must not peek at the new data to define "normal".
 - Mean-shift is the simplest drift signal and misses some shifts (e.g. variance changes with equal means). Noticing that limitation is part of the lesson, so put it in the notes.
 
@@ -222,10 +225,10 @@ cd work/41-mlops-ship-your-models
 
 ## Stretch goals
 
-- **CI on push:** add a GitHub Action that installs the service's requirements and runs `pytest`. A GitHub Action is a small YAML workflow in `.github/workflows/` that GitHub runs automatically on every push. This is **continuous integration**: the tests become a gate, not a chore. Search GitHub's docs for "Python application workflow" for the template, and set its `python-version` to "3.13" to match the venv (the template's older Python cannot install the pinned versions).
+- **CI on push:** add a GitHub Action that installs the service's requirements and runs `pytest`. A GitHub Action is a small YAML workflow in `.github/workflows/` that GitHub runs automatically on every push. This is **continuous integration**: the tests become a gate, not a chore. Search GitHub's docs for "Python application workflow" for the template, and set its `python-version` to "3.13" to match the venv (the template's older Python cannot install the pinned versions). Two more edits make it work here: under `jobs:` → `build:`, add `defaults:` → `run:` → `working-directory: work/41-mlops-ship-your-models/service`, so that the install, lint and test steps run in the service folder, which holds `requirements.txt`, the model file and the tests; and add `httpx` to the template's `pip install flake8 pytest` line, because `TestClient` needs it and the serving requirements leave it out.
 - **Batch endpoint:** add `/predict_batch` accepting a list of inputs, with pydantic validating each item, and a test proving it.
 - **Latency logging:** time each `/predict` call and log it; report p50 and p95 latency (the median and the 95th percentile, which is the "slow tail" that users actually feel) over 100 curl requests.
-- **Registry push:** push the Docker image to Docker Hub (free account), then pull it and run it on any other machine. That is the "runs anywhere" promise in practice. Images are built for the processor type of the computer that builds them, so one built on an Apple Silicon Mac may not run on an Intel or AMD machine. To build for both, add `--platform linux/amd64,linux/arm64` to `docker build`.
+- **Registry push:** push the Docker image to Docker Hub (free account), then pull it and run it on any other machine. That is the "runs anywhere" promise in practice. Images are built for the processor type of the computer that builds them, so one built on an Apple Silicon Mac may not run on an Intel or AMD machine. To build for both, add `--platform linux/amd64,linux/arm64` to `docker build`. On Linux, Docker Engine first needs emulation for the other processor type: run `docker run --privileged --rm tonistiigi/binfmt --install all` once (and again after each restart). If the build then says multi-platform builds are not supported, the Engine still uses its older image store, the default before Docker Engine 29 that an upgrade keeps: turn on the containerd image store as Docker's "Multi-platform builds" page describes, or build for one platform at a time with `--platform linux/amd64`.
 
 ## Getting unstuck
 
@@ -236,7 +239,7 @@ cd work/41-mlops-ship-your-models
 
 ## Resources
 
-- FastAPI docs — https://fastapi.tiangolo.com — tutorial-style docs for the API and pydantic validation; the "First Steps" section covers everything Project 2 needs.
+- FastAPI docs — https://fastapi.tiangolo.com — tutorial-style docs for the API and pydantic validation; the tutorial's "First Steps", "Request Body", "Body - Fields" and "Testing" sections cover what Project 2 needs.
 - MLflow — https://mlflow.org — the local experiment tracker for Project 1; see its Tracking quickstart.
 - Weights & Biases — https://wandb.ai — the hosted alternative tracker (free tier, account required).
 - Get Docker — https://docs.docker.com/get-started/get-docker/ — Docker's install guides for macOS, Windows and Linux (on Linux, follow its link to Docker Engine); on Windows, also the WSL2 backend guide at https://docs.docker.com/desktop/features/wsl/.

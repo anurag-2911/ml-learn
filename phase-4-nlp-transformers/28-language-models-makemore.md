@@ -60,7 +60,7 @@ The lesson follows makemore Parts 1 and 2 from the [Karpathy playlist](https://w
 - [ ] A **bigram** is just a pair of adjacent characters. Loop over every word wrapped as `.emma.` and count every bigram into a 27×27 integer tensor `N`, where `N[i, j]` = how many times character `j` followed character `i`. Checkpoint: `N[stoi['.'], stoi['a']]` is 4410, meaning that 4410 names start with "a".
 - [ ] Visualize `N` as a heatmap with `plt.imshow`, labeling each cell with the character pair and its count (Karpathy shows how). Look at it closely. Checkpoint: the `q` row is nearly empty except for `qu`. The model has learned English spelling rules just by counting.
 - [ ] Turn counts into probabilities: `P = N.float()` normalized so every **row** sums to 1. Each row is now "given this character, the probability distribution over the next character". Checkpoint: `P[0].sum()` is `1.0`.
-- [ ] Generate names: start at `.`, repeatedly use `torch.multinomial` (a weighted random draw, like rolling a 27-sided dice whose sides have different weights) to pick the next character from the current row of `P`, and stop when `.` is drawn again. Use `torch.Generator().manual_seed(2147483647)` to match the video's outputs. Checkpoint: the samples look name-like but garbled (`mor.`, `axx.`, `cexze.`), with an occasional string like `anna` that happens to be a real name.
+- [ ] Generate names: start at `.`, repeatedly use `torch.multinomial` (a weighted random draw, like rolling a 27-sided dice whose sides have different weights) to pick the next character from the current row of `P`, and stop when `.` is drawn again. Use `torch.Generator().manual_seed(2147483647)` so that every run draws the same samples. Current PyTorch draws different samples from this seed than the older version in the video (the video starts with `mor.`, `axx.`); that is expected, not a bug. Checkpoint: the samples look name-like but garbled (current PyTorch starts with `cexze.`, `momasurailezitynn.`, `konimittain.`), with an occasional string that happens to be a real name.
 - [ ] Score the model with **negative log likelihood**: for every bigram in the data, look up the probability the model assigned to the character that actually came next, take `log`, average, negate. Lower = less surprised = better. Checkpoint: average NLL ≈ **2.454**. Write this number down: it is the score to beat for the rest of the lesson.
 - [ ] Add **smoothing**: `P = (N+1).float()` before normalizing, so no bigram has probability exactly 0 (one zero would make the loss infinite the moment a rare pair appears).
 
@@ -89,14 +89,14 @@ The lesson follows makemore Parts 1 and 2 from the [Karpathy playlist](https://w
 - [ ] Train with **minibatches** (a random few-dozen examples per step instead of all 228k; noisier but far faster, as in lesson 25) and pick a learning rate the Karpathy way: sweep it across a range, plot loss vs learning-rate exponent, pick the value just before the curve blows up.
 - [ ] Split the data 80/10/10 into **train/dev/test**: train on train, tune hyperparameters (context size, hidden units, embedding size) on dev, touch test exactly once at the very end. With 228k examples memorization is now possible, so the honesty rules apply. Checkpoint: train and dev loss are close to each other (no big overfit).
 - [ ] Improve the model until dev loss beats the bigram's 2.45 decisively. Grow the embedding size (2 → 10) and hidden layer, train longer, decay the learning rate. Checkpoint: dev loss around **~2.2 or below**, and samples are noticeably more name-like (outputs in the style of `ambrie.`, `khalaysie.` and `jareth.` instead of garbled letter soup).
-- [ ] Bonus insight: before training, visualize the 2-D embeddings as a scatter plot with character labels. Checkpoint: after training, the vowels `a e i o u` cluster together. The model *learned* that they behave alike; nobody told it.
+- [ ] Bonus insight: while the embeddings are still 2-D (train the 2-D model before growing it to 10), visualize `C` as a scatter plot with character labels. Checkpoint: after training, the vowels `a e i o u` cluster together. The model *learned* that they behave alike; nobody told it.
 
 <details><summary>Hints</summary>
 
 - A one-hot input times a matrix just *selects a row* of `W`. Once this is clear, the equivalence to the count table stops being mysterious.
 - If the loss is `nan` or `inf`, the code is probably exponentiating huge logits. Switch to `F.cross_entropy`, which handles this internally.
 - Sampling from the MLP: keep a rolling context of the last 3 characters (start with `[0, 0, 0]`), feed it through the net, `torch.multinomial` the output, shift the context, and repeat until `.` is drawn.
-- A learning rate of `0.1` with plain gradient descent (`p.data += -lr * p.grad`) is a solid start; remember `p.grad = None` (or zeroing) before each `backward()`.
+- Learning rates differ a lot between the two models. The full-batch neural bigram needs a large one (the video uses `50`; with `0.1` the loss barely moves). For the minibatch MLP, a learning rate of `0.1` with plain gradient descent (`p.data += -lr * p.grad`) is a solid start. Either way, remember `p.grad = None` (or zeroing) before each `backward()`.
 
 </details>
 
@@ -130,7 +130,7 @@ The lesson follows makemore Parts 1 and 2 from the [Karpathy playlist](https://w
 - **makemore Part 5 (WaveNet)**: follow the video to deepen the MLP into a hierarchical WaveNet-style architecture that fuses characters progressively instead of all at once. The dev loss drops below 2.0.
 - **Context-size experiment**: train the MLP with context 1, 2, 3, 5, 8 and plot dev loss vs context size. Where does the payoff flatten, and why might that be?
 - **Trigram counting model**: extend Project 1's *counting* approach to 2 characters of context (a 27×27×27 tensor). Watch it beat the bigram, then explain why counting cannot scale to a context of 10 (hint: count the cells).
-- **Temperature knob**: divide the logits by a number `T` before softmax when sampling. `T < 1` makes samples safer and more boring, `T > 1` wilder. Generate at 0.5, 1.0, 1.5 and compare. This knob is the "temperature" setting that every LLM API exposes.
+- **Temperature knob**: divide the logits by a number `T` before softmax when sampling. `T < 1` makes samples safer and more boring, `T > 1` wilder. Generate at 0.5, 1.0, 1.5 and compare. This knob is the "temperature" setting that most LLM APIs expose.
 
 ## Getting unstuck
 

@@ -31,7 +31,7 @@
    pip install gradio
    ```
 
-   (torch and torchvision are already installed from lesson 24. Their line is only there so that a fresh machine works too, and it leaves an existing install as it is, even a GPU build.) As in lesson 24, that line uses PyTorch's own package index, which has no gradio, so gradio gets a plain `pip install` line of its own. On an Intel Mac the torch line fails, because current PyTorch has no Intel Mac version: collect and sort the photos on the Mac, then upload them to Google Colab and run the code there, as in lesson 26.
+   (torch and torchvision are already installed from lesson 24. Their line is only there so that a fresh machine works too, and it leaves an existing install as it is, even a GPU build.) As in lesson 24, that line uses PyTorch's own package index, which has no gradio, so gradio gets a plain `pip install` line of its own. On an Intel Mac the torch line fails, because current PyTorch has no Intel Mac version: collect and sort the photos on the Mac, zip the folder (`zip -r data.zip data`), upload `data.zip` to a Google Colab notebook, unpack it there with `!unzip -q data.zip`, and run the code there, as in lesson 26 (in Colab, `demo.launch()` shows the app inside the notebook). Before closing the notebook, download `model.pt` with `from google.colab import files; files.download("model.pt")`, because Colab deletes the session's files when it ends.
 3. **No dataset download this time: the dataset comes from personal photos.** Collecting it takes a phone and ~1-2 hours of photo taking or photo-library digging. Think now about which 2-5 things to classify.
 4. **Accounts:** Projects 1 and 2 need no account. Project 3 needs a free Hugging Face account (sign up at [huggingface.co](https://huggingface.co); it is the standard hub for sharing ML models and demos, and the free tier is enough).
 5. **Create the work folder:**
@@ -40,6 +40,8 @@
    mkdir -p work/27-transfer-learning
    cd work/27-transfer-learning
    ```
+
+   Keep the photos and the model out of git. The fork is public, a phone photo often records where it was taken (GPS data inside the file), and `model.pt` is about 45 MB. In this folder, run `printf 'data/\ndata.zip\n*.pt\n' > .gitignore` (`data.zip` is the photo archive made on the Intel Mac route). Checkpoint: `git check-ignore data/x.jpg model.pt` prints both names.
 
 ## Project 1 — A personal dataset
 
@@ -61,7 +63,7 @@
       class_b/   ...
   ```
 
-  Write a small Python script that randomly moves ~20% of each class into `val/` (use `random.sample` and `shutil.move` from lesson 04). Never split by hand, because hand-picking biases the split. Checkpoint: train and val folders exist, val has roughly 20% of each class, and no image appears in both.
+  Write a small Python script that randomly moves ~20% of each class into `val/` (use `random.sample` to pick the files and `shutil.move` to move them; both come with Python). Never split by hand, because hand-picking biases the split. Checkpoint: train and val folders exist, val has roughly 20% of each class, and no image appears in both.
 - [ ] Write `dataset.py`: build two transform pipelines with `torchvision.transforms`. A **transform** is a preprocessing step applied to each image as it loads. For training: resize/crop to 224×224, random horizontal flip, small random rotation and color jitter (this is **data augmentation**: creating label-preserving variations so the model sees a "bigger" dataset), then `ToTensor()` and `Normalize` with the ImageNet means and stds (`mean=[0.485, 0.456, 0.406]`, `std=[0.229, 0.224, 0.225]`; pretrained models expect input scaled exactly the way they were trained). For validation: just resize, center-crop, tensor, normalize. There is no augmentation, because validation needs an honest, repeatable measurement.
 - [ ] Load both folders with `torchvision.datasets.ImageFolder` and wrap them in `DataLoader`s (batch size 16-32). Checkpoint: printing `dataset.classes` shows the class names, and `len()` of each dataset matches the file counts.
 - [ ] Visualize one training batch with matplotlib (undo the normalization before showing, or colors look psychedelic). Checkpoint: a grid of the collected photos with correct labels, some visibly flipped/rotated by augmentation.
@@ -70,7 +72,7 @@
 
 - Getting photos into the work folder: Google Photos or a phone-to-computer transfer gets them onto the computer first. Make each class folder with `mkdir -p data/train/CLASS-NAME`. To drag photos in, open the work folder in the file manager: `open .` on macOS, `explorer.exe .` on Windows (WSL2), `xdg-open .` on Linux. Or copy them in the terminal: on macOS and Linux, `cp ~/Pictures/YOUR-FOLDER/* data/train/CLASS-NAME/`; on Windows (WSL2), Windows files are under `/mnt/c/Users/`, so `cp /mnt/c/Users/YOUR-WINDOWS-NAME/Pictures/YOUR-FOLDER/* data/train/CLASS-NAME/`. On macOS, Finder can leave a hidden `.DS_Store` file in each folder opened in it, so make the split script skip names that start with a dot. On Windows (WSL2), dragging downloaded photos in can add a file ending in `:Zone.Identifier` next to each one (the clutter from lesson 01); delete them with `rm data/train/*/*:Zone.Identifier` so that the file counts stay right.
 - HEIC photos (the iPhone default) do not load with PIL, and `ImageFolder` skips them. Convert them to JPEG with the pillow-heif package, which works the same on every system: `pip install pillow-heif`, then call `register_heif_opener()` (from `pillow_heif`) once at the top of a small script. After that, `Image.open` can read `.heic` files, and `.save()` writes them out as `.jpg`. Or set the iPhone to shoot JPEG from now on: Settings → Camera → Formats → **Most Compatible**.
-- To un-normalize for display: `img * std + mean` (broadcast over the channel dimension, a lesson 05 skill), then `plt.imshow(img.permute(1, 2, 0))` because matplotlib wants height × width × channels.
+- To un-normalize for display: first `img = img.permute(1, 2, 0)`, because matplotlib wants height × width × channels, then `img = img * torch.tensor(std) + torch.tensor(mean)` (with the channels now last, the 3 values broadcast over the channel dimension, a lesson 05 skill), then `plt.imshow(img.clamp(0, 1))`.
 - If `ImageFolder` errors on a corrupt file, find it by looping over the dataset in a try/except and printing the index that fails.
 
 </details>
@@ -91,9 +93,9 @@
   print(model)
   ```
 
-  Checkpoint: the printout ends with `(fc): Linear(in_features=512, out_features=1000)`, a final layer producing 1000 ImageNet scores that this project does not need.
+  Checkpoint: the last layer in the printout is `(fc): Linear(in_features=512, out_features=1000, bias=True)`, a final layer producing 1000 ImageNet scores that this project does not need.
 - [ ] Swap the head: replace `model.fc` with a fresh `nn.Linear(512, num_classes)` for the dataset's classes. This new layer is the only randomly-initialized part of the whole network.
-- [ ] **Stage 1: feature extraction.** Train the head only: freeze every pretrained parameter by setting `param.requires_grad = False` for all of them, then un-freeze just the new `model.fc`. **Freezing** means gradients are not computed and weights never update: the pretrained layers become a fixed feature extractor, and only the new head learns. Build the optimizer over only the trainable parameters. Checkpoint: counting parameters with `requires_grad=True` gives a few thousand (512 × classes + biases), out of ~11 million total.
+- [ ] **Stage 1: feature extraction.** Train the head only: freeze every pretrained parameter by setting `param.requires_grad = False` for all of them, then un-freeze just the new `model.fc`. **Freezing** means gradients are not computed and weights never update: the pretrained layers become a fixed feature extractor, and only the new head learns. Build the optimizer over only the trainable parameters. Checkpoint: counting parameters with `requires_grad=True` gives 513 × the number of classes (512 weights plus 1 bias per class, so 1,026 for 2 classes and 2,565 for 5), out of ~11 million total.
 - [ ] Reuse the training loop from lesson 26 (train + validate per epoch, track loss and accuracy). Train stage 1 for 3-5 epochs with Adam, lr around `1e-3`. On CPU this takes minutes; if lesson 24's check showed a GPU (`cuda` on an NVIDIA card, `mps` on an Apple Silicon Mac), use it. Checkpoint: validation accuracy is already **80-95%** after the first epoch or two; the pretrained features are doing almost all the work.
 - [ ] **Stage 2: fine-tuning.** Unfreeze everything and continue training for 3-5 more epochs at a much lower learning rate (around `1e-4` or lower). The low LR matters: the pretrained weights are already good, and big updates would destroy them ("catastrophic forgetting"). Refinement: pass two parameter groups to the optimizer (pretrained layers at `1e-4`, the new head at `1e-3`), which is the standard "lower LR for pretrained layers" trick. Checkpoint: **validation accuracy ≥ 0.90** (most personal datasets land at 92-99%).
 - [ ] Save the winner: `torch.save` the model's `state_dict` plus the class-name list to `model.pt` whenever validation accuracy improves. Project 3 needs both.
@@ -106,7 +108,7 @@
 - Per-layer learning rates: `optim.Adam([{"params": backbone_params, "lr": 1e-4}, {"params": model.fc.parameters(), "lr": 1e-3}])`. `backbone_params` is every parameter not in `model.fc`.
 - Remember `model.train()` before training and `model.eval()` plus `with torch.no_grad():` for validation. ResNet contains batch-norm layers that behave differently in each mode, and forgetting this is the classic "val accuracy is garbage but loss looks fine" bug.
 - Stuck below 90%? Usual suspects in order: forgot ImageNet normalization; classes too similar or images too samey (add variety, not epochs); learning rate too high in stage 2 (accuracy *drops* after unfreezing, so lower it 10×).
-- The PyTorch transfer learning tutorial (Resources) follows this exact recipe, so it can be used to sanity-check the code's structure. Read it *after* attempting, not before.
+- The PyTorch transfer learning tutorial (Resources) covers both halves of this recipe as two separate runs (training only the head, and fine-tuning everything, both with SGD), so it can be used to sanity-check the code's structure. Read it *after* attempting, not before.
 
 </details>
 
@@ -118,11 +120,12 @@
 
 **Milestones**
 
-- [ ] Write `predict.py` with one function: it takes a PIL image, applies the *validation* transforms (never the augmentation ones, because the goal is the model's honest opinion, not a random rotation of it), runs the model inside `torch.no_grad()`, applies `softmax` to turn raw scores into probabilities, and returns a dict of `{class_name: probability}` for the top 3. Load the model once at module import, not inside the function. Checkpoint: calling it on a photo of class A returns class A above 0.9.
+- [ ] Write `predict.py` with one function, `predict(image)`: it takes a PIL image, applies the *validation* transforms (never the augmentation ones, because the goal is the model's honest opinion, not a random rotation of it), runs the model inside `torch.no_grad()`, applies `softmax` to turn raw scores into probabilities, and returns a dict of `{class_name: probability}` for the top 3 (or for every class when there are fewer than 3; with `torch.topk`, use `k=min(3, len(classes))`). Load the model once at module import, not inside the function. Checkpoint: calling it on a photo of class A returns class A above 0.9.
 - [ ] Build the UI in `app.py`. **Gradio** is a Python library that turns a function into a web interface: the code declares inputs and outputs, and Gradio builds the page. The skeleton:
 
   ```python
   import gradio as gr
+  from predict import predict
 
   demo = gr.Interface(
       fn=predict,                      # the function from predict.py
@@ -134,15 +137,15 @@
   ```
 
   `gr.Label` renders a probability dict as confidence bars automatically. Run `python app.py` and open the printed `http://127.0.0.1:7860` in a browser (on Windows, WSL2 forwards it automatically). Checkpoint: uploading a photo shows top-3 predictions with bars.
-- [ ] Polish: add a description telling strangers what the model expects ("upload a photo of X, Y or Z"), and add 2-3 bundled sample images via the `examples=` argument so visitors can try it in one click.
+- [ ] Polish: add a description telling strangers what the model expects ("upload a photo of X, Y or Z"), and add 2-3 bundled sample images via the `examples=` argument so visitors can try it in one click. Make a `samples` folder (`mkdir samples`), then make each sample with `ImageOps.exif_transpose(Image.open(PATH)).convert("RGB").save("samples/NAME.jpg")` (after `from PIL import Image, ImageOps`); saving through PIL this way drops the EXIF data, including any GPS location, and `exif_transpose` first turns the photo upright, because the rotation a phone records is part of that EXIF data.
 - [ ] Create the deployment target. On [huggingface.co](https://huggingface.co) (free account; this is the one signup of the lesson), create a new **Space**: a free container that runs the app on Hugging Face's servers. Choose the **Gradio** SDK and CPU hardware (free). A Space is a git repo. Clone it into a *separate* folder outside this repo.
-- [ ] Add the files to the Space repo: `app.py`, `predict.py`, `model.pt`, sample images, and a `requirements.txt` listing `torch`, `torchvision`, `gradio`. Three deployment gotchas: the Space runs `app.py` on CPU, so load with `torch.load("model.pt", map_location="cpu")`; a Space runs Python 3.10 unless its `README.md` says otherwise, so add the line `python_version: "3.13"` between the two `---` lines at the top of that file, to match the venv; and if `model.pt` is over ~10 MB (it will be, ~45 MB), git needs Git LFS for it, so run `git lfs install` and then `git lfs track "*.pt"` before adding (the Spaces docs cover this; ask an AI assistant if LFS causes trouble). Git LFS is a separate program that does not come with git, so install it before those two commands:
+- [ ] Add the files to the Space repo: `app.py`, `predict.py`, `model.pt`, sample images, and a `requirements.txt` listing `torch`, `torchvision`, `gradio`. Three deployment gotchas: the Space runs `app.py` on CPU, so load with `torch.load("model.pt", map_location="cpu")`; a Space runs Python 3.10 unless its `README.md` says otherwise, so add the line `python_version: "3.13"` between the two `---` lines at the top of that file, to match the venv; and Hugging Face rejects a push that contains binary files such as `model.pt` (~45 MB) or full-size phone photos unless Git LFS stores them, so run `git lfs install` and then `git lfs track "*.pt" "*.jpg" "*.jpeg" "*.png"` before adding, and add the updated `.gitattributes` together with the other files (the Spaces docs cover this; ask an AI assistant if LFS causes trouble). Git LFS is a separate program that does not come with git, so install it before those two commands:
 
   - **macOS:** `brew install git-lfs` if Homebrew is installed. On a Mac without it (an Intel Mac, or macOS 14 or older), download the Mac version that matches the chip (Apple Silicon or Intel) from [git-lfs.com](https://git-lfs.com), double-click the downloaded `.zip` if the browser has not unpacked it already, and run `sudo ~/Downloads/git-lfs-*/install.sh` (it asks for the Mac password).
   - **Windows (WSL2) and Linux:** `sudo apt install -y git-lfs` (other distributions have a `git-lfs` package too).
-- [ ] `git push`, then watch the build log on the Space page. The first build takes a few minutes. Debug until the status turns green and the app loads. Checkpoint: the app works at `https://huggingface.co/spaces/YOUR-USERNAME/YOUR-SPACE-NAME` in a browser, on the public internet, running on remote hardware.
+- [ ] Hugging Face does not accept the account password for git. Create a token at huggingface.co/settings/tokens (**Create new token**, type **Write**), and when `git push` asks for a password, paste the token instead (the username is the Hugging Face username). Never put the token in the remote URL or in any file in the repo; anyone who sees it can push to the account. Then `git push`, and watch the build log on the Space page. The first build takes a few minutes. Debug until the status turns green and the app loads. Checkpoint: the app works at `https://huggingface.co/spaces/YOUR-USERNAME/YOUR-SPACE-NAME` in a browser, on the public internet, running on remote hardware.
 - [ ] **Send the link to a friend or family member.** Have them upload their own photo. When their reply comes back, that is the milestone: a real, working AI product has been shipped. Getting there took four steps: collecting the data, training the model, building the interface and deploying it. Most people who "know ML" have never done all four.
-- [ ] Commit the work folder to the learning repo (the model file and dataset can stay out via `.gitignore`; code and README go in).
+- [ ] Commit the work folder to the learning repo. The `.gitignore` from Before starting keeps `data/`, `data.zip` and `model.pt` out; code, README and the sample images go in.
 
 <details><summary>Hints</summary>
 
@@ -172,7 +175,7 @@
 
 ## Resources
 
-- [PyTorch transfer learning tutorial](https://pytorch.org/tutorials/beginner/transfer_learning_tutorial.html) — the official walkthrough of exactly this lesson's recipe; read it after attempting the projects, to compare approaches.
+- [PyTorch transfer learning tutorial](https://docs.pytorch.org/tutorials/beginner/transfer_learning_tutorial.html) — the official walkthrough of fine-tuning and feature extraction with ResNet18, as two separate runs; read it after attempting the projects, to compare approaches.
 - [Gradio quickstart](https://www.gradio.app/guides/quickstart) — everything for Project 3's UI, and the current API when tutorials disagree.
 - [Hugging Face Spaces](https://huggingface.co/spaces) — where the demo lives; browse other people's Spaces for inspiration on what a good demo page looks like.
 - fast.ai course, lessons 1-2 — a famous free course that starts with exactly this fine-tune-and-deploy workflow; a good parallel take (search for "fast.ai practical deep learning").

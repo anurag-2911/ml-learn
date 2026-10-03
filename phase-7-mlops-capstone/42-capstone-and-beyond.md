@@ -1,6 +1,6 @@
 # 42 · Capstone: Your Hero Project (and What Comes Next)
 
-**Phase 7 — MLOps & Capstone** · Estimated time: 4-6 weeks · Prerequisites: [41 · MLOps: Track, Serve, Containerize, Deploy](41-mlops-ship-your-models.md) and all earlier lessons
+**Phase 7 — MLOps & Capstone** · Estimated time: 4-6 weeks · Prerequisites: [41 · MLOps: Track, Serve, Containerize, Deploy](41-mlops-ship-your-models.md) and all earlier lessons (in Phase 6, at least one of lessons 38-40)
 
 > This final lesson is the graduation project of the curriculum. [Lesson 01](../phase-0-foundations/01-environment-setup.md) started with a first Python script that printed a sentence. Since then, the lessons have built a gradient descent optimizer from a math formula, a k-NN classifier from scratch, a spam filter, a Kaggle pipeline, micrograd, a neural network in pure NumPy that reads handwritten digits, a CNN that sees, a GPT made layer by layer and then [trained](../phase-4-nlp-transformers/33-train-your-own-gpt.md), a RAG app that chats with personal documents, an AI agent, and a containerized model running behind a real API. Here the step-by-step lessons stop, and the work is a single substantial, self-chosen project: scoped, specced, built, deployed, and written up so well that it serves as proof of the whole journey. The lesson also covers scoping, one-page specs, weekly milestones, blog-style write-ups and sharing work in public, and it ends with a map of the specializations that come after the fundamentals.
 
@@ -89,7 +89,7 @@ One warning before beginning: the capstone will feel different from every lesson
   ```
 
 - [ ] Stress-test the spec: ask an AI assistant to play a skeptical reviewer and find the three biggest risks in it. Do not let it rewrite the spec. Argue with it, then revise the spec without its help. Checkpoint: the week-2 milestone says some version of "crude end-to-end pipeline works".
-- [ ] Create the project's own public GitHub repo (separate from this learning repo), commit `SPEC.md` as its first commit, and add the spec's problem statement as the repo description.
+- [ ] Create the project's own public GitHub repo (separate from this learning repo), commit `SPEC.md` as its first commit, and add the spec's problem statement as the repo description. The learning repo's `.gitignore` does not apply to the new repo, so give it its own before adding any code: `.venv/`, `__pycache__/`, `.ipynb_checkpoints/`, `.DS_Store`, `.env` (the API key from lesson 34), the data folder and the model files (for example `*.pt`). Checkpoint: `git status -u` lists none of them.
 
 <details><summary>Hints</summary>
 
@@ -112,7 +112,7 @@ One warning before beginning: the capstone will feel different from every lesson
 - [ ] **Week 2: End-to-end skeleton.** Wire the whole pipeline: data in → model (even a bad small one) → output → minimal demo (a bare Gradio page or FastAPI endpoint counts). Every piece can be crude; no piece may be missing. Checkpoint: the builder (or a friend) can open a URL or run one command and get a real prediction from real data.
 - [ ] **Mid-project review.** Stop and check honestly: (1) skeleton runs end to end, (2) current metric vs. baseline vs. target written down, (3) riskiest remaining piece named, (4) scope still finishable in two weeks (if not, cut features now and say so later in the README; cutting scope mid-project is a professional skill, not a failure). Checkpoint: the biggest remaining risk can be stated in one sentence.
 - [ ] **Week 3: Depth.** Attack the weakest link only: better model, better features, fine-tuning, hyperparameter search, whichever the metric says matters most. Track experiments as in [lesson 41](41-mlops-ship-your-models.md). Checkpoint: the metric improved over week 2, and the reason can be stated in one sentence per change.
-- [ ] **Week 4: Deploy and harden.** Ship the demo properly: Hugging Face Spaces for a UI (a free account is needed, as in lesson 27), or the lesson-41 container recipe for an API. Handle the three ugliest inputs that come to mind (empty input, wrong file type, absurd values), and ask two real people to break it. Checkpoint: the public link works from a phone that has never seen the code.
+- [ ] **Week 4: Deploy and harden.** Ship the demo properly: Hugging Face Spaces for a UI (a free account is needed, and the Space's `README.md` needs the line `python_version: "3.13"`, as in lesson 27), or the lesson-41 container for an API. That container only runs on localhost; to make it public, create a Space with the **Docker** SDK, push the `Dockerfile`, the service code, the model (through Git LFS, as in lesson 27) and `requirements.txt` to it, and add `app_port: 8000` to the settings block at the top of the Space's `README.md`, because Docker Spaces expect port 7860 unless told otherwise. Handle the three ugliest inputs that come to mind (empty input, wrong file type, absurd values), and ask two real people to break it. Checkpoint: the public link works from a phone that has never seen the code.
 
 <details><summary>Hints</summary>
 
@@ -133,7 +133,7 @@ One warning before beginning: the capstone will feel different from every lesson
 
 - [ ] Write the blog-style README with exactly these sections: **Problem** (why anyone should care, 1 paragraph), **Data** (what, where from, how much, what was messy), **Approach** (what was built and *why*, including the dead ends), **Results** (a small table: baseline vs. final on the metric, plus one honest plot made with the skills from [lesson 07](../phase-0-foundations/07-data-visualization.md)), **Demo** (the live link + a GIF or screenshot), **Limitations**, **Lessons learned**. Checkpoint: a friend who knows no ML can read it and explain back what was built and how well it works.
 - [ ] Write the **three honest limitations**: real ones ("only trained on daytime photos, fails at night"), not humble-brags ("could be even more accurate"). Then add a short **"With 10x time I would..."** paragraph. It shows reviewers that the author sees the road ahead, which reads as expertise.
-- [ ] Clean the repo as if someone's hiring decision depends on it (it might): `README.md`, `requirements.txt`, a `src/` folder, no dead files, no notebooks named `Untitled3.ipynb`, and a one-command way to run it locally.
+- [ ] Clean the repo as if someone's hiring decision depends on it (it might): `README.md`, `requirements.txt`, `.gitignore`, a `src/` folder, no dead files, no notebooks named `Untitled3.ipynb`, and a one-command way to run it locally.
 - [ ] Post it somewhere real: LinkedIn or X with the demo link and one result number, a lightning talk at a local Python/ML meetup, or a relevant community. Keep it to one genuine paragraph: what was built, one number, one limitation, the link. Checkpoint: at least one stranger has clicked the demo.
 - [ ] **Milestone: the credential.** Pin the repo on the GitHub profile and put the link in the profile bio/CV. The README and the repo together are the credential: they prove in public, with running code, that their author went from zero to shipping ML systems. No certificate says that more clearly.
 
@@ -156,20 +156,20 @@ One warning before beginning: the capstone will feel different from every lesson
 
 **The specialization map** lists the main roads from here, and what "go deeper" means on each:
 
-- **LLM engineering**: evals (systematic testing of AI systems, first practiced in [lesson 37](../phase-5-llms/37-ai-agents-tool-use.md)), serving at scale, retrieval quality, agent reliability. Builds on phases 4-5. The fastest-moving road, and the one where GPT-from-scratch knowledge is an unusual strength.
+- **LLM engineering**: evals (systematic testing of AI systems, first practiced in [lesson 34](../phase-5-llms/34-llm-apis-prompting.md) and applied to agents in [lesson 37](../phase-5-llms/37-ai-agents-tool-use.md)), serving at scale, retrieval quality, agent reliability. Builds on phases 4-5. The fastest-moving road, and the one where GPT-from-scratch knowledge is an unusual strength.
 - **Computer vision**: detection, segmentation, video, 3D. Builds on phase 3. Do Stanford's CS231n course for depth here.
 - **Reinforcement learning**: robotics, game AI, and RLHF (training language models from human feedback, the technique behind modern chat assistants), where the phase 4 and [lesson 39](../phase-6-special-topics/39-reinforcement-learning.md) threads meet. The most mathematical road.
 - **ML engineering / MLOps at scale**: data pipelines, distributed training, serving at millions of requests. Builds on phase 7 plus general software engineering. The most employable road.
-- **Research**: reading and reproducing papers. Start with the **annotated-paper method**: print or open a paper, and do not turn a page until every equation can be restated in plain words and every architecture in tensor shapes. The skills from [lesson 31](../phase-4-nlp-transformers/31-attention-build-gpt.md) are exactly this. Then reproduce one small paper result; Papers with Code links papers to their implementations, so a reproduction can be checked against them.
+- **Research**: reading and reproducing papers. Start with the **annotated-paper method**: print or open a paper, and do not turn a page until every equation can be restated in plain words and every architecture in tensor shapes. The skills from [lesson 31](../phase-4-nlp-transformers/31-attention-build-gpt.md) are exactly this. Then reproduce one small paper result; Hugging Face Papers (huggingface.co/papers) links many papers to their code repositories, so a reproduction can be checked against them.
 
 **Courses worth doing now** (the background to get their full value is finally in place): fast.ai (top-down and projects-first, so it will feel familiar), CS231n (vision depth), CS224n (Stanford's NLP course; search for "Stanford CS224n", and expect to know a surprising amount of it already), and d2l.ai (an interactive deep-learning book with runnable code, ideal as a reference to fill gaps).
 
 **Milestones**
 
 - [ ] Write `work/42-capstone/NEXT.md`: pick *one* primary specialization (it can change later; drifting between all five is the only wrong answer) and write a 12-month plan of quarterly projects, because the habit that led to this point is now clear: **learn by building, forever**. Checkpoint: every quarter's entry names a concrete artifact, not a topic ("build X", never "study Y").
-- [ ] Pick one paper connected to the capstone from Papers with Code and annotate it with the method above. Checkpoint: its core idea can be explained to a friend in two minutes without opening the paper.
+- [ ] Pick one paper connected to the capstone from Hugging Face Papers and annotate it with the method above. Checkpoint: its core idea can be explained to a friend in two minutes without opening the paper.
 - [ ] Join one community and actually participate once: answer a beginner's question (10 months ago, the roles were reversed), enter a Kaggle competition, or show the capstone at a meetup.
-- [ ] Update the main [README](../README.md) progress tracker: 42 of 42. Read the commit history from lesson 01 onward. It is not a tutorial trail; it is a portfolio.
+- [ ] Check off lesson 42 and the final milestone in [PROGRESS.md](../PROGRESS.md), so that every required lesson is ticked (Phase 6 needs only one of its three). Read the commit history from lesson 01 onward. It is not a tutorial trail; it is a portfolio.
 
 <details><summary>Hints</summary>
 
@@ -199,7 +199,7 @@ One warning before beginning: the capstone will feel different from every lesson
 - [fast.ai](https://course.fast.ai) — the projects-first deep learning course to take now that the fundamentals are in place; excellent for breadth and modern practice.
 - [Dive into Deep Learning](https://d2l.ai) — free interactive book with runnable code; the reference for filling theory gaps as they appear.
 - [CS231n](https://cs231n.stanford.edu) — Stanford's computer vision course; the definitive next step for the vision road.
-- [Papers with Code](https://paperswithcode.com) — papers linked to implementations; where to pick a first paper to annotate and reproduce.
+- [Hugging Face Papers](https://huggingface.co/papers/trending) — research papers linked to their code; where to pick a first paper to annotate and reproduce. (It replaced Papers with Code, which closed in 2025.)
 - [Karpathy's Neural Networks: Zero to Hero](https://www.youtube.com/playlist?list=PLAqhIrjkxbuWI23v9cThsA9GvCAUhRvKZ) — rewatch any of it now and notice how much more of it makes sense; the model for how this curriculum teaches.
 
 ## Skills unlocked
@@ -215,4 +215,4 @@ One warning before beginning: the capstone will feel different from every lesson
 
 ## The journey continues
 
-There is no lesson 43, because from here on the lessons are self-chosen projects. The [main README](../README.md) now reads as a map of the path so far, and `NEXT.md` as the map of the path ahead. The course began ten months ago, before a single line of Python had been written. It ends with a public repo, under the learner's own name, serving a self-built model, and with a GPT written from scratch in the commit history. Keep the habit that did all of this: pick something slightly too hard, build it, ship it, tell people, repeat. Learn by building, forever.
+There is no lesson 43, because from here on the lessons are self-chosen projects. [PROGRESS.md](../PROGRESS.md) now reads as a map of the path so far, and `NEXT.md` as the map of the path ahead. The course began ten months ago, before a single line of Python had been written. It ends with a public repo, under the learner's own name, serving a self-built model, and with a GPT written from scratch in the commit history. Keep the habit that did all of this: pick something slightly too hard, build it, ship it, tell people, repeat. Learn by building, forever.

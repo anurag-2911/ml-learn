@@ -53,7 +53,7 @@ EOF
 echo ".env" >> ~/ml/ml-learn/.gitignore
 ```
 
-Run `git status` from the repo root. If `.env` shows up as untracked-and-ignored (it should not appear at all in the list), the key is safe. Do this check *before* the first commit this week.
+Check that git ignores the file: in the lesson folder, run `git check-ignore .env`. Checkpoint: it prints `.env`. If it prints nothing, `.env` is not ignored: open `~/ml/ml-learn/.gitignore`, put `.env` on a line of its own, and run the check again. (Plain `git status` cannot show this, because it lists a new folder only by its name, never the files inside it.) Do this check *before* the first commit this week.
 
 **Smoke test** (Claude example; the SDK reads `ANTHROPIC_API_KEY` from the environment automatically):
 
@@ -67,14 +67,17 @@ load_dotenv()                      # reads .env into environment variables
 client = anthropic.Anthropic()
 response = client.messages.create(
     model=os.environ["MODEL"],
-    max_tokens=100,
+    max_tokens=1024,
     messages=[{"role": "user", "content": "Say hello in five words."}],
 )
-print(response.content[0].text)
+text = "".join(b.text for b in response.content if b.type == "text")
+print(text)
 print(response.usage)              # tokens in / tokens out — this is what gets billed
 ```
 
 Checkpoint: the script prints a greeting and a usage line showing input and output token counts. One call now does what took all of lesson 33 to build.
+
+A reply is a list of content blocks. Newer models can start a reply with a `thinking` block before the text, so the code keeps only the blocks whose `type` is `"text"` instead of reading `content[0]`. Thinking also counts toward `max_tokens`, so keep that limit generous. Use the same pattern in `chat.py`, `extract.py` and `run_eval.py`.
 
 ## Project 1 — CLI chat assistant
 
@@ -97,7 +100,7 @@ Checkpoint: the script prints a greeting and a usage line showing input and outp
 
   Checkpoint: replies appear progressively like a typewriter, not in one block after a pause.
 - [ ] Add a `--persona` flag using `argparse` (Python's standard library for command-line flags; it takes just two lines: `parser = argparse.ArgumentParser(); parser.add_argument("--persona", default="default")`, then read `parser.parse_args().persona`). `python chat.py --persona pirate` loads a pirate system prompt; keep a small dict of 3+ personas (e.g. `default`, `pirate`, `strict-tutor`). Checkpoint: each persona gives a recognizably different conversation.
-- [ ] Add **temperature** as a `--temp` flag. Temperature scales the randomness of sampling. Lesson 29 *built this exact dial* by dividing the logits by T before softmax. Ask the same creative question ("invent a name for a coffee shop") 3 times at low temperature and 3 times at high. Checkpoint: low temp gives near-identical answers, high temp gives variety.
+- [ ] Add **temperature** as a `--temp` flag. Temperature scales the randomness of sampling. Lesson 29 *built this exact dial* by dividing the logits by T before softmax. The `anthropic` SDK 1.x has no `temperature=` argument (passing one raises `TypeError`), so send it in the request body: `extra_body={"temperature": args.temp}`. Claude Opus 4.7 and later and Claude Sonnet 5 and later reject a non-default temperature with a 400 error, so run this milestone on a model that still accepts it (the provider's model pages say which; Claude Haiku 4.5 and Claude Sonnet 4.6 do) or on Ollama. Ask the same creative question ("invent a name for a coffee shop") 3 times at low temperature and 3 times at high. Checkpoint: low temp gives near-identical answers, high temp gives variety.
 - [ ] Print a cost line on exit: total input tokens and output tokens accumulated from each response's `usage`, and note that output tokens usually cost several times more than input tokens (exact prices: the provider's docs). Checkpoint: after a 5-turn chat, the cost line shows enough to say "this conversation cost roughly X tokens in, Y out."
 
 <details><summary>Hints</summary>
@@ -105,11 +108,11 @@ Checkpoint: the script prints a greeting and a usage line showing input and outp
 - Keep `messages` as a plain list that the loop appends to. For Claude, the system prompt does *not* go in the list; it is a separate `system=` parameter. (OpenAI puts it in the list as `{"role": "system", ...}`: same concept, different plumbing.)
 - Because the whole history is sent again with every call, long chats cost more each turn; that is why input tokens grow. Look for this in the cost line.
 - Wrap the API call in `try/except` and catch the SDK's error types (rate limits, bad key) so a network hiccup doesn't crash the chat. Print the error and let the user retry.
-- For Ollama: it exposes an HTTP API on localhost. See the [ollama.com](https://ollama.com) docs for the endpoint shape, and adapt the call function. Design the code so that the "call the model" part is one function that can be swapped.
+- For Ollama: it exposes an HTTP API on localhost. See the [ollama.com](https://ollama.com) docs for the endpoint shape, and adapt the call function. Design the code so that the "call the model" part is one function that can be swapped: `chat(prompt)`, which sends one user message and returns the reply text (the chat loop can call a sibling that takes the whole `messages` list). Lesson 35 calls this `chat()` helper.
 
 </details>
 
-**Definition of done**: `python chat.py --persona pirate --temp 1.0` holds a streaming, multi-turn conversation that remembers context and reports token usage on exit, and the `.env` file is not in git.
+**Definition of done**: `python chat.py --persona pirate --temp 1.0` (on a model that accepts temperature) holds a streaming, multi-turn conversation that remembers context and reports token usage on exit, and the `.env` file is not in git.
 
 ## Project 2 — Structured extractor
 
@@ -129,7 +132,7 @@ Checkpoint: the script prints a greeting and a usage line showing input and outp
 <details><summary>Hints</summary>
 
 - Strip markdown fences before parsing: if the reply starts with ```` ```json ````, slice them off. This is a cheap and effective first line of defense.
-- Set temperature to 0 (or the provider's minimum) for extraction. Extraction needs the most deterministic output, not creativity.
+- Set temperature to 0 for extraction when the model accepts it (through `extra_body`, as in Project 1); on a model that rejects it, leave it out. Extraction needs the most deterministic output, not creativity.
 - In the retry prompt, be precise: "Your previous output failed validation with these errors: {errors}. Return corrected JSON only." Feeding the error back works remarkably well.
 - Test the validator on hand-written bad JSON first (wrong type, missing key, extra key), to be sure it works before blaming the model.
 
@@ -146,7 +149,7 @@ Checkpoint: the script prints a greeting and a usage line showing input and outp
 - [ ] Pick one task with checkable answers. A good choice is **grading short answers**: given a question, a reference answer and a student answer, output exactly `CORRECT` or `INCORRECT`. (Alternative: article summarization, but grading is easier to score, so start there.)
 - [ ] Build `cases.json`: 10 hand-written test cases, each `{"question": ..., "reference": ..., "student": ..., "expected": "CORRECT" or "INCORRECT"}`. Make at least 3 of them *hard*: a correct answer worded completely differently from the reference, an answer that is close but subtly wrong, an empty answer. Easy test cases are how bad prompts sneak through.
 - [ ] Write 5 prompt variants in `prompts/v1.txt` … `v5.txt`, each with a `{question}` / `{reference}` / `{student}` placeholder (fill with Python's `.format()`). Make them genuinely different strategies: (1) one bare instruction; (2) detailed rules for what counts as correct; (3) **few-shot**: rules plus 2 worked examples; (4) **step-by-step reasoning**: "explain your reasoning, then give a verdict on the last line" (asking the model to reason before answering measurably helps on judgment tasks); (5) a free-choice wildcard.
-- [ ] Build `run_eval.py`: for each variant × each case, call the model (temperature 0), parse the verdict from the reply, compare with `expected`, score 1 or 0. That is 50 calls, which take a few minutes and use a fraction of the credits. Save every raw reply to `results/` so that failures can be inspected. Checkpoint: a results file with 50 graded outcomes.
+- [ ] Build `run_eval.py`: for each variant × each case, call the model (temperature 0 where the model accepts it), parse the verdict from the reply, compare with `expected`, score 1 or 0. That is 50 calls, which take a few minutes and use a fraction of the credits. Save every raw reply to `results/` so that failures can be inspected. Checkpoint: a results file with 50 graded outcomes.
 - [ ] Print the scoreboard, with one row per variant showing accuracy (the metric built in lesson 14) and total tokens used. Checkpoint: a table like `v3: 9/10` vs `v1: 6/10`, and the variants are *not* all equal.
 - [ ] Read the failures. For the best variant, open the raw replies it got wrong: is the model wrong, is the test case ambiguous, or is the verdict-parsing too strict? All three happen constantly in real eval work. Fix what needs fixing and re-run.
 - [ ] **Prompt sensitivity** experiment: take the best variant, change something trivial (reorder two rules, rephrase one sentence), re-run. Checkpoint: the score moves, sometimes by a lot. That is why serious teams re-run evals on every prompt edit, exactly as tests are re-run on every code edit.
@@ -156,7 +159,7 @@ Checkpoint: the script prints a greeting and a usage line showing input and outp
 - Make the output format part of the contract: "the last line of your reply must be exactly CORRECT or INCORRECT". Then parse only the last non-empty line, case-insensitively. Robust parsing is half of eval engineering.
 - Cache responses to disk keyed by (variant, case index) so that re-running the scoreboard doesn't re-spend tokens on calls already made.
 - 10 cases is enough to learn the method, not enough to trust a 1-point gap: 9/10 vs 8/10 is a coin flip, 9/10 vs 5/10 is signal. Say so in the conclusions.
-- Keep the eval harness generic (task = prompt template + cases + scorer); lessons 35 and 37 reuse it.
+- Keep the eval harness generic (task = prompt template + cases + scorer). Lessons 35 and 37 build their own evals with the same method: fixed cases, an automatic scorer, a results table.
 
 </details>
 
@@ -171,7 +174,7 @@ Checkpoint: the script prints a greeting and a usage line showing input and outp
 
 ## Getting unstuck
 
-- `401` / authentication errors: the key is not reaching the client. Check that `load_dotenv()` runs before the client is created, print `os.environ.get("ANTHROPIC_API_KEY")[:8]` to confirm it loaded, and make sure the script runs from the folder containing `.env`.
+- `401` / authentication errors: the key is not reaching the client. Check that `load_dotenv()` runs before the client is created, print `str(os.environ.get("ANTHROPIC_API_KEY"))[:8]` to confirm it loaded (it prints `None` when the key is missing), and make sure `.env` sits in the same folder as the script or in a folder above it: `load_dotenv()` searches upward from the script's own folder, not from the folder the command runs in.
 - `429` rate-limit errors: free tiers allow limited requests per minute. Add `time.sleep(1)` between eval calls and retry with a wait on 429.
 - Model ignores the format instructions: this happens, and it is prompt sensitivity, not a bug in the code. Add a worked example (few-shot beats instructions), and rely on the retry loop; that is why it was built.
 - JSON parse failures: print the raw reply *before* parsing. Nine times out of ten it is markdown fences or a chatty preamble that can be stripped or prompted away.

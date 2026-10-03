@@ -37,13 +37,15 @@ cd work/38-generative-models
 
 As in lesson 24, torch and torchvision come from PyTorch's own package index. If lesson 24 already installed them (even a GPU build), that line leaves them as they are. That index carries no matplotlib, imageio or scikit-learn, so they get a plain `pip install` line of their own. Current PyTorch has no Intel Mac version, so on an Intel Mac do this lesson in a free Google Colab notebook, as lesson 01 suggested.
 
-No dataset needs to be downloaded by hand: `torchvision` fetches MNIST and FashionMNIST itself (no account, ~12 MB each). Test it:
+No dataset needs to be downloaded by hand: `torchvision` fetches MNIST and FashionMNIST itself (no account; about 12 MB for MNIST and 31 MB for FashionMNIST). Test it:
 
 ```python
 from torchvision import datasets, transforms
 ds = datasets.MNIST(root="data", download=True, transform=transforms.ToTensor())
 print(len(ds), ds[0][0].shape)   # 60000 torch.Size([1, 28, 28])
 ```
+
+Keep the datasets out of git. The download lands in a `data/` folder inside the work folder (over 60 MB for MNIST once unpacked, more with FashionMNIST), and the fork is public. Run `echo "work/38-generative-models/data/" >> ~/ml/ml-learn/.gitignore` once. Checkpoint: `git status -u` lists nothing inside `data/`.
 
 All three projects train fine on a CPU in minutes to an hour. Only the stretch goals call for a GPU (free Colab works).
 
@@ -55,7 +57,7 @@ All three projects train fine on a CPU in minutes to an hour. Only the stretch g
 
 - [ ] Write `autoencoder.py`. Load MNIST and flatten each image to a 784-long vector (values 0-1). Build two networks: an **encoder** `784 → 128 → 2` and a **decoder** `2 → 128 → 784` with a `Sigmoid` on the output (a function that squashes values into 0-1, matching the pixel range). An autoencoder is just these two glued together.
 - [ ] Train it with the simplest possible objective: the output should equal the input. Use `nn.MSELoss()` between reconstruction and original, Adam with `lr=1e-3`, batch size 128, ~20 epochs. Note what is strange here: **there are no labels**. The image is its own target. Checkpoint: loss falls steadily and ends around 0.03-0.05.
-- [ ] Plot 8 test images above their reconstructions (`plt.subplots(2, 8)`). Checkpoint: the reconstructions are blurry, but most digits are still recognizable. Ten thousand pixels of information survived a 2-number bottleneck. That is what "keep only what matters" means.
+- [ ] Plot 8 test images above their reconstructions (`plt.subplots(2, 8)`). Checkpoint: the reconstructions are blurry, but most digits are still recognizable. Each digit's 784 pixels passed through a 2-number bottleneck, and enough survived to recognize it. That is what "keep only what matters" means.
 - [ ] The key result: encode the whole test set to get 10,000 points of shape `(10000, 2)`, and scatter-plot them colored by digit label (`plt.scatter(z[:,0], z[:,1], c=labels, cmap="tab10", s=2)` plus `plt.colorbar()`). Checkpoint: **digits form visible clusters**. Nobody told the network what a "7" is, yet all the 7s landed close together. That map is the latent space.
 - [ ] Latent morph: encode one "3" and one "8" to get points `z_a` and `z_b`. Compute 10 evenly spaced points on the line between them (`z_a + t*(z_b - z_a)` for `t` in 0…1) and decode each. Plot the 10 outputs in a row. Checkpoint: a smooth morph. The 3 grows a loop and *becomes* the 8, passing through plausible in-between digits. The row is a walk through the space of digits.
 - [ ] Denoising autoencoder: retrain, but corrupt each input with `noisy = (x + 0.4*torch.randn_like(x)).clamp(0,1)` while the target stays the **clean** `x`. Feed the trained model noisy test images. Checkpoint: static-covered digits come out clean. Keep this idea for later: *a network can learn to remove noise*. That one idea is the seed of Project 3 and of Stable Diffusion.
@@ -88,16 +90,16 @@ All three projects train fine on a CPU in minutes to an hour. Only the stretch g
   ```python
   import imageio.v2 as imageio, glob
   frames = [imageio.imread(f) for f in sorted(glob.glob("epoch_*.png"))]
-  imageio.mimsave("training.gif", frames, duration=0.3)
+  imageio.mimsave("training.gif", frames, duration=300, loop=0)
   ```
 
-  Checkpoint: noise → digits, in one looping animation.
+  `duration` is in milliseconds, so 300 shows each frame for 0.3 s, and `loop=0` makes the GIF repeat forever. Checkpoint: noise → digits, in one looping animation.
 - [ ] Break it on purpose. Raise both learning rates to `1e-3` (or train D twice per G step) and rerun a few epochs. The aim is to trigger **mode collapse**: the generator discovers one output that fools D and produces only that, so the grid shows 64 near-identical digits. Save that grid as `mode_collapse.png`. This is the GAN disease, and it is why the field moved on.
 - [ ] Apply a fix and recover: go back to `2e-4` and add **label smoothing** (train D on real images with target 0.9 instead of 1.0). This stops D from becoming overconfident and keeps gradients flowing to G. In `notes.md`, write three lines on symptom → cause → fix.
 
 <details><summary>Hints</summary>
 
-- Getting `ConvTranspose2d` to land exactly on 28×28 is fiddly. An easy path: project noise to `7×7×128` with a Linear layer + reshape, then two stride-2 transposed convs take the size 7→14→28.
+- Getting `ConvTranspose2d` to land exactly on 28×28 is fiddly. An easy path: flatten the `(64, 100, 1, 1)` noise to `(64, 100)` first (`nn.Flatten()` as the generator's first layer), project it to `7×7×128` with a Linear layer + reshape (`nn.Unflatten(1, (128, 7, 7))`), then two stride-2 transposed convs (`kernel_size=4, stride=2, padding=1`) take the size 7→14→28.
 - In the discriminator step, `.detach()` the fake images so that D's loss does not backprop into G. In the generator step, do not detach. This one line is the classic GAN bug.
 - Each network updates only itself: `d_optimizer.step()` after D's loss, `g_optimizer.step()` after G's. Call the right `zero_grad()` before each.
 - Nothing legible by epoch 10? Check in order: images normalized to [-1,1]? `betas=(0.5, 0.999)` on both optimizers? BatchNorm present? The DCGAN recipe genuinely needs all three.
@@ -122,7 +124,7 @@ All three projects train fine on a CPU in minutes to an hour. Only the stretch g
   alpha_bar = torch.cumprod(alphas, dim=0)   # cumulative signal remaining at each step
   ```
 
-  The shortcut formula jumps to any step t in one line: `x_t = sqrt(alpha_bar[t]) * x0 + sqrt(1 - alpha_bar[t]) * noise`, where `noise = torch.randn_like(x0)`. Plot the cloud at t = 0, 50, 100, 199. Checkpoint: spiral → fuzzy spiral → vague swirl → pure Gaussian blob. The structure dissolves into noise.
+  The shortcut formula jumps to any step t in one line: `x_t = sqrt(alpha_bar[t]) * x0 + sqrt(1 - alpha_bar[t]) * noise`, where `noise = torch.randn_like(x0)`. Plot the cloud at t = 0, 10, 20, 50, 199. Checkpoint: spiral → fuzzy spiral → vague swirl → blob → pure Gaussian blob. Most of the structure is gone within the first 50 steps; the remaining steps push the blob towards a standard Gaussian.
 - [ ] Build the model: a small MLP that takes a noisy point *and* its timestep, and predicts **the noise that was added**. The input is `(x, y, t/T)` (3 numbers), the hidden layers are ~128 wide with ReLU, and the output is 2 numbers. That is the whole model. It does not guess the clean point; it predicts the *noise*. Learning to spot the noise and learning the data's shape turn out to be the same skill.
 - [ ] Training loop: notice how boring it is, and that this boringness is the main point. Sample a batch of clean points, a random `t` per point (`torch.randint(0, T, ...)`) and fresh noise; form `x_t` with the shortcut formula; loss = `mse_loss(model(x_t, t), noise)`. This is plain, stable regression: no adversary, no knife-edge, no mode collapse. **This is why diffusion won.** Train for ~3,000 steps with Adam, `lr=1e-3` (about a minute on a CPU). Checkpoint: the loss falls from ~1.0 toward ~0.3-0.5 and flattens.
 - [ ] Write the **sampler**: creation by iterated cleanup. Start from `x = torch.randn(1000, 2)` and step t = T-1 → 0: predict the noise, subtract the right fraction of it, and (for every step except the last) re-add a smaller dose of fresh noise. The per-step update is the one formula worth copying from a reference: take "Algorithm 2 (Sampling)" from [Lilian Weng's diffusion post](https://lilianweng.github.io/posts/2021-07-11-diffusion-models/) (skim it for the pictures and boxed algorithms; ignore the derivations). Checkpoint: the 1,000 sampled points form a spiral. **The model created the spiral out of pure noise.**
@@ -150,7 +152,7 @@ All three projects train fine on a CPU in minutes to an hour. Only the stretch g
 ## Getting unstuck
 
 - **Read the error bottom-up.** The last line names the problem, and for shape mismatches it names both shapes.
-- **Print shapes obsessively.** Every bug in this lesson is a shape bug in disguise: broadcasting `(batch,)` against `(batch, 2)`, an image flattened twice, a grid saved in [-1,1] without `normalize=True` (it renders as grey mush).
+- **Print shapes obsessively.** Every bug in this lesson is a shape bug in disguise: broadcasting `(batch,)` against `(batch, 2)`, an image flattened twice, a grid saved in [-1,1] without `normalize=True` (everything below 0 is clipped to black, so digits look harsh and their soft edges vanish).
 - **GAN looks broken?** First decide whether it actually is: oscillating losses are normal, and epoch-3 samples are always ugly. Judge by the fixed-noise grids across epochs, never by the loss curve alone.
 - **Bisect the diffusion pipeline.** Forward process wrong? (Plot `x_t` at several t; it should degrade gradually.) Model wrong? (Training loss should fall.) Sampler wrong? (Most likely; recheck each symbol against the boxed algorithm.)
 - Study the problem for 20 minutes, then ask an AI assistant for a **HINT, not a solution** (for example, "my DCGAN discriminator loss goes to zero by epoch 2, what direction should I look?"), and **type all code by hand**. Muscle memory is the point of this curriculum.
