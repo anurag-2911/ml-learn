@@ -52,7 +52,7 @@ If the terminal prints `hello, world`, everything is ready. All week, the work f
 **Milestones**
 
 - [ ] Create `guess.py`. On the first line write `import random`. This loads Python's *random module*, a collection of ready-made functions for randomness. On the next line write `secret = random.randint(1, 100)`. This is a *variable*: the name `secret` now stores whatever number `randint` picked. Temporarily add `print(secret)` and run the file a few times. **Checkpoint: each run prints a different number between 1 and 100.**
-- [ ] Read one guess from the player: `guess = input("Your guess: ")`. Be careful: `input()` always gives back text (a `str`), even if the player types `42`. The text `"42"` and the number `42` are different *types* and cannot be compared. Convert it: `guess = int(input("Your guess: "))`. Add `print(type(guess))` once to confirm, then remove it. **Checkpoint: running the file asks for a guess and `type(guess)` prints `<class 'int'>`.**
+- [ ] Read one guess from the player: `guess = input("Your guess: ")`. Be careful: `input()` always gives back text (a `str`), even if the player types `42`. The text `"42"` and the number `42` are different *types*: Python never treats them as equal (`"42" == 42` is `False`), and comparing them with `<` or `>` crashes. Convert it: `guess = int(input("Your guess: "))`. Add `print(type(guess))` once to confirm, then remove it. **Checkpoint: running the file asks for a guess and `type(guess)` prints `<class 'int'>`.**
 - [ ] Compare guess to secret with an `if` / `elif` / `else` chain: print "Too low!", "Too high!", or "You got it!". Note that *equal to* in Python is `==` (double equals); a single `=` means "store this value". **Checkpoint: run three times; each of the three messages is reachable.**
 - [ ] One guess is not a game. Wrap the ask-and-compare part in a `while` loop (a block that repeats as long as its condition holds), so that the program keeps asking until the guess is right. Indentation (the 4 spaces at the start of a line) is how Python knows which lines are inside the loop; it is grammar, not decoration. **Checkpoint: the game keeps asking until the player wins, then stops.**
 - [ ] Count attempts: create `attempts = 0` before the loop, and inside it `attempts = attempts + 1` (or the shorthand `attempts += 1`). On a win, print an *f-string*, which is text with variables slotted in: `print(f"Got it in {attempts} attempts!")`. **Checkpoint: guess by always splitting the range in half (50, then 75 or 25, …). Guessing this way wins in 7 attempts or fewer. That halving trick is called binary search.**
@@ -61,7 +61,7 @@ If the terminal prints `hello, world`, everything is ready. All week, the work f
 <details><summary>Hints</summary>
 
 - Comparing text to a number (`"50" > 42`) crashes with a `TypeError`. The fix is the `int(...)` conversion around `input(...)`.
-- A clean loop shape: `while guess != secret:` ask again inside the loop. To make it run at least once, either ask once before the loop, or start with `guess = 0` (an impossible value).
+- A clean loop shape: start with `guess = 0` (an impossible value, so the loop runs at least once), then `while guess != secret:`, and inside the loop ask for the guess, add 1 to `attempts`, and compare. Asking once before the loop also works, but then that first guess sits outside the loop and needs counting too: start with `attempts = 1`.
 - For the replay: pick a **new** secret inside the outer loop; otherwise round two has the same answer as round one.
 - If the player types letters instead of a number, the program crashes. That is fine for now; [lesson 04](04-python-oop-files-errors.md) shows how to handle crashes properly.
 
@@ -93,7 +93,7 @@ If the terminal prints `hello, world`, everything is ready. All week, the work f
 
 - Keep a strict division of labor: functions **return** numbers and never print; the menu code prints and never calculates. This separation is a habit that will matter for the rest of the curriculum.
 - Everything from `input()` is a `str`. Convert the menu choice never (compare to `"1"`, `"2"`, …, `"q"`) and the measurement always (`float(...)`).
-- Getting `1.6666`-ish from `c_to_f(100)`? Check operator order: multiply by 9, divide by 5, **then** add 32. Parentheses make it unambiguous.
+- Getting `237.6` instead of `212.0` from `c_to_f(100)`? The 32 was added too early. Check operator order: multiply by 9, divide by 5, **then** add 32. In `f_to_c` the 32 comes off first, `(f - 32) * 5 / 9`; without those parentheses, `f_to_c(212)` returns about `194.2` instead of `100.0`. Parentheses make the order unambiguous.
 
 </details>
 
@@ -105,7 +105,7 @@ If the terminal prints `hello, world`, everything is ready. All week, the work f
 
 **Milestones**
 
-- [ ] Create `rps.py`. Make a list of the moves, `moves = ["rock", "paper", "scissors"]` (a *list* is an ordered collection in square brackets; lesson 03 explores lists fully, and today only this one is needed), and let the computer pick with `random.choice(moves)`. **Checkpoint: running the file prints a random move, different across runs.**
+- [ ] Create `rps.py` and, as in Project 1, write `import random` on its first line. Make a list of the moves, `moves = ["rock", "paper", "scissors"]` (a *list* is an ordered collection in square brackets; lesson 03 explores lists fully, and today only this one is needed), let the computer pick with `random.choice(moves)`, and print the pick. **Checkpoint: over several runs the printed move changes, and all three moves show up. The same move twice in a row is normal: it happens about one run in three.**
 - [ ] Read the player's move with `input()` and clean it up: `player = input("rock, paper or scissors? ").lower().strip()`. Those are *string methods* (functions attached to text with a dot) that lowercase it and trim spaces, so `" Rock "` still counts. If the cleaned move is not in the list (`if player not in moves:`), say so and ask again.
 - [ ] Write `def decide_winner(player, computer):` returning exactly one of `"player"`, `"computer"`, or `"tie"`. Three rules to encode: rock beats scissors, scissors beats paper, paper beats rock. Test it exhaustively with a `for` loop (a loop that runs once per item of a list) nested inside another:
 
@@ -133,7 +133,7 @@ If the terminal prints `hello, world`, everything is ready. All week, the work f
 
 - **A computer that learns the player.** Track how often the player has picked each move using three counter variables (`rock_count`, `paper_count`, `scissors_count`). After a few rounds, make the computer play the counter to the player's most frequent move instead of a random one. Predicting future behavior from counted past behavior is the first genuinely ML-flavored idea in the course.
 - **Reverse the guessing game.** The player thinks of a number; the computer guesses by always proposing the middle of the remaining range and narrowing it from the player's `h`/`l`/`c` answers. It should never need more than 7 guesses.
-- **Converter, but smarter.** Add two more conversion pairs of any kind (hours↔minutes, GB↔MB, …) and print `"That doesn't look like a number"` instead of crashing when the value input is not numeric (hint: strings have an `.isdigit()` method, though it rejects decimals; finding a way around that is part of the challenge).
+- **Converter, but smarter.** Add two more conversion pairs of any kind (hours↔minutes, GB↔MB, …) and print `"That doesn't look like a number"` instead of crashing when the value input is not numeric (hint: strings have an `.isdigit()` method, though it rejects decimals such as `3.5` and negative numbers such as `-40`; finding a way around both is part of the challenge).
 - **Guess history.** In Project 1, build up a string of all guesses (`history = history + f"{guess} "`) and show it when the game ends.
 
 ## Getting unstuck

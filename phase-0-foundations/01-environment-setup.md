@@ -25,7 +25,7 @@
 
 Requirements:
 
-- A computer running **macOS**, **Windows 11** (or Windows 10 version 22H2) or **Linux**, with an internet connection and an administrator account for installing software. The Linux commands in this curriculum are written for Ubuntu 22.04 or newer; other distributions work with their own package manager.
+- A computer running **macOS 12 (Monterey) or newer**, **Windows 11** (or Windows 10 version 22H2) or **Linux**, with an internet connection and an administrator account for installing software. The Linux commands in this curriculum are written for Ubuntu 22.04 or newer; other distributions work with their own package manager.
 - A free **GitHub account** with a verified email address (sign up at [github.com](https://github.com)).
 
 Where the steps differ between systems, they are labeled **macOS**, **Windows (WSL2)** and **Linux**. Follow only the label that matches the computer. Steps without a label are the same everywhere.
@@ -65,7 +65,7 @@ Nothing needs to be installed in advance. Installing things is Project 1.
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     ```
 
-    Press Return when asked, then type the Mac login password. Nothing appears on screen while the password is typed; that is normal. The script also installs Apple's Command Line Tools, which include git, so it can take a while. At the end it prints **Next steps**: commands that put `brew` on the PATH. Run them; they are not optional. They look like this:
+    When the script asks for a password, type the Mac login password. Nothing appears on screen while the password is typed; that is normal. Then press Return when the script asks to continue. The script also installs Apple's Command Line Tools, which include git, so it can take a while. At the end it prints **Next steps**: commands that put `brew` on the PATH. Run them; they are not optional. They look like this:
 
     ```bash
     echo >> ~/.zprofile
@@ -265,7 +265,7 @@ Nothing needs to be installed in advance. Installing things is Project 1.
   cat ~/.ssh/id_ed25519.pub
   ```
 
-  The second command prints the public half: one line starting with `ssh-ed25519`. Select it with the mouse and copy it (Cmd+C on a Mac, Ctrl+Shift+C in Windows and Linux terminals). On github.com, click the profile picture → **Settings** → **SSH and GPG keys** → **New SSH key**, paste the line into **Key**, give it a title such as the computer's name, and click **Add SSH key**. Then test the connection:
+  The second command prints the public half: one line starting with `ssh-ed25519`. Select it with the mouse and copy it (Cmd+C on a Mac, Ctrl+Shift+C in Linux terminals and in Windows Terminal, which Windows 11 uses for Ubuntu). On Windows 10, where Ctrl+Shift+C does not copy in the Ubuntu window by default, run `clip.exe < ~/.ssh/id_ed25519.pub` instead; it puts the line on the Windows clipboard. On github.com, click the profile picture → **Settings** → **SSH and GPG keys** → **New SSH key**, paste the line into **Key**, give it a title such as the computer's name, and click **Add SSH key**. Then test the connection:
 
   ```bash
   ssh -T git@github.com

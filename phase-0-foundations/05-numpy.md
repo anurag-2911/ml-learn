@@ -2,12 +2,12 @@
 
 **Phase 0 — Foundations** · Estimated time: 1 week · Prerequisites: [02 · Python Basics](02-python-basics.md), [03 · Data Structures](03-python-data-structures.md), [04 · Classes, Files, JSON and Errors](04-python-oop-files-errors.md)
 
-> In machine learning, every image, every dataset and every neural network weight is stored and manipulated as a NumPy-style array. This lesson teaches the single most important mental shift in the whole curriculum: moving from loops that touch one number at a time to operations that transform millions of numbers at once. To prove that this is not just a style preference, the three projects edit a real photo with pure math, run a speed race in which NumPy beats a hand-written Python loop by 50–100x, and build Conway's Game of Life on a 2D grid. When arrays feel natural, everything after this lesson gets easier.
+> In machine learning, every image, every dataset and every neural network weight is stored and manipulated as a NumPy-style array. This lesson teaches the single most important mental shift in the whole curriculum: moving from loops that touch one number at a time to operations that transform millions of numbers at once. To prove that this is not just a style preference, the three projects edit a real photo with pure math, run a speed race in which NumPy beats a hand-written Python loop by 10x or more, and build Conway's Game of Life on a 2D grid. When arrays feel natural, everything after this lesson gets easier.
 
 ## What this lesson builds
 
 - **Project 1 — Images are just arrays:** a photo-editing script that grayscales, flips, crops, brightens and inverts a real photo using only array operations, saving each result as an image file to open and view.
-- **Project 2 — Speed race:** a benchmark script that computes the same sum-of-squares on 10 million numbers with a Python loop and with NumPy, and prints a timed scoreboard showing NumPy winning by 50–100x.
+- **Project 2 — Speed race:** a benchmark script that computes the same sum-of-squares on 10 million numbers with a Python loop and with NumPy, and prints a timed scoreboard showing NumPy winning by 10x or more.
 - **Project 3 — Conway's Game of Life:** a self-running 2D world where cells live and die by simple rules, updated entirely with array slicing (no per-cell loops) and animated in the terminal or with matplotlib.
 
 ## Concepts covered
@@ -20,7 +20,7 @@
 - **aggregations and axis**: `sum`, `mean`, `max` and `argmax`, and what `axis=0` and `axis=1` actually mean.
 - **boolean masking**: using an array of True/False values to select or modify only the elements that matter.
 - **np.random**: generating random arrays for simulations and, later, for initializing neural networks.
-- **vectorization**: why NumPy is 50–100x faster than Python loops, and how to rewrite loop-thinking as array-thinking.
+- **vectorization**: why NumPy is often 10–100x faster than Python loops, and how to rewrite loop-thinking as array-thinking.
 
 ## Before starting
 
@@ -43,7 +43,9 @@ mkdir -p work/05-numpy
 cd work/05-numpy
 ```
 
-Project 1 also needs one photo. Any personal JPEG works (a pet, a meal, a holiday shot; ideally at least 500×500 pixels). Put it in this folder as `photo.jpg`. To drag one in, open the folder in the file manager: `open .` on macOS, `explorer.exe .` on Windows (WSL2), `xdg-open .` on Linux. Or copy it in the terminal: on macOS and Linux, `cp ~/Pictures/YOUR-PHOTO.jpg photo.jpg`; on Windows (WSL2), Windows files are under `/mnt/c/Users/`, so `cp /mnt/c/Users/YOUR-WINDOWS-NAME/Pictures/YOUR-PHOTO.jpg photo.jpg`.
+Project 1 also needs one photo. Any personal JPEG works (a pet, a meal, a holiday shot; ideally at least 500×500 pixels). Put it in this folder as `photo.jpg`. To drag one in, open the folder in the file manager: `open .` on macOS, `explorer.exe .` on Windows (WSL2), `xdg-open .` on Linux. Or copy it in the terminal: on macOS and Linux, `cp ~/Pictures/YOUR-PHOTO.jpg photo.jpg`; on Windows (WSL2), Windows files are under `/mnt/c/Users/` (`ls /mnt/c/Users/` lists the Windows account names), so `cp /mnt/c/Users/YOUR-WINDOWS-NAME/Pictures/YOUR-PHOTO.jpg photo.jpg`. When OneDrive backs up the Pictures folder, the photos are in `/mnt/c/Users/YOUR-WINDOWS-NAME/OneDrive/Pictures/` instead.
+
+The fork on GitHub is public, and a phone photo often records where it was taken (GPS data inside the file). Keep this lesson's images out of git. In this folder, run `printf '*.jpg\n*.png\n' > .gitignore`, and save every result in Project 1 as a `.jpg` or `.png` file. Checkpoint: `git check-ignore photo.jpg` prints `photo.jpg`.
 
 Finally, spend 30–60 minutes skimming the [NumPy absolute beginners guide](https://numpy.org/doc/stable/user/absolute_beginners.html) with a Python prompt open, typing every example. Skim it now, and refer back to it all week.
 
@@ -56,14 +58,14 @@ Finally, spend 30–60 minutes skimming the [NumPy absolute beginners guide](htt
 - [ ] Create `images.py`. Load the photo and convert it to an array:
 
   ```python
-  from PIL import Image
+  from PIL import Image, ImageOps
   import numpy as np
 
-  img = np.array(Image.open("photo.jpg"))
+  img = np.array(ImageOps.exif_transpose(Image.open("photo.jpg")))
   print(img.shape, img.dtype)
   ```
 
-  **Checkpoint:** the script prints something like `(1024, 768, 3) uint8`, meaning height, width, and 3 values (red, green, blue) per pixel, each an integer from 0 to 255. `uint8` means "unsigned 8-bit integer": a whole number from 0 to 255.
+  **Checkpoint:** the script prints something like `(1024, 768, 3) uint8`, meaning height, width, and 3 values (red, green, blue) per pixel, each an integer from 0 to 255. `uint8` means "unsigned 8-bit integer": a whole number from 0 to 255. `ImageOps.exif_transpose` stands the photo upright first. Phone cameras often store a photo on its side, with a tag in the file (the EXIF orientation tag) that tells viewers which way to turn it. `Image.open` ignores that tag, so without this call a portrait photo loads sideways and every image saved from it comes out rotated.
 - [ ] Look at single pixels: print `img[0, 0]` (top-left pixel, 3 numbers) and `img[0, 0, 0]` (just its red value). Print `img[:5, :5, 0]`, the red channel of the top-left 5×5 corner. This is 2D/3D indexing: one index (or slice) per dimension, separated by commas.
 - [ ] Write a helper `save(arr, name)` that does `Image.fromarray(arr).save(name)`, so that every result can be checked by eye. Call it after each step. Open the saved files in VS Code's file explorer.
 - [ ] **Crop:** slicing a 2D array works like slicing a list, once per axis: `img[100:400, 200:500]` keeps rows 100–399 and columns 200–499. Crop an interesting region of the photo and save it. **Checkpoint:** the saved image shows the intended region (expect a few tries: rows come first and columns second, which surprises most people).
@@ -101,8 +103,8 @@ Finally, spend 30–60 minutes skimming the [NumPy absolute beginners guide](htt
 
 <details><summary>Hints</summary>
 
-- Crop confusion: `img[a:b, c:d]` means rows a–b (vertical), then columns c–d (horizontal). If the crop looks transposed, the two were swapped.
-- `Image.fromarray` needs `uint8`. If saving throws a type error or produces garbage, print `arr.dtype`. After any math involving floats, the array must be converted with `.astype(np.uint8)` (clip first).
+- Crop confusion: `img[a:b, c:d]` means rows a–b (vertical), then columns c–d (horizontal). If the crop looks transposed, the two were swapped. If every saved image is turned sideways compared with the original, the `ImageOps.exif_transpose` call is missing.
+- `Image.fromarray` needs `uint8`. If saving fails with an error such as `TypeError: Cannot handle this data type` or `OSError: cannot write mode F as PNG`, or produces garbage, print `arr.dtype`. After any math involving floats, the array must be converted with `.astype(np.uint8)` (clip first).
 - For grayscale, `img * np.array([0.299, 0.587, 0.114])` broadcasts exactly as the comment shows; then sum along the last axis.
 - Masking a color image: a `(h, w)` boolean mask used on a `(h, w, 3)` image selects whole pixels, so `img[mask] = [255, 0, 0]` sets each selected pixel to red. That is broadcasting again.
 
@@ -112,7 +114,7 @@ Finally, spend 30–60 minutes skimming the [NumPy absolute beginners guide](htt
 
 ## Project 2 — Speed race
 
-**Goal:** Prove with a stopwatch that vectorized NumPy is far faster than Python loops, and understand why. This number, 50–100x, is the reason all of ML is built on arrays.
+**Goal:** Prove with a stopwatch that vectorized NumPy is far faster than Python loops, and understand why. This gap, often 10x or more, is the reason all of ML is built on arrays.
 
 **Milestones**
 
@@ -128,9 +130,9 @@ Finally, spend 30–60 minutes skimming the [NumPy absolute beginners guide](htt
   elapsed = time.perf_counter() - start
   ```
 
-  Print each contestant's time and the ratio. **Checkpoint:** the loop takes on the order of a second; NumPy takes milliseconds; the printed ratio is roughly 50–100x (anywhere from 30x to 300x is normal, depending on the computer).
-- [ ] There is one catch, and it is a useful one: the two totals do *not* match. Print both and compare them. The true sum of squares here is about 3.3 × 10²⁰, but `np.arange` gives an `int64` array (check `data_array.dtype`), and `int64` maxes out near 9.2 × 10¹⁸. So NumPy's total silently wraps around, exactly like the `uint8` speckles in Project 1, just at 64-bit scale. The Python loop is immune: plain Python ints grow as big as they need to. Fix the NumPy side by computing in floats with `(data_array.astype(np.float64) ** 2).sum()`, and compare the result to `float(loop_total)`. **Checkpoint:** the two float totals agree to about 15 significant digits (a difference in the last digit or two is ordinary float rounding, not overflow).
-- [ ] Add a third contestant: a Python loop *over a NumPy array* (`for x in data_array: ...`). **Checkpoint:** it is the *slowest* of the three, because looping in Python throws away all of NumPy's speed. Moral: never loop over an array's elements.
+  Print each contestant's time and the ratio. **Checkpoint:** the loop takes a few tenths of a second; NumPy takes a few hundredths of a second; the printed ratio is roughly 10–30x (anywhere from 5x to 50x is normal, depending on the computer and how busy it is). On 10 million numbers, NumPy's time goes mostly into moving the array through memory, so a computer's memory speed sets the ratio.
+- [ ] There is one catch, and it is a useful one: the two totals do *not* match. Print both and compare them. The true sum of squares here is about 3.3 × 10²⁰, but `np.arange` gives an `int64` array (check `data_array.dtype`), and `int64` maxes out near 9.2 × 10¹⁸. So NumPy's total silently wraps around, exactly like the `uint8` speckles in Project 1, just at 64-bit scale. The loop over the list is immune: plain Python ints grow as big as they need to. Fix the NumPy side by computing in floats with `(data_array.astype(np.float64) ** 2).sum()`, and compare the result to `float(loop_total)`. **Checkpoint:** the two float totals agree to about 15 significant digits (a difference in the last digit or two is ordinary float rounding, not overflow).
+- [ ] Add a third contestant: a Python loop *over a NumPy array* (`for x in data_array: ...`). **Checkpoint:** it is the *slowest* of the three, because looping in Python throws away all of NumPy's speed. Moral: never loop over an array's elements. It also prints `RuntimeWarning: overflow encountered in scalar add` and a wrong total: each `x` taken out of an `int64` array is a NumPy `int64`, not a plain Python int, so this total wraps around like NumPy's, this time with a warning. Only its time matters here.
 - [ ] In a comment at the bottom, explain the result in the learner's own words. The short version: the Python loop makes the interpreter examine one number at a time, with type-checking overhead per element; `(arr ** 2).sum()` hands the whole array to compiled C code that races through memory in bulk. Replacing per-element Python loops with whole-array operations is called **vectorization**.
 
 <details><summary>Hints</summary>
@@ -141,7 +143,7 @@ Finally, spend 30–60 minutes skimming the [NumPy absolute beginners guide](htt
 
 </details>
 
-**Definition of done:** `speed_race.py` prints three labeled timings and the NumPy-vs-loop ratio; the ratio is at least 30x; the closing comment correctly names vectorization as the reason.
+**Definition of done:** `speed_race.py` prints three labeled timings and the NumPy-vs-loop ratio; the ratio (best of 3 runs) is at least 5x; the closing comment correctly names vectorization as the reason.
 
 ## Project 3 — Conway's Game of Life
 
@@ -155,7 +157,7 @@ The rules (from mathematician John Conway, 1970): a live cell with 2 or 3 live n
 - [ ] Print the world in a readable form: write a function that prints each row as characters, for example `'█'` for alive and `'·'` for dead. Loops are allowed for *printing*; the no-loop rule applies to the update math.
 - [ ] The core: `count_neighbors(grid)` returns a same-shaped array where each entry is that cell's number of live neighbors. The vectorized idea: shifting the whole grid one step in each of the 8 directions and summing the shifts counts every cell's neighbors at once. Pad the grid with a border of zeros first (`np.pad(grid, 1)`) so edge cells simply see dead space outside; then each direction is a `(30, 40)` slice of the padded `(32, 42)` array. **Checkpoint:** on a tiny 4×4 test grid with one live cell in the middle, the count array shows 1 in the 8 surrounding cells and 0 in that cell itself.
 - [ ] Write a `step(grid)` function that applies Conway's rules using only comparisons and boolean logic on whole arrays. Combine masks with `&` (and) and `|` (or); for example, survivors are `(grid == 1) & ((n == 2) | (n == 3))`. Note that NumPy needs `&`/`|` with parentheses, not Python's `and`/`or`. Return the new grid; never modify the old one mid-computation (every cell's fate depends on the *old* neighbor counts).
-- [ ] Test with a known pattern: a **blinker**, three live cells in a horizontal row on an otherwise dead grid. **Checkpoint:** after one step it becomes a vertical row of three, after two steps horizontal again, forever. If this works, the rules in `step` are provably correct.
+- [ ] Test with a known pattern: a **blinker**, three live cells in a horizontal row on an otherwise dead grid. **Checkpoint:** after one step it becomes a vertical row of three, after two steps horizontal again, forever. This checks births and survival with 2 neighbors, but not every rule: no live cell in a blinker ever has 3 or more neighbors. The glider test below exercises the remaining rules.
 - [ ] Run it: loop 50 generations, printing each and pausing with `time.sleep(0.1)`. Clearing the terminal between frames (`print("\033[2J\033[H", end="")`) makes it a real animation. **Checkpoint:** the world visibly evolves: flickering chaos settles into stable blocks, oscillators, and maybe a glider crawling diagonally across the grid.
 - [ ] Seed a **glider** by hand (search "game of life glider" for the 5-cell pattern) on an empty grid. **Checkpoint:** it walks one cell diagonally every 4 generations.
 

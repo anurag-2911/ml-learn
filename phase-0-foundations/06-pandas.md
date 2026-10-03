@@ -2,7 +2,7 @@
 
 **Phase 0 — Foundations** · Estimated time: 1 week · Prerequisites: [05 · NumPy: Thinking in Arrays](05-numpy.md), [04 · Classes, Files, JSON and Errors](04-python-oop-files-errors.md)
 
-> About 80% of real machine-learning work is not building models. It is loading messy data, cleaning it, filtering it and asking it questions, and pandas is the tool everyone uses for that. This lesson uses pandas to interrogate the real passenger list of the Titanic, dig through personal data, and rescue a deliberately broken dataset. The Titanic data in this lesson is exactly the data fed to the first real ML models in lessons [11](../phase-2-classical-ml/11-first-model-knn.md), [13](../phase-2-classical-ml/13-logistic-regression.md) and [15](../phase-2-classical-ml/15-decision-trees.md), so get to know it well.
+> About 80% of real machine-learning work is not building models. It is loading messy data, cleaning it, filtering it and asking it questions, and pandas is the tool everyone uses for that. This lesson uses pandas to interrogate the real passenger list of the Titanic, dig through personal data, and rescue a deliberately broken dataset. The Titanic data in this lesson is exactly the data fed to the ML models in lessons [13](../phase-2-classical-ml/13-logistic-regression.md), [14](../phase-2-classical-ml/14-model-evaluation.md) and [15](../phase-2-classical-ml/15-decision-trees.md), so get to know it well.
 
 ## What this lesson builds
 
@@ -56,7 +56,7 @@ import pandas as pd
 
 df = sns.load_dataset("titanic")   # df is a DataFrame
 print(df.head())                   # first 5 rows
-print(df.info())                   # column names, types, missing counts
+df.info()                          # column names, types, non-null counts (info() prints by itself)
 print(df.describe())               # stats for the numeric columns
 ```
 
@@ -77,7 +77,7 @@ Key columns: `survived` (1 = survived, 0 = died), `pclass`/`class` (ticket class
 - [ ] **Q11 — Fill the age gap.** Make a copy (`df2 = df.copy()`), fill missing ages with the median age using `fillna`, and verify with `isna().sum()`. Checkpoint: `df2["age"]` has 0 missing values, and its median is unchanged.
 - [ ] **Q12 — Family size.** Create a new column `family_size = df["sibsp"] + df["parch"] + 1`. Compare survival rates of people travelling alone vs with family (the `alone` column, or `family_size == 1`). Checkpoint: alone about 0.30, with family about 0.51.
 - [ ] **Bonus question — the full picture.** Group by *two* columns at once: `df.groupby(["sex", "pclass"])["survived"].mean()`. Checkpoint: first-class women survived at about 0.97; third-class men at about 0.14. One line of code is enough to show the social structure of the tragedy.
-- [ ] **Save the dataset for lesson 07.** Write the DataFrame to disk next to the script: `df.to_csv("titanic.csv", index=False)` (`index=False` stops pandas writing the row numbers as an extra column). The next lesson's charts read this exact file. Checkpoint: `work/06-pandas/titanic.csv` exists, and loading it back with `pd.read_csv("titanic.csv")` shows the familiar `(891, 15)` shape.
+- [ ] **Save the dataset for lesson 07.** Write the DataFrame to disk next to the script: `df.to_csv("titanic.csv", index=False)` (`index=False` stops pandas writing the row numbers as an extra column). The next lesson's charts read this exact file. Checkpoint: `work/06-pandas/titanic.csv` exists, and loading it back with `pd.read_csv("titanic.csv")` shows the shape `(891, 16)`: the 15 original columns plus `family_size` from Q12.
 
 <details><summary>Hints</summary>
 
@@ -97,7 +97,7 @@ Key columns: `survived` (1 = survived, 0 = died), `pclass`/`class` (ticket class
 Pick ONE data source:
 
 1. **Bank or expense CSV**: most banking apps can export transactions as CSV (comma-separated values: a plain-text table, one row per line). It is the best option if available.
-2. **YouTube watch history**: search for "Google Takeout" and export the YouTube history (it arrives as JSON; use `pd.read_json` or the `json` module from lesson 04).
+2. **YouTube watch history**: search for "Google Takeout", click **Deselect all**, tick **YouTube and YouTube Music**, then click **Multiple formats** and change **history** from HTML (the default) to **JSON**. The export then contains `watch-history.json`; load it with `pd.read_json` or the `json` module from lesson 04.
 3. **Hand-made study log**: no exports? Make one by hand. Spend 15 minutes writing a CSV of the ML study done so far, one row per session:
 
 ```csv
@@ -109,9 +109,11 @@ date,lesson,minutes,focus
 
 Give it 25+ rows (reconstruct them from memory; approximate is fine, since real data is approximate too).
 
+**Keep a real export out of git.** The fork is public, and the `git add .` routine from lesson 01 uploads every file under `work/`, including a bank export (names, account numbers, every transaction) or a full watch history. Before copying the file in, run `mkdir private` inside `work/06-pandas` and `echo "work/*/private/" >> ~/ml/ml-learn/.gitignore`. Keep the export in `work/06-pandas/private/` and load it from there, for example with `pd.read_csv("private/transactions.csv")`. Checkpoint: `git status -u` lists nothing inside `private/`. `insights.md` is committed and published, so keep account numbers and other people's names out of it.
+
 **Milestones**
 
-- [ ] Load the CSV with `pd.read_csv("...")` and inspect it with `head()`, `info()`, `describe()`. Checkpoint: every column has the expected type. If a date or number column shows dtype `object` (pandas-speak for "text"), fix it (see hints).
+- [ ] Load the CSV with `pd.read_csv("...")` and inspect it with `head()`, `info()`, `describe()`. Checkpoint: every column has the expected type. If a date or number column shows dtype `str` (pandas-speak for "text"; pandas 2 showed `object`), fix it (see hints).
 - [ ] Clean what needs cleaning: parse dates with `pd.to_datetime`, drop or fill missing values, rename cryptic columns with `df.rename(columns={...})`.
 - [ ] Ask at least 5 questions with `groupby`, boolean filtering, `sort_values` and `value_counts`. Examples: spending by category per month, the top 10 most-watched channels, the busiest weekday for study, the longest study streak.
 - [ ] Create at least one new column that makes a question answerable, for example `df["weekday"] = df["date"].dt.day_name()` or an `is_weekend` True/False column.
@@ -120,9 +122,9 @@ Give it 25+ rows (reconstruct them from memory; approximate is fine, since real 
 <details><summary>Hints</summary>
 
 - `pd.read_csv("file.csv", parse_dates=["date"])` parses dates while loading. Once a column is a real datetime, the `.dt` accessor unlocks `.dt.month`, `.dt.day_name()`, and more.
-- Money columns sometimes load as text because of currency symbols or commas: `df["amount"].str.replace(",", "").str.replace("€", "").astype(float)`.
+- Money columns sometimes load as text because of currency symbols or thousands separators. For amounts written like `1,234.50 €`, remove the commas and the symbol: `df["amount"].str.replace(",", "").str.replace("€", "").astype(float)`.
 - Group by month with `df.groupby(df["date"].dt.to_period("M"))["amount"].sum()`.
-- If the bank CSV uses `;` as separator (common in Europe), pass `sep=";"` to `read_csv`.
+- If the bank CSV uses `;` as separator (common in Europe), pass `sep=";"` to `read_csv`. Such files usually write amounts like `1.234,50`, with a decimal comma; never just delete the commas there, or `12,50` becomes `1250`. Plain numbers in that style load directly with `pd.read_csv("file.csv", sep=";", decimal=",", thousands=".")`. If the amounts also carry a `€` sign, convert them with `df["amount"].str.replace("€", "").str.replace(".", "").str.replace(",", ".").astype(float)`. Compare a few converted values with the original file before trusting any total.
 
 </details>
 
@@ -156,14 +158,23 @@ RENT,housing,850.00,2026-01-10
 
 - [ ] Load it and diagnose. Find as many problems as possible and list them as comments in `work/06-pandas/rescue.py`. Checkpoint: the comments name at least four kinds of problems (inconsistent capitalization, trailing spaces, missing values, duplicate rows, four different date formats).
 - [ ] **Fix the text columns.** Use the `.str` accessor (string methods that work on a whole Series at once) to strip whitespace and normalize case, for example `df["category"] = df["category"].str.strip().str.lower()`. Checkpoint: `df["category"].value_counts()` shows exactly one entry per real category, and "Food"/"FOOD"/"food" have merged.
-- [ ] **Fix the dates.** Convert the `date` column to real datetimes despite the mixed formats. Checkpoint: `df["date"].dtype` prints `datetime64[ns]` and `df["date"].min()` is January 5, 2026.
-- [ ] **Handle missing values deliberately.** Decide per column and write the reasoning down as a comment: the missing `category` can be filled ("food", since it is coffee), but is a missing `amount` fillable, or should that row be dropped? There is no single right answer; having a *reason* is the skill.
+- [ ] **Fix the dates.** Convert the `date` column to real datetimes despite the mixed formats. Checkpoint: `df["date"].dtype` prints `datetime64[us]` (pandas versions before 3.0 print `datetime64[ns]`; both are real datetimes) and `df["date"].min()` is January 5, 2026.
+- [ ] **Handle missing values deliberately.** Decide per column and write the reasoning down as a comment: the missing `category` can be filled ("food", since it is coffee), but is a missing `amount` fillable, or should that row be dropped? There is no single right answer; having a *reason* is the skill. The row counts below assume the Bus ticket row is kept; dropping it leaves 10 rows instead of 11.
 - [ ] **Drop the duplicates.** Use `df.duplicated()` to inspect and `df.drop_duplicates()` to remove, but watch for the hidden ones: after the text cleaning, "Coffee/food" and "coffee  /Food" became identical, and the duplicated rent should go too. Checkpoint: 11 rows remain.
 - [ ] **Prove it is tidy.** Save with `df.to_csv("clean_expenses.csv", index=False)`, reload it, and run a groupby: total spend per category. Checkpoint: the reloaded frame has 11 rows, no missing values except any kept on purpose, and housing is the biggest category at over 900.
 
 <details><summary>Hints</summary>
 
-- `pd.to_datetime(df["date"], format="mixed", dayfirst=True)` handles multiple formats in one column (pandas 2.x). `dayfirst=True` tells pandas that `14-01-2026` means January 14, not month 14.
+- Parse each date layout with its own `format`, then fill the gaps. `errors="coerce"` turns strings that do not match the layout into `NaT` (a missing date), and each `fillna` fills those holes from the next layout:
+
+  ```python
+  d = pd.to_datetime(df["date"], format="ISO8601", errors="coerce")             # 2026-01-05 and 2026/01/08
+  d = d.fillna(pd.to_datetime(df["date"], format="%d-%m-%Y", errors="coerce"))  # 09-01-2026 is January 9
+  d = d.fillna(pd.to_datetime(df["date"], format="%b %d %Y", errors="coerce"))  # Jan 7 2026
+  df["date"] = d
+  ```
+
+  Avoid the shortcut `format="mixed", dayfirst=True`: since pandas 3.0, `dayfirst=True` also swaps day and month in year-first dates, so `2026-01-05` silently becomes May 1. Without `dayfirst`, `format="mixed"` reads `09-01-2026` as September 1.
 - Order of operations matters: clean the text *before* dropping duplicates, or the disguised duplicates survive.
 - `df.duplicated(keep=False)` marks *all* copies of a duplicate (not just the later ones), which is useful for checking by eye before deleting.
 - Chain `.str` calls freely: `.str.strip().str.lower()`. Each call returns a new Series.
@@ -183,7 +194,7 @@ RENT,housing,850.00,2026-01-10
 
 - **Read errors bottom-up.** The last line names the problem; `KeyError: 'Age'` almost always means a misspelled or wrongly-capitalized column name. Print `df.columns` to see the real names.
 - **Look at the data, constantly.** Before and after every operation: `df.head()`, `df.shape`, `df.dtypes`. Most bugs are "the data was never what I assumed".
-- **`SettingWithCopyWarning`:** pandas' famous warning when code writes into a filtered slice. The fix is usually one `loc`: `df.loc[df["age"] < 10, "group"] = "child"` instead of `df[df["age"] < 10]["group"] = "child"`.
+- **`ChainedAssignmentError`** (called `SettingWithCopyWarning` before pandas 3): pandas' warning when code writes into a filtered slice or a single column in one chained line. That write never changes the original DataFrame. The fix is usually one `loc`: `df.loc[df["age"] < 10, "group"] = "child"` instead of `df[df["age"] < 10]["group"] = "child"`. The same applies to `inplace=True` on one column: write `df2["age"] = df2["age"].fillna(...)`, not `df2["age"].fillna(..., inplace=True)`.
 - **Filtering with `and`/`or` raises "truth value is ambiguous":** use `&` and `|` with parentheses around each condition instead.
 - Ask an AI assistant for a **hint, not a solution** ("why might groupby().mean() return NaN for one group?", not "write my cleaning script"), and type all code by hand. Muscle memory with pandas is precisely the skill this lesson is meant to build.
 

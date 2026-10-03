@@ -15,7 +15,7 @@
 - **Lists**: ordered collections (indexing, slicing, `append`, sorting)
 - **Dictionaries (dicts)**: key → value lookups (`.get`, `.items`, the counting pattern)
 - **Sets**: collections of unique items with instant "is X in here?" membership tests
-- **Tuples and unpacking**: fixed pairs like `("the", 1802)` and pulling them apart in one line
+- **Tuples and unpacking**: fixed pairs like `("the", 1825)` and pulling them apart in one line
 - **List and dict comprehensions**: building a new collection in a single readable line
 - **Reading text files** and cleaning strings with `.split`, `.strip` and `.lower`
 
@@ -55,15 +55,15 @@ Checkpoint: `wc -w alice.txt` (word count) prints roughly **29,500 words**.
 
   The `with open(...)` pattern opens a file and closes it automatically when the block ends. Checkpoint: the output shows about **164,000 characters**.
 - [ ] Lowercase everything with `text = text.lower()` so `The` and `the` count as the same word. Then split the string into a **list** of words with `words = text.split()`. With no arguments, `.split()` cuts a string wherever there is whitespace. Checkpoint: `len(words)` is around **29,500**, `words[0]` is `"the"` (indexing: position 0 is the first item), and `words[:10]` (slicing: the first ten items) shows the opening words of the Gutenberg header.
-- [ ] Clean the punctuation. Right now `"hearts."` and `"hearts"` are different words. `.strip(chars)` removes any of the given characters from both ends of a string (only the ends, which is exactly what is needed: `don't` keeps its apostrophe). Use a **list comprehension**, which builds a new list from an old one in one line:
+- [ ] Clean the punctuation. Right now `"hearts."` and `"hearts"` are different words. `.strip(chars)` removes any of the given characters from both ends of a string (only the ends, which is exactly what is needed: `don’t` keeps its apostrophe). Use a **list comprehension**, which builds a new list from an old one in one line:
 
   ```python
-  punct = '.,;:!?"\'()_-*[]'
+  punct = '.,;:!?"\'()_-*[]\u201c\u201d\u2018\u2019\u2014'
   words = [w.strip(punct) for w in words]
   words = [w for w in words if w]   # drop empty strings left over
   ```
 
-  Read the first line out loud: "a list of `w.strip(punct)` for each `w` in `words`". Checkpoint: `"alice" in words` prints `True`.
+  This edition of the book prints dialogue with curly quotation marks (“ ” ‘ ’) and joins some words with long dashes (—), not the straight `"` and `'` on the keyboard, so `punct` lists them too, written as escape codes: `\u201c` and `\u201d` are “ and ”, `\u2018` and `\u2019` are ‘ and ’, and `\u2014` is —. Without them, about 2,300 words keep their punctuation, such as `“i` and `it,”`. Read the second line out loud: "a list of `w.strip(punct)` for each `w` in `words`". Checkpoint: `"alice" in words` prints `True`.
 - [ ] Count with a **dict**. A dict maps keys to values, like a phone book maps names to numbers. Here, each word maps to the number of times it has been seen. The counting pattern uses `.get(key, default)`, which looks up a key but returns the default instead of crashing when the key is missing:
 
   ```python
@@ -72,16 +72,18 @@ Checkpoint: `wc -w alice.txt` (word count) prints roughly **29,500 words**.
       counts[w] = counts.get(w, 0) + 1
   ```
 
-  Checkpoint: `counts["alice"]` is about **383**, and `len(counts)` (the number of *unique* words) is around **4,200**.
-- [ ] Rank and print the top 20. `counts.items()` gives the dict's contents as pairs like `("alice", 383)`. Each pair is a **tuple**, a small immutable bundle of values. Sort those pairs by count, biggest first, using `sorted(..., key=..., reverse=True)`, then slice the top 20 and print them with **tuple unpacking**: `for word, count in top20:`. Checkpoint: `"the"` is #1 with a count around **1,800**, followed by "and", "to", "a", "of".
+  Checkpoint: `counts["alice"]` is about **385**, and `len(counts)` (the number of *unique* words) is around **3,300**.
+- [ ] Rank and print the top 20. `counts.items()` gives the dict's contents as pairs like `("alice", 385)`. Each pair is a **tuple**, a small immutable bundle of values. Sort those pairs by count, biggest first, using `sorted(..., key=..., reverse=True)`, then slice the top 20 and print them with **tuple unpacking**: `for word, count in top20:`. Checkpoint: `"the"` is #1 with a count around **1,800**, followed by "and", "to", "a", "of".
 - [ ] The top 20 is mostly boring glue words. Filter them with a **set**, a collection of unique items whose whole job is fast membership tests: `stopwords = {"the", "and", "to", "a", "of", "she", "it", "in", "was", "i", ...}` (build a custom set from the boring words at the top of the ranking; in NLP these are literally called *stopwords*). Skip any word that is `in stopwords` before ranking. Checkpoint: "alice", "said", "queen", "king" and "turtle" now appear in the top 20, and the list shows what the book is about.
 
 <details><summary>Hints</summary>
 
 - For sorting pairs by count: `sorted(counts.items(), key=lambda pair: pair[1], reverse=True)`. A `lambda` is a tiny unnamed function; `pair[1]` is the count part of the tuple.
 - `sorted()` returns a new list; it does not change the dict. The top 20 is just a slice: `[:20]`.
+- The standard library has this counting pattern built in: after `from collections import Counter`, `Counter(words)` builds the same word-to-count dict in one call, and `.most_common(20)` returns the top 20 pairs already sorted. Write the loop by hand first, then use `Counter` to check it; lessons 17 and 30 use `Counter` directly.
 - If the counts look off, print `words[100:120]` and look at it closely. Cleaning bugs are always visible in the data itself.
 - `.strip` versus `.replace`: strip only touches the ends of each word; replace would delete characters everywhere. Strip is the right choice here.
+- A **dict comprehension** builds a dict the same way a list comprehension builds a list: `frequent = {w: c for w, c in counts.items() if c >= 100}` keeps only the words seen at least 100 times.
 
 </details>
 
@@ -97,7 +99,7 @@ Checkpoint: `wc -w alice.txt` (word count) prints roughly **29,500 words**.
 - [ ] Write the menu loop: forever, print the commands (`add`, `list`, `done`, `delete`, `quit`), read one with `input()`, and dispatch with `if`/`elif`. `quit` breaks the loop. Checkpoint: commands can be typed again and again without the program exiting.
 - [ ] Implement `add` (ask for a title, `append` a new task dict) and `list` (print each task numbered from 1, with `[x]` or `[ ]` depending on `done`). Use `enumerate(tasks, start=1)`, which gives *both* the number and the task through tuple unpacking: `for i, task in enumerate(tasks, start=1):`. Checkpoint: after adding three tasks, `list` shows them numbered 1, 2, 3.
 - [ ] Implement `done` and `delete`: ask which number, convert with `int()`, subtract 1 to get the list index (lists count from 0, humans from 1; this off-by-one causes bugs all year, so it is worth learning now). Set `task["done"] = True`, or remove with `tasks.pop(index)`. Reject numbers that are out of range instead of crashing. Checkpoint: completing task 2 shows `[x]` next to it; deleting it renumbers the rest.
-- [ ] Persistence. Write a `save(tasks)` function that writes one line per task to `todo.txt` in a custom format, e.g. `1|buy milk` where the `1`/`0` means done/not-done. Open with `open("todo.txt", "w")` and write lines ending in `"\n"`. Call `save` after every change. Checkpoint: `cat todo.txt` in another terminal shows the saved tasks.
+- [ ] Persistence. Write a `save(tasks)` function that writes one line per task to `todo.txt` in a custom format, e.g. `1|buy milk` where the `1`/`0` means done/not-done. Open with `open("todo.txt", "w")` and write lines ending in `"\n"`. Call `save` after every change. Checkpoint: in a second terminal, `cat ~/ml/ml-learn/work/03-python-data-structures/todo.txt` shows the saved tasks (a new terminal starts in the home folder, so the full path is needed).
 - [ ] Write `load()`, called once at startup: if the file exists, read it line by line, `.strip()` each line (this removes the invisible newline character; forgetting it is a classic bug), split on `"|"`, and rebuild the list of dicts. Checkpoint: add tasks, `quit`, and run `python todo.py` again: **the tasks are back**.
 
 <details><summary>Hints</summary>

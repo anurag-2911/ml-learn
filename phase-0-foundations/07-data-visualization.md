@@ -38,12 +38,12 @@ Create the work folder for this lesson:
 mkdir -p work/07-data-visualization
 ```
 
-**Where will the plots appear?** Work in Jupyter notebooks inside VS Code (as in lesson 06): plots render right under the cell. If a plot ever comes from a plain `.py` script instead, what `plt.show()` does depends on the system:
+**Where will the plots appear?** Work in Jupyter notebooks inside VS Code (as in lesson 01's Project 3): plots render right under the cell. If a plot ever comes from a plain `.py` script instead, what `plt.show()` does depends on the system:
 
 - **macOS:** it opens the chart in a window, and the script waits until the window is closed.
-- **Windows (WSL2) and Linux:** it opens no window, because the Python 3.13 from lesson 01 comes without tkinter, the toolkit matplotlib uses for windows on Linux. Save to a file with `plt.savefig("myplot.png")` instead and open the PNG in VS Code. To get windows anyway, install tkinter with `sudo apt install -y python3.13-tk` (on Fedora, `sudo dnf install -y python3.13-tkinter`) and run the script again. On Windows, the window then opens on the Windows desktop.
+- **Windows (WSL2) and Linux:** it opens no window, because the Python 3.13 from lesson 01 comes without tkinter, the toolkit matplotlib uses for windows on Linux. Save to a file with `plt.savefig("myplot.png")` instead and open the PNG in VS Code. To get windows anyway, install tkinter with `sudo apt update && sudo apt install -y python3.13-tk` (on Fedora, `sudo dnf install -y python3.13-tkinter`) and run the script again. On Windows, the window then opens on the Windows desktop. If nothing opens and nothing is printed (`echo $DISPLAY` prints an empty line), the WSL install predates Linux window support: in an administrator PowerShell window, run `wsl --update` and then `wsl --shutdown`, reopen Ubuntu and run the script again.
 
-**Data:** reuse the Titanic CSV saved at the end of lesson 06's Project 1 (copy it in: `cp work/06-pandas/titanic.csv work/07-data-visualization/`). If that file is gone, seaborn bundles the same data: `sns.load_dataset("titanic")` returns it as a DataFrame (this needs internet once). Project 2's weather download is explained inside that project.
+**Data:** reuse the Titanic CSV saved at the end of lesson 06's Project 1 (copy it in: `cp work/06-pandas/titanic.csv work/07-data-visualization/`). If that file is gone, seaborn can download the same data again: `sns.load_dataset("titanic")` returns it as a DataFrame (this needs internet once; seaborn then keeps a copy). Project 2's weather download is explained inside that project.
 
 ## Project 1 — Chart sampler
 
@@ -79,14 +79,15 @@ mkdir -p work/07-data-visualization
 - [ ] **Chart 4 (scatter):** "Q4: Is there a pattern connecting fare, age and survival?" A *scatter plot* puts one dot per row, revealing the relationship between two numeric columns. Draw fare (y) vs age (x), colored by survival:
 
   ```python
+  known_age = df.dropna(subset=["age"])   # 177 passengers have no age
   fig, ax = plt.subplots(figsize=(8, 5))
-  scatter = ax.scatter(df["age"], df["fare"], c=df["survived"], alpha=0.6)
+  scatter = ax.scatter(known_age["age"], known_age["fare"], c=known_age["survived"], alpha=0.6)
   ax.legend(*scatter.legend_elements(), title="Survived")
   ```
 
-  `alpha=0.6` makes the dots translucent so that overlaps stay visible. The *legend* is the little box that explains what each color means; always add one when color carries meaning. Checkpoint: most dots crowd below fare 100, and the expensive tickets are mostly survivor-colored.
-- [ ] **Chart 5 (boxplot):** "Q5: How does age differ across classes?" One seaborn line: `sns.boxplot(data=df, x="pclass", y="age")`. A *boxplot* summarizes a distribution as a box (middle 50% of values, line at the median) with whiskers for the rest. It is ideal for comparing distributions across categories. Checkpoint: the 1st-class median age is clearly the highest (money takes time to earn).
-- [ ] **Chart 6 (heatmap):** "Q6: Which numeric columns move together?" A *heatmap* paints a grid of numbers as colors so that patterns stand out. Feed it a *correlation matrix*: a table where each cell holds the correlation between two columns. A correlation is a number from -1 to +1 that measures how strongly two columns move together (+1: they rise together; -1: one rises as the other falls; 0: unrelated). `.corr()` computes the matrix:
+  A dot needs both numbers, so the rows with no age are dropped first. If they stay in, matplotlib lists them in the legend as a third entry, `nan`, and prints warnings under the cell. `alpha=0.6` makes the dots translucent so that overlaps stay visible. The *legend* is the little box that explains what each color means; always add one when color carries meaning. Checkpoint: most dots crowd below fare 100, and the expensive tickets are mostly survivor-colored.
+- [ ] **Chart 5 (boxplot):** "Q5: How does age differ across classes?" One seaborn line: `sns.boxplot(data=df, x="pclass", y="age")`. A *boxplot* summarizes a distribution as a box (middle 50% of values, line at the median) with whiskers reaching to the furthest values within 1.5 box-heights of the box, and single dots for the outliers beyond them. It is ideal for comparing distributions across categories. Checkpoint: the 1st-class median age is clearly the highest (money takes time to earn).
+- [ ] **Chart 6 (heatmap):** "Q6: Which numeric columns move together?" A *heatmap* paints a grid of numbers as colors so that patterns stand out. Feed it a *correlation matrix*: a table where each cell holds the correlation between two columns. A correlation is a number from -1 to +1 that measures how closely two columns follow a straight-line relationship (+1: they rise together; -1: one rises as the other falls; 0: no straight-line pattern, although the columns can still be related in another way). `.corr()` computes the matrix:
 
   ```python
   corr = df[["survived", "pclass", "age", "sibsp", "parch", "fare"]].corr()
@@ -94,7 +95,7 @@ mkdir -p work/07-data-visualization
   ```
 
   Checkpoint: `pclass` vs `fare` is strongly negative, around -0.55 (a lower class number goes with a pricier ticket), and `pclass` vs `survived` is around -0.34.
-- [ ] Pick a favorite chart and save it to a file: `fig.savefig("survival_by_class.png", dpi=150, bbox_inches="tight")`. Checkpoint: the PNG appears in the work folder and opens in VS Code.
+- [ ] Pick a favorite chart and save it to a file by adding a line at the end of that chart's own cell, for example in the Chart 2 cell: `fig.savefig("survival_by_class.png", dpi=150, bbox_inches="tight")`. `fig` holds the figure from the most recent `plt.subplots()` call, so in a separate cell it saves Chart 4. For the seaborn one-liners (Charts 5 and 6), which create no `fig`, use `plt.savefig(...)` with the same arguments in the same cell. Checkpoint: the PNG appears in the work folder, opens in VS Code and shows the chosen chart.
 - [ ] Add a final markdown cell and write a 4-line "when to use which chart" cheat sheet in it: trend over time → line; compare categories → bar; two numbers related? → scatter; shape of one number → histogram (boxplot to compare shapes, heatmap for a grid of numbers).
 
 <details><summary>Hints</summary>
@@ -113,7 +114,7 @@ mkdir -p work/07-data-visualization
 
 **Milestones**
 
-- [ ] Download the data. Open-Meteo's archive API serves historical weather as CSV with no signup. This command downloads 2024 for Berlin; swap in the chosen city's latitude/longitude (find them at https://open-meteo.com, or search "\<your city> latitude longitude"):
+- [ ] Download the data. Open-Meteo's archive API serves historical weather as CSV with no signup. This command downloads 2024 for Berlin; swap in the chosen city's latitude/longitude (find them with the **Search** button on https://open-meteo.com/en/docs/historical-weather-api, or search "\<your city> latitude longitude"):
 
   ```bash
   cd ~/ml/ml-learn/work/07-data-visualization
@@ -125,8 +126,8 @@ mkdir -p work/07-data-visualization
 - [ ] **Chart 1 (line):** daily max temperature across the whole year. A *line chart* connects points in time order and is the default for anything measured over time: `ax.plot(df["time"], df["temperature_2m_max"])`. Question: "What did the year feel like?" Checkpoint: a broad seasonal wave (a hill or valley shape, depending on the hemisphere), not random noise.
 - [ ] **Chart 2 (line, two series):** max and min temperature on the same axes. Call `ax.plot` twice, with `label="max"` and `label="min"`, then call `ax.legend()`. Question: "How big is the daily swing, and does it change with season?"
 - [ ] **Chart 3 (bar):** average max temperature per month. Make a month column (`df["time"].dt.month`), then use `groupby("month")` and `.mean()`. This is the split-apply-combine move from lesson 06, now feeding a chart. Checkpoint: 12 bars with a clear seasonal shape (for most non-equatorial cities, warmest and coldest months differ by 10 °C or more).
-- [ ] **Chart 4 (free choice):** find and mark the hottest and coldest days. Get them with `df.loc[df["temperature_2m_max"].idxmax()]` (and `idxmin` on the min column), then design a chart that shows them. For example, draw the year line, mark the two days on top of it with `ax.scatter`, and write the dates on the chart with `ax.annotate`. Checkpoint: two labeled points sitting exactly on the line's peak and trough.
-- [ ] Top the notebook with a markdown title cell and finish with a 3-sentence "weather story" summarizing what the four charts revealed. Save chart 4 as `weather_story.png`.
+- [ ] **Chart 4 (free choice):** find and mark the hottest and coldest days. Get them with `df.loc[df["temperature_2m_max"].idxmax()]` (and `idxmin` on the min column), then design a chart that shows them. For example, draw the max and min lines from chart 2, mark the hottest day on the max line and the coldest day on the min line with `ax.scatter`, and write the dates on the chart with `ax.annotate`. Checkpoint: two labeled points, one sitting exactly on the max line's peak and the other exactly on the min line's trough.
+- [ ] Top the notebook with a markdown title cell (include the credit line `Weather data by [Open-Meteo.com](https://open-meteo.com/) (CC BY 4.0)`, which the data's licence requires) and finish with a 3-sentence "weather story" summarizing what the four charts revealed. Save chart 4 as `weather_story.png`.
 
 <details><summary>Hints</summary>
 
@@ -145,13 +146,13 @@ mkdir -p work/07-data-visualization
 
 **Milestones**
 
-- [ ] Pick a genuinely interesting dataset; curiosity keeps the work going. Easy no-signup options: any of seaborn's built-in sets (`sns.get_dataset_names()` lists them; `penguins`, `tips` and `diamonds` are good), another Open-Meteo download (compare two cities?), or any CSV from the wild. Aim for at least 300 rows and a mix of numeric and categorical columns.
+- [ ] Pick a genuinely interesting dataset; curiosity keeps the work going. Easy no-signup options: any of seaborn's built-in sets (`sns.get_dataset_names()` lists them; `penguins`, `tips` and `diamonds` are good), another Open-Meteo download (compare two cities?), or any CSV from the wild. Aim for at least 200 rows and a mix of numeric and categorical columns.
 - [ ] Create `03_eda_report.ipynb`. First interrogate the data without plotting, using the lesson 06 toolkit: `df.shape`, `df.head()`, `df.dtypes`, `df.describe()`, `df.isna().sum()`. In a markdown cell, note the size, the column meanings and any missing data. Checkpoint: say out loud what one row represents.
 - [ ] **Before any chart, write the 5 questions** in one markdown cell. Use real questions with unknown answers ("Do heavier penguins have longer flippers?" "Do smokers tip differently?"), not chart orders ("plot X"). This is the one-question-per-chart discipline, and it stops the aimless plotting that eats afternoons.
-- [ ] Get a fast overview with one seaborn line: `sns.pairplot(df, hue="<a category column>")`. It draws a grid of scatter plots for every pair of numeric columns, colored by a category (with histograms on the diagonal). Checkpoint: at least one panel gives a "huh" moment; refine a question if so.
+- [ ] Get a fast overview with one seaborn line: `sns.pairplot(df, hue="<a category column>")`. It draws a grid of scatter plots for every pair of numeric columns, colored by a category, with each column's distribution on the diagonal as smooth density curves, one per category (`diag_kind="hist"` draws histograms there instead). Checkpoint: at least one panel gives a "huh" moment; refine a question if so.
 - [ ] Answer each question with exactly one chart, choosing the type deliberately from the Project 1 cheat sheet, plus seaborn's `histplot` and `boxplot` where they fit. Give every one the same structure: markdown question → code cell → markdown one-sentence answer. Vary the types: a report with 5 histograms means the questions were too similar.
 - [ ] Polish pass: every chart has a title, axis labels, and a legend if color carries meaning. Restart the kernel and "Run All": everything runs clean top to bottom. Checkpoint: a friend could read only the markdown cells and charts and learn 5 true things.
-- [ ] Commit all three notebooks to git (lesson 01 workflow): `git add`, `git commit -m "Lesson 07: data visualization projects"`.
+- [ ] Commit and push this lesson's work (lesson 01 workflow), staging only this lesson's folder so that personal files from earlier lessons (lesson 06's exports, lesson 05's photo) stay off the public fork: from `~/ml/ml-learn`, run `git add work/07-data-visualization`, `git status`, `git commit -m "Lesson 07: data visualization projects"`, then `git push`. Checkpoint: before the commit, `git status` lists only files in `work/07-data-visualization/` under "Changes to be committed", and none of them is a large data file (GitHub rejects files over 100 MB).
 
 <details><summary>Hints</summary>
 
@@ -172,16 +173,16 @@ mkdir -p work/07-data-visualization
 
 ## Getting unstuck
 
-- **Blank or missing plot?** In notebooks, the plot renders when the cell ends, so make the plotting calls the last thing in the cell. From a `.py` script, `plt.show()` opens a window on macOS. On Windows (WSL2) and Linux it opens none unless tkinter is installed (see Before starting), and it may warn `FigureCanvasAgg is non-interactive, and thus cannot be shown`. There, do not fight `plt.show()`: `savefig` to PNG and open the file in VS Code.
+- **Blank or missing plot?** In notebooks, a chart is drawn when the cell that created it finishes. Keep every call for one chart in one cell, from `plt.subplots()` to the last label: drawing on an `ax` created in an earlier cell shows nothing (end the drawing cell with `fig` to show the figure again). From a `.py` script, `plt.show()` opens a window on macOS. On Windows (WSL2) and Linux it opens none unless tkinter is installed (see Before starting), and it may warn `FigureCanvasAgg is non-interactive, and thus cannot be shown`. There, do not fight `plt.show()`: `savefig` to PNG and open the file in VS Code.
 - **Two charts on top of each other?** The code reused an axes. Use one `fig, ax = plt.subplots()` per chart.
-- **A mysterious `Text(0.5, ...)` line under the plot** is only the return value of the last call, not an error. Ignore it, or end the cell with `plt.show()`.
+- **A mysterious `Text(0.5, ...)` line above the plot** is only the return value of the last call, not an error. Ignore it, or end the cell with `plt.show()`.
 - **Seaborn errors about a column** usually mean a name mismatch. Print `df.columns` and check the spelling and case (the Titanic columns in this lesson are all lowercase: `age`, not `Age`; a Titanic CSV from Kaggle capitalizes them).
 - Standing advice: read the error message bottom-up (the last line names the problem); print what is being plotted (`df["age"].head()`, `.shape`, `.dtype`) before blaming the chart; ask an AI assistant for a **hint**, not a solution; and type all code by hand, with no pasting.
 
 ## Resources
 
 - [Matplotlib quick start](https://matplotlib.org/stable/users/explain/quick_start.html) — the figure/axes model from the source; read after Project 1 and it will all click.
-- [Seaborn tutorial](https://seaborn.pydata.org/tutorial.html) — gallery-style tour of every seaborn plot; skim to know what exists, and return when one is needed.
+- [Seaborn example gallery](https://seaborn.pydata.org/examples/index.html) — a thumbnail of every kind of seaborn plot, each linked to its code; skim to know what exists, and return when one is needed.
 - [Kaggle: Data Visualization](https://www.kaggle.com/learn/data-visualization) — free short course with in-browser exercises; good structured practice after Project 3 (account needed for the exercises).
 
 ## Skills unlocked

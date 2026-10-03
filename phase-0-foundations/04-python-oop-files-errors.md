@@ -38,11 +38,11 @@
    cd work/04-python-oop-files-errors
    ```
 
-4. Practice a first **pip install** (pip is Python's package installer: it downloads third-party code from the internet into the venv). Install `rich`, a popular package for pretty terminal output; a later milestone uses it as an optional extra:
+4. Practice another **pip install** (pip, first used in lesson 01, is Python's package installer: it downloads third-party code from the internet into the venv). Install `rich`, a popular package for pretty terminal output; a later milestone uses it as an optional extra:
 
    ```bash
    pip install rich
-   python3 -c "from rich import print; print('[bold green]pip works![/bold green]')"
+   python3 -c 'from rich import print; print("[bold green]pip works![/bold green]")'
    ```
 
    If the text appears in bold green, the command has just used someone else's code. Using other people's code is 90% of real ML work.
@@ -83,9 +83,9 @@ No datasets are needed this week. All the data is created during the projects.
       json.dump(data, f, indent=2)
   ```
 
-  Call it after every change. Checkpoint: open `contacts.json` in VS Code. The contacts appear there as human-readable text.
+  Call it after every change. Store only made-up contacts like the example above (555-01xx numbers, example.com addresses): `contacts.json` sits in `work/`, which gets pushed to the public fork. Checkpoint: open `contacts.json` in VS Code. The contacts appear there as human-readable text.
 - [ ] **Load on startup.** Write a `load(self, filename)` method that does the reverse: `json.load(f)` gives back a list of dicts, and the method rebuilds `Contact` objects from them. Call it once when the app starts. Checkpoint: add a contact, quit, rerun the app, and the contact is still there.
-- [ ] **Break it on purpose, then handle it.** Delete `contacts.json` and run the app: it crashes. Read the traceback (Python's error report) *bottom-up*: the last line names the error (`FileNotFoundError`), and the lines above show where it happened. Now open `contacts.json`, type garbage into it and run the app again. This time it crashes with a different error (`json.JSONDecodeError`). Wrap the loading code in try/except, which means "attempt this; if a specific error occurs, do this instead of crashing":
+- [ ] **Break it on purpose, then handle it.** Delete `contacts.json` and run the app: it crashes. Read the traceback (Python's error report) *bottom-up*: the last line names the error (`FileNotFoundError`), and the lines above show where it happened. Now create `contacts.json` again, type some garbage into it (such as `not json`), save it and run the app again. This time it crashes with a different error (`json.JSONDecodeError`). Wrap the loading code in try/except, which means "attempt this; if a specific error occurs, do this instead of crashing":
 
   ```python
   try:
@@ -102,7 +102,7 @@ No datasets are needed this week. All the data is created during the projects.
 
 <details><summary>Hints</summary>
 
-- If Python complains `TypeError: describe() takes 0 positional arguments but 1 was given`, the method is missing `self` as its first parameter. Python passes the object in automatically.
+- If Python complains `TypeError: Contact.describe() takes 0 positional arguments but 1 was given`, the method is missing `self` as its first parameter. Python passes the object in automatically.
 - For case-insensitive search, compare `term.lower() in c.name.lower()`.
 - `json.dump` cannot save `Contact` objects directly, which is why they are converted to plain dicts first. Going dict → object on load: `Contact(d["name"], d["phone"], d["email"])`.
 - Save inside `add` and `delete` (call `self.save(...)` at the end of each), so that a save can never be forgotten.
@@ -120,7 +120,7 @@ No datasets are needed this week. All the data is created during the projects.
 - [ ] **Design the data first.** Create `cards.json` by hand in VS Code: a list of card dicts, each with `"question"`, `"answer"`, and `"score"` (start every score at 0). Put in 8–10 cards about things from lessons 01–03 (e.g. Q: "What symbol starts a Python comment?" A: "#"). Checkpoint: `python3 -c "import json; print(len(json.load(open('cards.json'))))"` prints the number of cards.
 - [ ] **Write a `Card` class and a `Deck` class.** `Card` holds question, answer, score. `Deck` loads cards from JSON in `__init__` (reuse the try/except pattern from Project 1) and has a `save()` method. Checkpoint: load the deck and print every question.
 - [ ] **Build the quiz loop.** Pick a random card (`import random`, then `random.choice(...)`, introduced in lesson 02), show the question, `input()` the answer, compare ignoring case and surrounding spaces (`.strip().lower()`). Right answer: score + 1. Wrong: score − 1, and show the correct answer. Save after every card. Checkpoint: play 5 cards, quit and open `cards.json`; the scores have changed.
-- [ ] **Make missed cards come back more often.** Replace `random.choice` with *weighted* choice: give each card a weight like `max(1, 5 - card.score)`, so a card with score −3 (weight 8) is 4× more likely to appear than one with score 3 (weight 2). `random.choices(cards, weights=weights)[0]` does the weighted pick. The result is a tiny spaced-repetition algorithm, the idea behind apps like Anki. Checkpoint: deliberately fail one card 5 times, then play 10 rounds. That card should show up noticeably more than any other.
+- [ ] **Make missed cards come back more often.** Replace `random.choice` with *weighted* choice: give each card a weight like `max(1, 5 - card.score)`, so a card with score −3 (weight 8) is 4× more likely to appear than one with score 3 (weight 2). `random.choices(cards, weights=weights)[0]` does the weighted pick. The result is a tiny spaced-repetition algorithm, the idea behind apps like Anki. Checkpoint: deliberately fail one card 5 times, then print the weights list. That card now has the largest weight in the list: 10 if its score started at 0, twice the weight of a card at score 0. Over the next 10 rounds it usually shows up more than any other card, though not every time, because the pick is still random.
 - [ ] **Add a stats command.** Typing `stats` during the quiz prints every card with its score, worst first (sort with `sorted(..., key=...)` from lesson 03). Optional extra: print it as a table with the `rich` package installed earlier. Checkpoint: stats shows the weakest cards at the top.
 
 <details><summary>Hints</summary>
@@ -151,6 +151,7 @@ No datasets are needed this week. All the data is created during the projects.
 - Inside `add`, build the result with `return Vector2D(self.x + other.x, self.y + other.y)`. A class can create new instances of itself.
 - `__repr__` must *return* a string, not print one. Use an f-string: `f"Vector2D({self.x}, {self.y})"`.
 - `import math` at the top of the file makes `math.sqrt` available.
+- `==` between two `Vector2D` objects checks whether they are the very same object, not whether their numbers match, so `Vector2D(4, 6) == Vector2D(4, 6)` is `False`. To test `add`, `subtract` or `scale`, compare the numbers instead: `v = Vector2D(1, 2).add(Vector2D(3, 4))`, then `assert (v.x, v.y) == (4, 6)`.
 
 </details>
 
@@ -158,7 +159,7 @@ No datasets are needed this week. All the data is created during the projects.
 
 ## Stretch goals
 
-- **Operator overloading**: rename `add` to the special method `__add__` and `subtract` to `__sub__`, so `v1 + v2` just works. (Search the Python classes tutorial below for "special methods".) NumPy arrays do exactly this, and the next lesson uses it constantly.
+- **Operator overloading**: rename `add` to the special method `__add__` and `subtract` to `__sub__`, so `v1 + v2` just works. (The Python reference lists every special method under [Special method names](https://docs.python.org/3/reference/datamodel.html#special-method-names); `__add__` and `__sub__` are in its "Emulating numeric types" part.) NumPy arrays do exactly this, and the next lesson uses it constantly.
 - **Contact book edit command**: add an `edit` option that finds a contact and updates one field, with a friendly message when the name is not found.
 - **Flashcard categories**: give cards a `"topic"` field and let the user quiz a single topic.
 - **A `fit`/`predict` toy**: write a class `MeanPredictor` with `fit(self, numbers)` (stores the average) and `predict(self)` (returns it). Ten lines of code make a first scikit-learn-shaped model.
@@ -166,14 +167,14 @@ No datasets are needed this week. All the data is created during the projects.
 ## Getting unstuck
 
 - **Read the traceback bottom-up.** The last line is the error type and message; the lines above trace where it happened, most recent call last. `AttributeError: 'Contact' object has no attribute 'phone'` usually means a typo in `__init__` (`self.phone` vs `self.phon`).
-- **`NameError: name 'self' is not defined`** means `self` was used outside a class, or is missing from a method's parameter list.
+- **`NameError: name 'self' is not defined`** means `self` was used outside a method: directly in the class body (for example `self.contacts = []` written under `class ContactBook:` instead of inside `__init__`), or in the code below the class, where the object goes by its own name such as `book`. A method with no `self` parameter at all fails earlier, with the `TypeError` described in Project 1's hints.
 - **JSON acting strangely?** Print the data right before `json.dump` and right after `json.load`, and look at it. JSON only holds dicts, lists, strings, numbers, booleans and `null`, never custom objects directly.
 - **Print early, print often.** When behavior is confusing, print the values and types in play (`print(type(x), x)`). This habit scales all the way to debugging neural networks.
 - Ask an AI assistant for a **hint**, not a solution. For example: "I'm getting this traceback in my ContactBook.load method, give me a hint but don't write the code." Also type all code by hand; muscle memory is half the learning.
 
 ## Resources
 
-- [Python classes tutorial](https://docs.python.org/3/tutorial/classes.html) — the official walkthrough of classes, `self`, and special methods; skim after Project 1 to consolidate.
+- [Python classes tutorial](https://docs.python.org/3/tutorial/classes.html) — the official walkthrough of classes, `self` and `__init__`; skim after Project 1 to consolidate.
 - [Automate the Boring Stuff](https://automatetheboringstuff.com/) — free book; its chapters on files, JSON and debugging are excellent backup reading if any project milestone feels shaky.
 
 ## Skills unlocked
