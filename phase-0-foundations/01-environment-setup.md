@@ -13,7 +13,7 @@
 ## Concepts covered
 
 - The **terminal**: a text window where typed commands control the computer (`cd`, `ls`, `mkdir`).
-- **One workshop on any computer**: macOS and Linux have a Unix-style terminal built in. Windows gets one through **WSL2**, a real Ubuntu Linux system that runs inside Windows. Once setup is done, almost every command in this curriculum is the same on all three.
+- **One workshop on any computer**: macOS and Linux have a Unix-style terminal built in. Windows gets one through **WSL2**, a real Ubuntu Linux system that runs inside Windows. Once setup is done, almost every command in this curriculum is the same on all three, and the few that differ are labeled.
 - **Package managers**: terminal tools that install software, such as **Homebrew** (`brew`) on macOS and **apt** on Ubuntu, including Ubuntu inside WSL. (Intel Macs, and Macs still on macOS 14 or older, use Python's official installer instead.)
 - **Python** and **pip**: the programming language of ML, and its tool for installing extra packages.
 - **Virtual environments (venv)**: a private folder of Python packages for one project, so that different projects never clash over package versions.
@@ -45,7 +45,7 @@ Nothing needs to be installed in advance. Installing things is Project 1.
 
 - [ ] Open a terminal.
 
-  - **macOS:** press Cmd+Space, type `Terminal` and press Return (the app is in Applications → Utilities). The prompt ends in `%`: that is zsh, the default shell on a Mac. Run `echo 'setopt interactivecomments' >> ~/.zshrc` once. Some commands in later lessons end with a note after a `#`, and this setting makes zsh skip such notes the way Linux terminals do (it takes effect in new Terminal windows).
+  - **macOS:** press Cmd+Space, type `Terminal` and press Return (the app is in Applications → Utilities). The prompt ends in `%`: that is zsh, the default shell on a Mac. Run `echo 'setopt interactivecomments' >> ~/.zshrc` once. Commands copied from websites often end with a note after a `#`, and this setting makes zsh skip such notes the way Linux terminals do (it takes effect in new Terminal windows).
   - **Windows (WSL2):** install WSL once (if WSL is already installed, skip to the note after step 4):
     1. Right-click the Start button and choose **Terminal (Admin)** (or search for PowerShell and choose **Run as administrator**), then run `wsl --install`.
     2. If it ends by saying the changes will not be effective until the system is rebooted, restart the PC, open an administrator window the same way and run `wsl --install` again. This time it downloads Ubuntu and starts it in that window. (If Ubuntu starts straight away the first time, skip the restart. A "Welcome to Windows Subsystem for Linux" window may also open; it can be closed.)
@@ -309,7 +309,6 @@ Nothing needs to be installed in advance. Installing things is Project 1.
 - **Read error messages from the bottom up.** The last line usually names the real problem. For example, `ModuleNotFoundError: No module named 'numpy'` means the package is missing *in the Python that is running*.
 - **"Module not found" almost always means the venv is not active.** Look for `(.venv)` at the start of the prompt. If it is missing, run `source .venv/bin/activate` from the repo root.
 - **"Command not found" means the terminal cannot find the program.** Either the program is not installed, or it was installed after this terminal window opened and a new window is needed.
-- **A command in a later lesson fails on one system only?** A few later lessons still assume Windows with WSL. Some download files with `wget`, which Macs do not have (use `curl -L -o FILE URL` instead), and some copy from a Windows folder under `/mnt/c/...` (use a folder on the local computer instead). An AI assistant can suggest the equivalent command for other systems.
 - **Print things.** When code misbehaves, add `print(...)` lines to show what values the variables really hold.
 - **Ask an AI assistant for a hint, not a solution.** Paste the error and ask "what does this mean?", never "write this for me". Working through the problem is where the learning happens.
 - **Type all project code by hand.** Copying commands such as `pip install ...` is fine, but pasting in project code or finished solutions defeats the purpose of the curriculum.

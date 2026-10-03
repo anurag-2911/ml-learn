@@ -115,7 +115,7 @@ Also create a free account at [huggingface.co](https://huggingface.co) — you n
 **Milestones**
 
 - [ ] Merge or export. A LoRA adapter is a patch on top of the base model; to serve it simply, merge it into the base weights (PEFT's `merge_and_unload`, or Unsloth's save/export helpers, which can write GGUF directly — GGUF is the quantized single-file format that CPU-friendly runtimes use). Checkpoint: you have either a merged model folder or a `.gguf` file.
-- [ ] Route A — Ollama (recommended: your lesson-35 friend). If you do not have Ollama yet, install it with the one-line installer from [ollama.com/download](https://ollama.com/download), shown below. On **macOS** (Ollama needs macOS 14 or later), it may ask for your password to add the `ollama` command. On **Windows (WSL2)** and **Linux**, first run `sudo apt install -y zstd` (on other distributions, install zstd with your package manager), because the installer needs zstd to unpack Ollama; on Windows, run both in Ubuntu, not the PowerShell command ollama.com offers for Windows:
+- [ ] Route A — Ollama (recommended: your lesson-34 friend). If you do not have Ollama yet, install it with the one-line installer from [ollama.com/download](https://ollama.com/download), shown below. On **macOS** (Ollama needs macOS 14 or later), it may ask for your password to add the `ollama` command. On **Windows (WSL2)** and **Linux**, first run `sudo apt install -y zstd` (on other distributions, install zstd with your package manager), because the installer needs zstd to unpack Ollama; on Windows, run both in Ubuntu, not the PowerShell command ollama.com offers for Windows:
 
   ```bash
   curl -fsSL https://ollama.com/install.sh | sh
@@ -129,7 +129,7 @@ Also create a free account at [huggingface.co](https://huggingface.co) — you n
   ```
 
   Checkpoint: you chat with YOUR model in your terminal, on your machine, no cloud. A quantized 1–4B model runs fine on CPU.
-- [ ] Route B (alternative) — a `transformers` pipeline wrapped in a small Gradio chat UI (Gradio: a Python library that turns a function into a shareable web UI, from lesson 27). Either route counts; do Route A unless it fights you.
+- [ ] Route B (alternative) — a `transformers` pipeline wrapped in a small Gradio chat UI (Gradio: a Python library that turns a function into a shareable web UI, from lesson 27). Either route counts; do Route A unless it fights you. Route B runs on PyTorch, and current PyTorch has no Intel Mac version, so on an Intel Mac use Route A (or run Route B in Google Colab).
 - [ ] Blind taste test. Prepare 10 fresh prompts (not from training OR eval). Generate answers from base and fine-tuned, shuffle which is "A" and which is "B" per prompt, and have a friend pick which output better matches your spec — without knowing which model is which. Record results in `eval/taste_test.md`. Checkpoint: fine-tuned wins ≥7/10.
 - [ ] Write `DECISIONS.md`, your prompt-vs-RAG-vs-fine-tune framework, from experience you now actually have: **prompting** when instructions fit in context and stock behavior is close enough (cheapest, instant); **RAG** when the model needs *knowledge* it doesn't have, especially changing knowledge (lesson 35); **fine-tuning** when you need reliable *style, format or behavior* that prompting can't hold, or want a small local model to do one job well. Include one real task for each and one task where you would combine them. Checkpoint: for any new task, you can answer "which technique and why" in two sentences.
 
