@@ -28,19 +28,19 @@ One expectation to set right now: **fine-tuning a small model changes its style 
 
 Check you can do these (from earlier lessons): call an LLM API and parse its output (lesson 34), build an eval set and judge outputs (lessons 34–35), explain what matrix rank means (lesson 08).
 
-**A note on hardware:** your WSL2 machine will handle dataset building and (later) running the finished model. The *training* itself needs a GPU — you will use Google Colab's free tier (needs a Google account) or a cheap rented GPU (e.g. Runpod, paid). Both are explicitly account-based; there is no way around that for GPU training.
+**A note on hardware:** your own machine will handle dataset building and (later) running the finished model. The *training* itself needs a GPU — you will use Google Colab's free tier (needs a Google account) or a cheap rented GPU (e.g. Runpod, paid). Both are explicitly account-based; there is no way around that for GPU training.
 
-In your repo root on WSL2:
+In your repo root, install `transformers` (it gives you tokenizers and chat templates locally, no GPU needed) and `datasets`, and create your work folder:
 
 ```bash
 cd ~/ml/ml-learn
 source .venv/bin/activate
-pip install transformers datasets   # transformers gives you tokenizers + chat templates locally, no GPU needed
+pip install transformers datasets
 mkdir -p work/36-fine-tuning-open-models
 cd work/36-fine-tuning-open-models
 ```
 
-Also create a free account at [huggingface.co](https://huggingface.co) — you need it to download some models, and it is where the whole open-model world lives. A few families, like Llama, are "gated": you accept a license on the model page *and* your machine must prove who you are, or downloads fail with a 401 "gated repo" error. So create an access token at [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) and run `huggingface-cli login` once on WSL2; for Colab (Project 2), add the same token as a Colab secret named `HF_TOKEN`. Or sidestep gating entirely for your first fine-tune by picking a non-gated family like Qwen. Browse the Hub for 15 minutes: open a few model cards (the README of a model) and find the license section on each.
+Also create a free account at [huggingface.co](https://huggingface.co) — you need it to download some models, and it is where the whole open-model world lives. A few families, like Llama, are "gated": you accept a license on the model page *and* your machine must prove who you are, or downloads fail with a 401 "gated repo" error. So create an access token at [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) and run `hf auth login` once, with the venv active (`hf` came with `transformers`); if it asks how you would like to log in, choose **Paste an access token**, then paste yours. For Colab (Project 2), add the same token as a Colab secret named `HF_TOKEN`. Or sidestep gating entirely for your first fine-tune by picking a non-gated family like Qwen. Browse the Hub for 15 minutes: open a few model cards (the README of a model) and find the license section on each.
 
 ## Project 1 — Dataset craft
 
@@ -115,7 +115,13 @@ Also create a free account at [huggingface.co](https://huggingface.co) — you n
 **Milestones**
 
 - [ ] Merge or export. A LoRA adapter is a patch on top of the base model; to serve it simply, merge it into the base weights (PEFT's `merge_and_unload`, or Unsloth's save/export helpers, which can write GGUF directly — GGUF is the quantized single-file format that CPU-friendly runtimes use). Checkpoint: you have either a merged model folder or a `.gguf` file.
-- [ ] Route A — Ollama (recommended: your lesson-35 friend). Install Ollama on WSL2 from [ollama.com](https://ollama.com), then write a `Modelfile` that points at your GGUF and sets the chat template, and run:
+- [ ] Route A — Ollama (recommended: your lesson-35 friend). If you do not have Ollama yet, install it with the one-line installer from [ollama.com/download](https://ollama.com/download), shown below. On **macOS** (Ollama needs macOS 14 or later), it may ask for your password to add the `ollama` command. On **Windows (WSL2)** and **Linux**, first run `sudo apt install -y zstd` (on other distributions, install zstd with your package manager), because the installer needs zstd to unpack Ollama; on Windows, run both in Ubuntu, not the PowerShell command ollama.com offers for Windows:
+
+  ```bash
+  curl -fsSL https://ollama.com/install.sh | sh
+  ```
+
+  Then write a `Modelfile` that points at your GGUF and sets the chat template, and run:
 
   ```bash
   ollama create my-model -f Modelfile
@@ -129,7 +135,7 @@ Also create a free account at [huggingface.co](https://huggingface.co) — you n
 
 <details><summary>Hints</summary>
 
-- The Modelfile's `TEMPLATE` must match your model family's chat template — Ollama's docs on ollama.com show the syntax, and existing models of the same family (`ollama show <model> --modelfile`) are a working reference to copy from.
+- The Modelfile's `TEMPLATE` must match your model family's chat template — Ollama's docs on ollama.com show the syntax, and existing models of the same family (`ollama show MODEL-NAME --modelfile`) are a working reference to copy from.
 - If Unsloth's GGUF export fights you on Colab, the fallback is: merge to 16-bit, download, and convert with llama.cpp's conversion script (search for "llama.cpp convert hf to gguf").
 - For the taste test, do the shuffling with a 5-line Python script that records the key — do not trust yourself to "remember which was A".
 

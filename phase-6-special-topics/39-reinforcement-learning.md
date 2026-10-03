@@ -30,10 +30,13 @@ You need PyTorch working (lesson 24) and comfort with training loops and loss cu
 ```bash
 cd ~/ml/ml-learn
 source .venv/bin/activate
-pip install "gymnasium[toy-text,classic-control]" torch matplotlib numpy
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install "gymnasium[toy-text,classic-control]" matplotlib numpy
 mkdir -p work/39-reinforcement-learning
 cd work/39-reinforcement-learning
 ```
+
+As in lesson 24, torch comes from PyTorch's own package index; if lesson 24 already installed it (even a GPU build), that line leaves it as it is. That index has no Gymnasium or matplotlib, so the other packages get a plain `pip install` line of their own. On an Intel Mac the torch line fails, because current PyTorch has no Intel Mac version: Projects 1 and 3 need only the second line and run fine on your Mac, but do Project 2, and everything else that uses PyTorch, in Google Colab, as lesson 01 suggested.
 
 **Gymnasium** is the standard library of RL environments (worlds for agents to act in) — the maintained successor of OpenAI Gym. No datasets to download: in RL the agent *generates* its own data by acting. Sanity-check the install:
 
@@ -104,7 +107,7 @@ CartPole: push a cart left or right to keep a pole balanced. Reward is +1 per ti
 - [ ] Write the training step: sample a batch of 64, compute predicted `q_net(s)[a]` and target `r + gamma * max(target_net(s')) * (1 - done)`, take an MSE (or Huber) loss between them, backprop, step. That `(1 - done)` matters: after the episode ends there is no future reward. This is the Bellman update from Project 1 wearing a neural network costume.
 - [ ] Train with epsilon-greedy (decay 1.0 → 0.05 over ~10k steps), Adam with lr around 1e-3, gamma 0.99. Log episode reward. Checkpoint: rewards are noisy and ugly for a while (RL curves are far messier than the supervised loss curves of lesson 25 — this is normal), then climb past 100, then 300.
 - [ ] Track the average over the last 100 episodes; stop when it reaches **475+**. Checkpoint: solved, typically within 300-1000 episodes. Save the weights with `torch.save`.
-- [ ] Victory lap: load the weights and run one episode with `gym.make("CartPole-v1", render_mode="human")` and epsilon=0. On WSL2 with WSLg a window should pop up; if not, use `render_mode="rgb_array"`, collect `env.render()` frames, and save them as PNGs or an animation with matplotlib. Checkpoint: the pole just... stays up, for the full 500 steps. Enjoy this. You taught it that.
+- [ ] Victory lap: load the weights and run one episode with `gym.make("CartPole-v1", render_mode="human")` and epsilon=0. A window should pop up on macOS, on Windows (WSL2 shows it on your Windows desktop through WSLg) and on a Linux desktop; if none appears, or you are working in Google Colab, use `render_mode="rgb_array"`, collect `env.render()` frames, and save them as PNGs or an animation with matplotlib. Checkpoint: the pole just... stays up, for the full 500 steps. Enjoy this. You taught it that.
 
 <details><summary>Hints</summary>
 
@@ -143,7 +146,7 @@ CartPole: push a cart left or right to keep a pole balanced. Reward is +1 per ti
 
 - Solve **8×8 FrozenLake** (64 states) with your Project 1 code — sparser reward, so exploration gets much harder. How do epsilon and episode count have to change?
 - Implement **Double DQN**: select the best next action with the online net but *evaluate* it with the target net (one line changed) — it reduces DQN's systematic overestimation of Q-values. Compare learning curves.
-- Beat **LunarLander-v3** (`pip install "gymnasium[box2d]"`) with your DQN — 8-dimensional state, 4 actions, and much more satisfying to watch land.
+- Beat **LunarLander-v3** (`pip install "gymnasium[box2d]"`) with your DQN — 8-dimensional state, 4 actions, and much more satisfying to watch land. Its physics engine, the Box2D package, installs only on Python 3.13 or older, on a Mac or on a PC with an Intel or AMD (x86_64) processor: on an ARM computer running Linux or WSL2, the install fails with `Failed to build box2d-py`, so try this one in Google Colab.
 - Implement bare-bones **REINFORCE** (policy gradient) on CartPole in ~60 lines and compare it to your DQN: noisier per-episode, but no replay buffer or target network needed.
 
 ## If you get stuck

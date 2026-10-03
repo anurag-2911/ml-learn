@@ -38,7 +38,10 @@ Create your work folder:
 mkdir -p work/07-data-visualization
 ```
 
-**Where will the plots appear?** Work in Jupyter notebooks inside VS Code (as in lesson 06): plots render right under the cell. If you ever plot from a plain `.py` script instead, `plt.show()` may not open a window on WSL2 — save to a file with `plt.savefig("myplot.png")` and open the PNG in VS Code.
+**Where will the plots appear?** Work in Jupyter notebooks inside VS Code (as in lesson 06): plots render right under the cell. If you ever plot from a plain `.py` script instead, what `plt.show()` does depends on your system:
+
+- **macOS:** it opens the chart in a window, and the script waits until you close it.
+- **Windows (WSL2) and Linux:** it opens no window, because the Python 3.13 from lesson 01 comes without tkinter, the toolkit matplotlib uses for windows on Linux. Save to a file with `plt.savefig("myplot.png")` instead and open the PNG in VS Code. If you would rather have windows, install tkinter with `sudo apt install -y python3.13-tk` (on Fedora, `sudo dnf install -y python3.13-tkinter`) and run the script again — on Windows, the window then opens on your Windows desktop.
 
 **Data:** reuse the Titanic CSV you saved at the end of lesson 06's Project 1 (copy it in: `cp work/06-pandas/titanic.csv work/07-data-visualization/`). If you don't have it anymore, seaborn bundles the same data — `sns.load_dataset("titanic")` returns it as a DataFrame (needs internet once). Project 2's weather download is explained inside that project.
 
@@ -118,7 +121,7 @@ mkdir -p work/07-data-visualization
   ```
 
   Checkpoint: `wc -l weather.csv` shows roughly 370 lines.
-- [ ] **Look at the raw file before parsing it** — a habit for life. Open `weather.csv` in VS Code. Notice the real column header row is not line 1: there are metadata lines above it. Load it in a new notebook `02_weather_story.ipynb` with `pd.read_csv("weather.csv", skiprows=N)` (count N yourself), then convert the time column: `df["time"] = pd.to_datetime(df["time"])`. Checkpoint: `df.dtypes` shows `datetime64` for time and `float64` for the temperature columns, and `len(df)` is 365 or 366.
+- [ ] **Look at the raw file before parsing it** — a habit for life. Open `weather.csv` in VS Code. Notice the real column header row is not line 1: there are metadata lines above it. Load it in a new notebook `02_weather_story.ipynb` with `pd.read_csv("weather.csv", skiprows=N)` (count N yourself), then convert the time column: `df["time"] = pd.to_datetime(df["time"])`. The other column names carry their units, like `temperature_2m_max (°C)`; rename them to the short names the code below uses: `df.columns = ["time", "temperature_2m_max", "temperature_2m_min", "precipitation_sum"]`. Checkpoint: `df.dtypes` shows `datetime64` for time and `float64` for the temperature columns, and `len(df)` is 365 or 366.
 - [ ] **Chart 1 (line):** daily max temperature across the whole year. A *line chart* connects points in time order — the default for anything measured over time: `ax.plot(df["time"], df["temperature_2m_max"])`. Question: "What did the year feel like?" Checkpoint: a broad seasonal wave — a hill or valley shape depending on hemisphere, not random noise.
 - [ ] **Chart 2 (line, two series):** max and min temperature on the same axes — call `ax.plot` twice with `label="max"` / `label="min"`, then `ax.legend()`. Question: "How big is the daily swing, and does it change with season?"
 - [ ] **Chart 3 (bar):** average max temperature per month. Make a month column (`df["time"].dt.month`), then `groupby("month")` and `.mean()` — the lesson 06 split-apply-combine move feeding a chart. Checkpoint: 12 bars with a clear seasonal shape (for most non-equatorial cities, warmest and coldest months differ by 10 °C or more).
@@ -169,7 +172,7 @@ mkdir -p work/07-data-visualization
 
 ## If you get stuck
 
-- **Blank or missing plot?** In notebooks, the plot renders when the cell ends — make the plotting calls the last thing in the cell. From a `.py` script on WSL2, don't fight `plt.show()`: `savefig` to PNG and open it in VS Code.
+- **Blank or missing plot?** In notebooks, the plot renders when the cell ends — make the plotting calls the last thing in the cell. From a `.py` script, `plt.show()` opens a window on macOS, but on Windows (WSL2) and Linux it opens none unless you installed tkinter (see Before you start), and may warn `FigureCanvasAgg is non-interactive, and thus cannot be shown`. There, don't fight `plt.show()`: `savefig` to PNG and open it in VS Code.
 - **Two charts on top of each other?** You reused an axes. One `fig, ax = plt.subplots()` per chart.
 - **A mysterious `Text(0.5, ...)` line under your plot** is just the return value of the last call, not an error — ignore it or end the cell with `plt.show()`.
 - **Seaborn errors about a column** usually mean a name mismatch — print `df.columns` and check spelling and case (your Titanic columns are all lowercase: `age`, not `Age`; a Titanic CSV from Kaggle capitalizes them).

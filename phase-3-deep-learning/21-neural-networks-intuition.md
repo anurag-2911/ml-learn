@@ -29,11 +29,11 @@ No dataset downloads this week: XOR is four rows you type yourself, and `make_mo
 ```bash
 cd ~/ml/ml-learn
 source .venv/bin/activate
-pip install numpy matplotlib scikit-learn   # all likely installed already; this just confirms
+pip install numpy matplotlib scikit-learn
 mkdir -p work/21-neural-networks-intuition
 ```
 
-Do all your coding in `work/21-neural-networks-intuition/`.
+All three packages are likely installed already — the `pip install` line just confirms it. Do all your coding in `work/21-neural-networks-intuition/`.
 
 ## Project 1 — Perceptron from scratch
 
@@ -115,7 +115,13 @@ Spend one focused hour in TensorFlow Playground — a neural network you drive f
 
 - [ ] Open https://playground.tensorflow.org. Choose the **spiral** dataset (bottom-left of the four data thumbnails), keep only the raw `X1` and `X2` features, and use the minus button to remove *all* hidden layers. Press play. Checkpoint: test loss plateaus around 0.4-0.5 and the background is split by one straight line — your Project 1 wall, live on screen.
 - [ ] Add one hidden layer of 4 neurons with `tanh` activation and retrain. Hover over each hidden neuron: its thumbnail shows the feature it has learned. Checkpoint: each hidden neuron shows a simple stripe-like pattern, and the output stitches those stripes into something spiral-ish but still failing — you can watch a hidden layer inventing features, just like your hand-built OR and AND.
-- [ ] Grow the network until the spiral falls: try 2 hidden layers of 8 neurons each with ReLU (**ReLU** is the activation `max(0, x)` — a hinge that is the modern default because it trains fast). Let it run a few hundred epochs. Checkpoint: test loss below about 0.05 and the orange/blue background wraps the spiral correctly. Take a screenshot (on Windows: Win+Shift+S) and save it into `work/21-neural-networks-intuition/`.
+- [ ] Grow the network until the spiral falls: try 2 hidden layers of 8 neurons each with ReLU (**ReLU** is the activation `max(0, x)` — a hinge that is the modern default because it trains fast). Let it run a few hundred epochs. Checkpoint: test loss below about 0.05 and the orange/blue background wraps the spiral correctly. Take a screenshot:
+
+  - **macOS:** press Cmd+Shift+4 and drag a box around the playground; the screenshot is saved on your Desktop.
+  - **Windows (WSL2):** press Win+Shift+S and drag a box around the playground; Windows 11 saves the screenshot in Pictures → Screenshots (on Windows 10, click the notification that pops up and save the snip from the window that opens).
+  - **Linux:** on Ubuntu, press the Print Screen key (PrtSc), drag a box around the playground and press Enter; the screenshot is saved in `~/Pictures/Screenshots`.
+
+  Then save it into `work/21-neural-networks-intuition/`: run `cd ~/ml/ml-learn/work/21-neural-networks-intuition`, open that folder in your file manager — `open .` on macOS, `explorer.exe .` on Windows (WSL2), `xdg-open .` on Linux — and drag the screenshot in.
 - [ ] Learning-rate torture test on the same setup: set the learning rate to 3 and retrain — Checkpoint: loss spikes and bounces instead of settling. Set it to 0.001 — training crawls. Back to 0.03 — smooth descent. This is lesson 09's step-size lesson, now visible as animation.
 - [ ] ReLU vs tanh, same architecture, spiral data: retrain with each and compare the final boundary texture and how many epochs each takes. Checkpoint: the ReLU boundary is made of straight facets, tanh's is smooth and rounded.
 

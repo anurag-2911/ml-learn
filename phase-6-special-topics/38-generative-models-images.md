@@ -29,10 +29,13 @@ Check you can run PyTorch from lesson 24, then install this lesson's extras insi
 ```bash
 cd ~/ml/ml-learn
 source .venv/bin/activate
-pip install torch torchvision matplotlib imageio scikit-learn
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+pip install matplotlib imageio scikit-learn
 mkdir -p work/38-generative-models
 cd work/38-generative-models
 ```
+
+As in lesson 24, torch and torchvision come from PyTorch's own package index — if lesson 24 already installed them (even a GPU build), that line leaves them as they are. That index carries no matplotlib, imageio or scikit-learn, so they get a plain `pip install` line of their own. Current PyTorch has no Intel Mac version, so on an Intel Mac do this lesson in a free Google Colab notebook, as lesson 01 suggested.
 
 No dataset downloads needed by hand — `torchvision` fetches MNIST and FashionMNIST itself (no account, ~12 MB each). Test it:
 

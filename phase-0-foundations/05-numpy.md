@@ -43,11 +43,7 @@ mkdir -p work/05-numpy
 cd work/05-numpy
 ```
 
-You also need one photo for Project 1 — any JPEG of yours works (a pet, a meal, a holiday shot; ideally at least 500×500 pixels). On WSL2 you can copy one straight from Windows:
-
-```bash
-cp /mnt/c/Users/<YourWindowsUsername>/Pictures/<some-photo>.jpg photo.jpg
-```
+You also need one photo for Project 1 — any JPEG of yours works (a pet, a meal, a holiday shot; ideally at least 500×500 pixels). Put it in this folder as `photo.jpg`. To drag one in, open the folder in your file manager: `open .` on macOS, `explorer.exe .` on Windows (WSL2), `xdg-open .` on Linux. Or copy it in the terminal: on macOS and Linux, `cp ~/Pictures/YOUR-PHOTO.jpg photo.jpg`; on Windows (WSL2) your Windows files are under `/mnt/c/Users/`, so `cp /mnt/c/Users/YOUR-WINDOWS-NAME/Pictures/YOUR-PHOTO.jpg photo.jpg`.
 
 Finally, spend 30–60 minutes skimming the [NumPy absolute beginners guide](https://numpy.org/doc/stable/user/absolute_beginners.html) with a Python prompt open, typing every example. Skim now, refer back all week.
 
@@ -168,7 +164,7 @@ The rules (from mathematician John Conway, 1970): a live cell with 2 or 3 live n
 - The padded-slice trick, half-revealed: with `p = np.pad(grid, 1)`, the "north-west neighbor" of every cell is `p[:-2, :-2]`, and `p[1:-1, 1:-1]` is the grid itself. Work out the other 7 slices on paper by drawing a 4×4 grid and its 6×6 padded version. Sum the 8 shifted slices, not the center.
 - Wrong neighbor counts? Print shapes first — every one of the 8 slices must be exactly `grid.shape`. Then test on the single-live-cell 4×4 grid where you can check by hand.
 - Blinker stuck or exploding? Classic cause: updating the grid in place while still reading it. Build the new grid entirely from the old one.
-- Prefer graphics over terminal art? `matplotlib.pyplot.imshow(grid)` draws the grid as an image; call `plt.pause(0.1)` between generations.
+- Prefer graphics over terminal art? `matplotlib.pyplot.imshow(grid)` draws the grid as an image; call `plt.pause(0.1)` between generations. On macOS a window opens straight away; on Windows (WSL2) and Linux none opens until you install tkinter, the toolkit matplotlib uses for windows there: `sudo apt install -y python3.13-tk`.
 
 </details>
 

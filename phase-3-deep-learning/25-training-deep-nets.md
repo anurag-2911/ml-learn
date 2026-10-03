@@ -31,7 +31,14 @@
    python3 -c "import torch, torchvision, matplotlib; print(torch.__version__)"
    ```
 
-   If that import fails, install inside the venv: `pip install torch torchvision matplotlib`.
+   If that import fails, install inside the venv — torch and torchvision from PyTorch's own package index, as in lesson 24, and matplotlib with a separate command, because that index does not carry it:
+
+   ```bash
+   pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+   pip install matplotlib
+   ```
+
+   On an Intel Mac, current PyTorch cannot be installed at all, so do this lesson in a free Google Colab notebook, as lesson 01 suggested.
 
 2. Download FashionMNIST (grayscale 28×28 images of clothing — a drop-in replacement for MNIST, no account needed):
 
@@ -43,7 +50,7 @@
 
    ```bash
    mkdir -p work/25-training-deep-nets
-   wget https://raw.githubusercontent.com/karpathy/makemore/master/names.txt -P work/25-training-deep-nets/
+   curl -L --create-dirs -o work/25-training-deep-nets/names.txt https://raw.githubusercontent.com/karpathy/makemore/master/names.txt
    ```
 
 4. A heads-up for Project 1: makemore Part 3 continues code built in makemore Parts 1-2, which this curriculum covers later ([lesson 28](../phase-4-nlp-transformers/28-language-models-makemore.md)). You do *not* need those videos first — the first ~15 minutes of Part 3 walk through the complete starter code: loading `names.txt`, building the character vocabulary (`stoi`/`itos`), the context windows, the embedding table `C`, and the train/dev/test split. Pause there and type *all* of it, not just the new material — every checkpoint in Project 1 depends on it.

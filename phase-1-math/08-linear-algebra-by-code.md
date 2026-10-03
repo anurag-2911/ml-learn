@@ -28,12 +28,12 @@ Check you can do these from earlier lessons: write a class with `__init__` and m
 ```bash
 cd ~/ml/ml-learn
 source .venv/bin/activate
-pip install numpy matplotlib   # probably already installed from phase 0
+pip install numpy matplotlib
 mkdir -p work/08-linear-algebra-by-code
 cd work/08-linear-algebra-by-code
 ```
 
-No datasets needed — you will generate everything yourself.
+NumPy and matplotlib are probably already installed from phase 0, in which case pip just reports "Requirement already satisfied". No datasets needed — you will generate everything yourself.
 
 **Companion videos:** watch 3Blue1Brown's *Essence of Linear Algebra* alongside the projects, not before them. Suggested pairing: episodes on vectors and the dot product with Project 1, episodes on linear transformations, matrix multiplication and inverses with Project 2, and the eigenvectors episode after Project 2's last milestone. Build first, then watch the episode — you will feel the "ohhh, that's what I coded" click.
 

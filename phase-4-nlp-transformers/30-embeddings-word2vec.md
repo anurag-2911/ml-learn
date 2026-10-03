@@ -24,29 +24,31 @@
 
 Check you can do these (all from earlier lessons): train a small PyTorch model with a manual training loop (24), explain what `nn.Embedding` does mechanically (28), compute cosine similarity from a dot product (08), and run your own PCA (18).
 
-Activate the venv and install what's new:
+Activate the venv and install what's new — torch, numpy and matplotlib are already installed from earlier lessons:
 
 ```bash
 cd ~/ml/ml-learn
 source .venv/bin/activate
-pip install gensim tqdm        # torch, numpy, matplotlib already installed
+pip install gensim tqdm
 ```
 
-If `pip install gensim` errors (it pins an older NumPy and can lag the newest Python releases, so on a very fresh setup it may try — and fail — to build from source), don't fight it: skip the install and use the no-gensim fallback in Project 3's hints instead. The fallback path is equivalent — everything the project does still works.
+If `pip install gensim` errors (gensim has ready-made packages for Python up to 3.13, the version this curriculum uses, but none yet for 3.14 or newer, where pip tries — and fails — to build it from source; `python --version` shows which Python your venv has), don't fight it: run `pip install tqdm` on its own (the failed command installed nothing), skip gensim, and use the no-gensim fallback in Project 3's hints instead. The fallback path is equivalent — everything the project does still works.
+
+Current PyTorch has no Intel Mac version, so on an Intel Mac do this lesson in a free Google Colab notebook, as lesson 01 suggested.
 
 Download a corpus — three classic novels from Project Gutenberg (free, no account needed):
 
 ```bash
 mkdir -p data/gutenberg work/30-embeddings-word2vec
 cd data/gutenberg
-wget -O pride.txt    https://www.gutenberg.org/cache/epub/1342/pg1342.txt
-wget -O moby.txt     https://www.gutenberg.org/cache/epub/2701/pg2701.txt
-wget -O sherlock.txt https://www.gutenberg.org/cache/epub/1661/pg1661.txt
+curl -L -o pride.txt    https://www.gutenberg.org/cache/epub/1342/pg1342.txt
+curl -L -o moby.txt     https://www.gutenberg.org/cache/epub/2701/pg2701.txt
+curl -L -o sherlock.txt https://www.gutenberg.org/cache/epub/1661/pg1661.txt
 cat pride.txt moby.txt sherlock.txt > corpus.txt
-wc -w corpus.txt     # expect roughly 450,000-500,000 words
+wc -w corpus.txt
 ```
 
-If any link 404s, go to gutenberg.org, search the title (*Pride and Prejudice*, *Moby-Dick*, *The Adventures of Sherlock Holmes*), and copy the "Plain Text UTF-8" link instead. All your code for this lesson goes in `work/30-embeddings-word2vec/`.
+`wc -w` counts the words in the combined file: expect roughly 450,000-500,000. If any link 404s, `curl` quietly saves a short error page instead of the book, and the count comes out far too low (`wc -w *.txt` shows which file is tiny). In that case go to gutenberg.org, search the title (*Pride and Prejudice*, *Moby-Dick*, *The Adventures of Sherlock Holmes*), and copy its "Plain Text" link (under "Other formats & older devices") instead. All your code for this lesson goes in `work/30-embeddings-word2vec/`.
 
 ## Project 1 — word2vec from scratch
 

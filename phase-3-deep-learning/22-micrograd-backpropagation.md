@@ -31,10 +31,9 @@ source .venv/bin/activate
 pip install numpy matplotlib scikit-learn
 ```
 
-- Optional but nice: `graphviz` lets you draw the computational graph like Karpathy does in the video. Skip it if it gives you trouble — it is cosmetic.
+- Optional but nice: `graphviz` lets you draw the computational graph like Karpathy does in the video. Skip it if it gives you trouble — it is cosmetic. It comes in two parts: the Graphviz program, which does the drawing, and a Python package that talks to it. Install the program first. **macOS:** on an Apple Silicon Mac with Homebrew, run `brew install graphviz`; Macs without Homebrew (Intel Macs, and macOS 14 or older) skip graphviz altogether — nothing else in this lesson needs it. **Windows (WSL2) and Linux:** run `sudo apt install -y graphviz` (on Fedora, `sudo dnf install -y graphviz`). Then install the Python package:
 
 ```bash
-sudo apt install graphviz
 pip install graphviz
 ```
 

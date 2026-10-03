@@ -19,7 +19,7 @@
 - **Optimizers** (`SGD`, `Adam`) and why you must call `zero_grad()` every step.
 - The canonical five-line PyTorch training loop that appears in essentially every deep learning codebase.
 - Saving and loading models with `state_dict` — a dictionary of all learned weights.
-- Running on a GPU with `.to(device)`, and free GPU options when your laptop has none.
+- Running on a GPU with `.to(device)` (`cuda` for NVIDIA cards, `mps` for Apple Silicon Macs), and free GPU options when your laptop has none.
 
 ## Your secret decoder table
 
@@ -41,7 +41,7 @@ Everything here is a renamed version of something you built. Keep this table ope
 
 You need lessons 22 and 23 finished — this lesson only makes sense if you have felt the pain it removes. Keep your micrograd code and your NumPy MNIST script nearby; you will compare against both.
 
-Activate your venv at the repo root and install PyTorch. On WSL2 without an NVIDIA GPU, install the smaller CPU-only build:
+Activate your venv at the repo root and install PyTorch. On **macOS**, the command below installs the regular Mac build, which can also use an Apple Silicon Mac's built-in GPU — but current PyTorch does not install on Intel Macs at all, so on an Intel Mac do this lesson in a free [Google Colab](https://colab.research.google.com) notebook instead, as lesson 01 suggested (PyTorch comes preinstalled there). On **Windows (WSL2)** and **Linux** without an NVIDIA GPU, the same command installs the smaller CPU-only build:
 
 ```bash
 cd ~/ml/ml-learn
@@ -49,13 +49,13 @@ source .venv/bin/activate
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 ```
 
-If you do have an NVIDIA GPU set up in WSL2, get the right command from the "Get Started" selector on [pytorch.org](https://pytorch.org) instead. Either way, verify:
+If you do have an NVIDIA GPU set up in WSL2 or on Linux, get the right command from the "Get Started" selector on [pytorch.org](https://pytorch.org) instead. Either way, verify:
 
 ```bash
-python3 -c "import torch; print(torch.__version__, torch.cuda.is_available())"
+python -c "import torch; print(torch.__version__, torch.cuda.is_available(), torch.backends.mps.is_available())"
 ```
 
-CPU is completely fine for this whole lesson — MNIST is small. When later lessons need more muscle, Google Colab and Kaggle notebooks (kaggle.com, account required) give you free GPU time in the browser.
+It prints the version, then `True` or `False` for an NVIDIA GPU (`cuda`) and for an Apple Silicon Mac's GPU (`mps`, macOS 14 or newer). CPU is completely fine for this whole lesson — MNIST is small. When later lessons need more muscle, Google Colab and Kaggle notebooks (kaggle.com, account required) give you free GPU time in the browser.
 
 Create your work folder:
 
@@ -112,8 +112,8 @@ mkdir -p work/24-pytorch-fundamentals && cd work/24-pytorch-fundamentals
 - [ ] Now the real thing: train on the full training set for 5 epochs (an epoch is one full pass through the data), printing average loss per epoch. Checkpoint: first-batch loss starts near 2.3 (that is −ln(1/10), a random 10-way guess — you learned this in lesson 23) and epoch loss falls below 0.1.
 - [ ] Write an evaluation pass over the test loader inside `with torch.no_grad():`, using `model.eval()` first. Take the arg-max of the 10 scores as the prediction and compute accuracy. Checkpoint: test accuracy ≥ 0.97 — matching or beating your NumPy network, in far less code and time.
 - [ ] Save the trained weights: `torch.save(model.state_dict(), "mnist.pt")`. A `state_dict` is a plain dictionary mapping parameter names to tensors — print its keys to see.
-- [ ] In a separate script `predict.py`, rebuild the same architecture, load the weights with `model.load_state_dict(torch.load("mnist.pt"))`, and predict 8 test images, showing each image with its predicted and true label using matplotlib. Checkpoint: predictions from the reloaded model — most or all 8 correct.
-- [ ] Add device support at the top: `device = "cuda" if torch.cuda.is_available() else "cpu"`, then `model.to(device)` and move each batch with `images.to(device)`. On CPU it changes nothing; the point is your script is now GPU-ready for free — paste it into a Colab or Kaggle GPU notebook and it speeds up with zero edits.
+- [ ] In a separate script `predict.py`, rebuild the same architecture, load the weights with `model.load_state_dict(torch.load("mnist.pt"))`, and predict 8 test images, showing each image with its predicted and true label in a matplotlib figure saved as `predictions.png` (lesson 07). Checkpoint: predictions from the reloaded model — most or all 8 correct.
+- [ ] Add device support at the top: `device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"`, then `model.to(device)` and move each batch with `images, labels = images.to(device), labels.to(device)`. `cuda` means an NVIDIA GPU and `mps` an Apple Silicon Mac's built-in GPU. On CPU it changes nothing; the point is your script is now GPU-ready for free — paste it into a Colab or Kaggle GPU notebook and it speeds up with zero edits.
 
 <details><summary>Hints</summary>
 
@@ -167,7 +167,7 @@ mkdir -p work/24-pytorch-fundamentals && cd work/24-pytorch-fundamentals
 
 - Write a custom `Dataset` class (implement `__len__` and `__getitem__`) that serves MNIST from the raw files you used in lesson 23, and confirm `DataLoader` happily consumes it.
 - Race SGD vs Adam: same model, 5 epochs each, both loss curves on one plot. Which wins on MNIST, and by how much?
-- Upload your script to a free GPU notebook (Colab, or kaggle.com with an account) and time one epoch on GPU vs your CPU. Feel the speedup you will lean on from lesson 26 onward.
+- Upload your script to a free GPU notebook (Colab, or kaggle.com with an account) and time one epoch on GPU vs your CPU (on an Apple Silicon Mac, set `device = "cpu"` by hand for that run, and time `"mps"` too). Feel the speedup you will lean on from lesson 26 onward.
 - Rewrite the model as an explicit `nn.Module` subclass with `__init__` and `forward()` instead of `nn.Sequential` — the form you will need once architectures stop being straight lines.
 
 ## If you get stuck

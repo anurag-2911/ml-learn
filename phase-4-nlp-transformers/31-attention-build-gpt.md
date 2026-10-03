@@ -25,10 +25,12 @@
 
 Check prerequisites honestly: you should have finished lesson 25 (you know what residuals and layernorm are *for*), lesson 28 (you have trained a character-level language model and know what "loss ≈ 2.5" feels like), and lesson 29 (you have an LSTM whose loss you wrote down — you will need that number).
 
+Activate the venv from lesson 01, check that PyTorch (installed in lesson 24) imports and prints its version, and create your work folder:
+
 ```bash
 cd ~/ml/ml-learn
-source .venv/bin/activate          # the venv from lesson 01
-python3 -c "import torch; print(torch.__version__)"   # installed in lesson 24
+source .venv/bin/activate
+python -c "import torch; print(torch.__version__)"
 mkdir -p work/31-attention-build-gpt
 cd work/31-attention-build-gpt
 ```
@@ -36,17 +38,17 @@ cd work/31-attention-build-gpt
 Get the data — reuse the tiny Shakespeare file from lesson 29:
 
 ```bash
-cp ../29-rnn-lstm/input.txt .    # ~1.1 MB of Shakespeare
-wc -c input.txt                  # should print about 1115394
+cp ../29-rnn-lstm/input.txt .
+wc -c input.txt
 ```
 
-If you no longer have it, download it again the same way lesson 29 did:
+`wc -c` counts the file's bytes and should print about 1115394 — roughly 1.1 MB of Shakespeare. If you no longer have the file, download it again the same way lesson 29 did:
 
 ```bash
-wget -O input.txt https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt
+curl -L -o input.txt https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt
 ```
 
-**A note on hardware:** the final scaled-up model in the video trains on a GPU. On a CPU-only WSL2 machine, everything up to the scale-up step runs fine in minutes; for the big config either shrink it (instructions in Project 2) or use a free cloud GPU (search for "Google Colab" — upload your `gpt.py` and `input.txt` there).
+**A note on hardware:** the final scaled-up model in the video trains on a GPU. On a CPU-only computer, everything up to the scale-up step runs fine in minutes; for the big config either shrink it (instructions in Project 2) or use a free cloud GPU (search for "Google Colab" — upload your `gpt.py` and `input.txt` there). An Apple Silicon Mac on macOS 14 or later can also speed training up on its built-in GPU, which PyTorch calls the `mps` device. To use it, where the video's code sets `device`, type `device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"` instead — it picks an NVIDIA GPU if there is one, else a Mac's GPU, else the CPU, so the same script runs on any computer. On an Intel Mac the `import torch` check above fails, because current PyTorch cannot be installed there at all: do Projects 2 and 3 in Colab (Project 1 needs only NumPy).
 
 ## Project 1 — Attention on paper first
 

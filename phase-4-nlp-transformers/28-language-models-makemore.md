@@ -29,18 +29,23 @@ Everything runs on CPU in seconds — no GPU needed. From the repo root, in your
 
 ```bash
 source .venv/bin/activate
-pip install torch matplotlib jupyter   # all likely installed already; this is a no-op then
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install matplotlib jupyter
 ```
+
+All of these are likely installed already; if so, both lines are a no-op. PyTorch has a line of its own because the package index it comes from, the same as in lesson 24, does not carry matplotlib or jupyter (if you installed a GPU build in lesson 24, that line leaves it in place). Current PyTorch has no Intel Mac version, so on an Intel Mac do this lesson in Google Colab, as lesson 01 suggested.
 
 Create your work folder and download the dataset (32,000 real names, one per line, no account needed):
 
 ```bash
 mkdir -p work/28-language-models-makemore
 cd work/28-language-models-makemore
-wget https://raw.githubusercontent.com/karpathy/makemore/master/names.txt
-wc -l names.txt    # should print 32033
-head names.txt     # emma, olivia, ava, ...
+curl -L -O https://raw.githubusercontent.com/karpathy/makemore/master/names.txt
+wc -l names.txt
+head names.txt
 ```
+
+`wc -l` should print 32032 — it counts line breaks, and the last name has none after it, but Python will still find all 32,033 names. `head` shows the first ten: emma, olivia, ava, ...
 
 You will follow makemore Parts 1 and 2 from the [Karpathy playlist](https://www.youtube.com/playlist?list=PLAqhIrjkxbuWI23v9cThsA9GvCAUhRvKZ). House rule, same as lesson 22: **type every line yourself, pause the video constantly, never paste.** Work in a Jupyter notebook (`jupyter notebook` from your work folder) so you can inspect tensors as you go.
 

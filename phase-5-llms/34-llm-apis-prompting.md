@@ -39,14 +39,13 @@ mkdir -p work/34-llm-apis-prompting && cd work/34-llm-apis-prompting
 
 - **Claude API** — sign up at [https://docs.claude.com](https://docs.claude.com) (the docs link to the Console where you create an API key). Check the current trial/credit policy when you sign up — if there are no free credits and you don't want to pay a few dollars, do the whole lesson on the Ollama path below. Even paid, this whole lesson costs very little.
 - **OpenAI API** — same idea, docs at [https://platform.openai.com/docs](https://platform.openai.com/docs).
-- **Fully local and free** — install [Ollama](https://ollama.com) and it serves open models on your own machine at `http://localhost:11434`, no key, no cost. Slower and weaker than frontier models, but everything in this lesson works with it. This is the zero-cost path.
+- **Fully local and free** — install [Ollama](https://ollama.com) and it serves open models on your own machine at `http://localhost:11434`, no key, no cost. Slower and weaker than frontier models, but everything in this lesson works with it. This is the zero-cost path. On **macOS**, Ollama needs macOS 14 or later. On **Windows (WSL2)** and **Linux**, run `sudo apt install -y zstd` and then the install command on [ollama.com/download/linux](https://ollama.com/download/linux), which needs zstd to unpack Ollama; on Windows, run both inside Ubuntu instead of installing the Windows version: your code runs in WSL, which by default cannot reach Windows programs at `localhost`.
 
 **Which model?** Model names and prices change every few months, so this lesson never hardcodes them. Open your provider's docs, find the current model list, and pick a small/cheap one for experimenting. Put the name in your `.env` (below) so your code never contains it either.
 
-**Set up your secrets.** An API key is a password for your account — anyone who has it can spend your money. It goes in a `.env` file (a plain text file of `NAME=value` lines that stays on your machine), never in code, never in git:
+**Set up your secrets.** An API key is a password for your account — anyone who has it can spend your money. It goes in a `.env` file (a plain text file of `NAME=value` lines that stays on your machine), never in code, never in git. Run this in your lesson folder, `work/34-llm-apis-prompting/`:
 
 ```bash
-# in work/34-llm-apis-prompting/
 cat > .env << 'EOF'
 ANTHROPIC_API_KEY=paste-your-key-here
 MODEL=paste-a-current-model-name-from-the-docs
@@ -84,7 +83,7 @@ Checkpoint: you get a greeting back and a usage line showing input and output to
 **Milestones**
 
 - [ ] Understand the three message roles by experimenting in a scratch script. A conversation is a list of dicts: `{"role": "user", ...}` is you, `{"role": "assistant", ...}` is the model's previous replies, and the **system prompt** (a separate `system=` parameter in Claude's API) is standing instructions the model treats as its job description. Send the same question with two different system prompts ("You are a pirate" vs "You answer in one word"). Checkpoint: same question, visibly different behavior — that is the system prompt working.
-- [ ] Prove the API is **stateless**: send "My name is Anurag", then in a *separate* call send "What is my name?". The model has no idea. Now send the second call *with the first exchange included in the messages list*. Checkpoint: it knows your name only when you resend the history — memory is your job, not the API's.
+- [ ] Prove the API is **stateless**: send "My name is YOUR-NAME" (with your own name), then in a *separate* call send "What is my name?". The model has no idea. Now send the second call *with the first exchange included in the messages list*. Checkpoint: it knows your name only when you resend the history — memory is your job, not the API's.
 - [ ] Build the core loop of `chat.py`: read user input with `input()`, append it to a `messages` list, call the API, print the reply, append the reply as an `{"role": "assistant", ...}` message. Type `quit` to exit. Checkpoint: a multi-turn conversation where the model remembers earlier turns.
 - [ ] Add **streaming** — receiving the reply word-by-word as it is generated instead of waiting for the whole thing. Use the SDK's streaming helper:
 

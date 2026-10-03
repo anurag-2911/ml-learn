@@ -25,19 +25,20 @@
 
 Check you can do the following (all from earlier lessons): train a PyTorch model with a training loop, DataLoader, and the overfit-one-batch trick (lessons 24–25); write NumPy code with slicing and broadcasting (lesson 5).
 
+Then activate the venv you made in lesson 01, install this lesson's packages and create your work folder:
+
 ```bash
 cd ~/ml/ml-learn
-source .venv/bin/activate        # the venv you made in lesson 01
-pip install torch torchvision matplotlib pillow numpy
+source .venv/bin/activate
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+pip install matplotlib pillow numpy
 mkdir -p work/26-cnns-computer-vision
 cd work/26-cnns-computer-vision
 ```
 
-**Get a photo for Project 1.** Any photo with clear shapes works — one of your own is more fun. From WSL2 you can grab one straight from Windows:
+As in lesson 24, torch and torchvision come from PyTorch's own package index; if lesson 24 already installed them (even a GPU build), that line leaves them as they are. That index has no matplotlib, so the other packages get a plain `pip install` line of their own. On an Intel Mac the torch line fails, because current PyTorch has no Intel Mac version: do Project 1 on your Mac and Projects 2 and 3 in Google Colab (see **Free GPU** below).
 
-```bash
-cp /mnt/c/Users/<YourWindowsUser>/Pictures/some-photo.jpg ./photo.jpg
-```
+**Get a photo for Project 1.** Any photo with clear shapes works — one of your own is more fun. Put it in this folder, `work/26-cnns-computer-vision`, as `photo.jpg`. To drag one in, open the folder in your file manager: `open .` on macOS, `explorer.exe .` on Windows (WSL2), `xdg-open .` on Linux. Or copy it in the terminal: on macOS and Linux, `cp ~/Pictures/YOUR-PHOTO.jpg photo.jpg`; on Windows (WSL2) your Windows files are under `/mnt/c/Users/`, so `cp /mnt/c/Users/YOUR-WINDOWS-NAME/Pictures/YOUR-PHOTO.jpg photo.jpg`.
 
 **CIFAR-10** (60,000 tiny 32×32 photos in 10 classes: plane, car, bird, cat, deer, dog, frog, horse, ship, truck) downloads automatically via `torchvision.datasets.CIFAR10(root="data", download=True)` — no account needed, ~170 MB.
 
@@ -46,7 +47,7 @@ cp /mnt/c/Users/<YourWindowsUser>/Pictures/some-photo.jpg ./photo.jpg
 - **Google Colab** (needs a Google account): go to colab.research.google.com → New notebook → menu *Runtime → Change runtime type → T4 GPU*. Paste your training script into a cell.
 - **Kaggle** (needs a Kaggle account — you'll want one for lesson 20 anyway): kaggle.com → Create → Notebook → right-hand *Settings → Accelerator → GPU*.
 
-In your script, one line makes it portable: `device = "cuda" if torch.cuda.is_available() else "cpu"`, then move the model and each batch with `.to(device)`. Develop locally on CPU with 2–3 epochs; do the real 20–30-epoch run on the GPU.
+In your script, one line makes it portable: `device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"`, then move the model and each batch with `.to(device)`. It picks an NVIDIA GPU (`cuda`, as on Colab and Kaggle), else the built-in GPU of an Apple Silicon Mac (`mps`, macOS 14 or later), else the CPU. Develop locally with 2–3 epochs; do the real 20–30-epoch run on the GPU.
 
 ## Project 1 — Convolution from scratch
 
@@ -130,7 +131,7 @@ In your script, one line makes it portable: `device = "cuda" if torch.cuda.is_av
 
 **Milestones**
 
-- [ ] Reload your trained model (`model.load_state_dict(torch.load("cifar_cnn.pt"))`, then `model.eval()`).
+- [ ] Reload your trained model (`model.load_state_dict(torch.load("cifar_cnn.pt", map_location="cpu"))`, then `model.eval()`). `map_location="cpu"` lets weights saved on a Colab or Kaggle GPU load on a computer without an NVIDIA GPU, such as a Mac.
 - [ ] **Learned filters:** the first conv layer's weights are a tensor of shape `(32, 3, 3, 3)` — 32 learned RGB kernels, direct cousins of your Project 1 kernels. Normalize each to 0–1 and show all 32 in a matplotlib grid. Checkpoint: several filters look like oriented edges or color-contrast blobs — nobody designed them; gradient descent did.
 - [ ] **Feature maps:** run one test image through the network layer by layer and plot a handful of channels after each conv block (grab intermediate outputs by calling the blocks manually, or with a *forward hook* — a function PyTorch calls with a layer's output; search "pytorch forward hook"). Checkpoint: early maps look like edge-detected versions of the image; deeper maps are smaller and increasingly abstract blobs.
 - [ ] **Confusion matrix:** a 10×10 grid where cell (i, j) counts test images of true class i predicted as class j (your lesson-14 metrics library, or `sklearn.metrics.confusion_matrix`). Plot with `plt.imshow` and class-name tick labels. Checkpoint: a bright diagonal, with the biggest off-diagonal glow at cat↔dog — the classic confusion.
@@ -158,7 +159,7 @@ In your script, one line makes it portable: `device = "cuda" if torch.cuda.is_av
 
 - **Read the error bottom-up** — the last lines name the failing operation, and in CNNs it is almost always a shape mismatch.
 - **Print shapes obsessively.** Temporarily add `print(x.shape)` between layers in `forward`. Know the conv arithmetic: output size = `(input + 2*padding - kernel) / stride + 1`.
-- **Trust the ladder:** overfit one batch → short CPU run → full GPU run. Never debug a 30-epoch run; debug a 50-step one.
+- **Trust the ladder:** overfit one batch → short local run → full GPU run. Never debug a 30-epoch run; debug a 50-step one.
 - If training diverges (loss → NaN), your learning rate is too high or normalization is missing.
 - Ask an AI assistant for a **hint**, not a solution ("why might my CNN be stuck at 10% on CIFAR-10?" — and don't paste its code).
 - Type all code yourself. Copy-pasting a CNN teaches nothing; typing one teaches everything.

@@ -23,7 +23,7 @@
 
 ## Before you start
 
-You need the setup from [lesson 01](01-environment-setup.md): WSL2 Ubuntu, VS Code, and the virtual environment (the private Python installation) at the repo root. Nothing new to install this week — plain Python is enough.
+You need the setup from [lesson 01](01-environment-setup.md): your terminal, VS Code, and the virtual environment (the private Python installation) at the repo root. Nothing new to install this week — plain Python is enough.
 
 Open a terminal and run:
 
@@ -31,13 +31,13 @@ Open a terminal and run:
 cd ~/ml/ml-learn
 source .venv/bin/activate
 mkdir -p work/02-python-basics
-cd work/02-python-basics
 code .
+cd work/02-python-basics
 ```
 
-`mkdir -p` creates your work folder for this lesson; `code .` opens it in VS Code. All three game files live in `work/02-python-basics/`.
+`mkdir -p` creates your work folder for this lesson; `code .` opens the whole repo in VS Code — always open the repo root, as in lesson 01, so VS Code can find your venv — and the last line moves your terminal into the work folder. All three game files live in `work/02-python-basics/`; to create one, right-click that folder in VS Code's Explorer panel and choose **New File**.
 
-Quick smoke test — create a file named `hello.py` in VS Code containing exactly one line, `print("hello, world")`, then run it from the terminal:
+Quick smoke test — in VS Code, create a file named `hello.py` in `work/02-python-basics/` containing exactly one line, `print("hello, world")`, then run it from the terminal:
 
 ```bash
 python3 hello.py
@@ -140,13 +140,13 @@ If you see `hello, world`, you are ready. That two-step rhythm — edit the file
 
 - **Read the error from the bottom up.** Python prints a *traceback* when it crashes; the last line names the problem (`NameError`, `TypeError`, …) and the line just above it shows where. The most common first-week errors: `SyntaxError` (often a missing `:` at the end of an `if`/`while`/`def` line), `IndentationError` (spaces at the start of a line do not match), `NameError` (a typo — `atempts` is not `attempts`), and `TypeError` (mixing text and numbers — you forgot `int()` or `float()`).
 - **Print your way to the truth.** Unsure what a variable holds? `print(guess, type(guess))` right before the crashing line. Debugging by printing is a respected professional technique, not a beginner hack.
-- **Loop never ends?** Press `Ctrl+C` to stop the program, then check: does anything inside the loop ever change the loop's condition?
+- **Loop never ends?** Press `Ctrl+C` (the Control key, not Command, even on a Mac) to stop the program, then check: does anything inside the loop ever change the loop's condition?
 - **Ask an AI assistant for a HINT, not a solution.** Say "give me a hint, don't write the code" — a pasted solution today is a debt you repay with interest in lesson 22.
 - **Type all code yourself.** Even the snippets in this file. Muscle memory is real.
 
 ## Resources
 
-- [Automate the Boring Stuff with Python](https://automatetheboringstuff.com/) — free online book; chapters 1–3 cover exactly this lesson's ground with more examples, in the same practical spirit.
+- [Automate the Boring Stuff with Python](https://automatetheboringstuff.com/) — free online book; chapters 1–4 cover exactly this lesson's ground with more examples, in the same practical spirit.
 - [The official Python tutorial](https://docs.python.org/3/tutorial/) — chapters 3 ("An Informal Introduction") and 4 ("More Control Flow Tools") as a second angle on numbers, strings, `if`, loops, and functions.
 - On the same site, the *Library Reference* page for the `random` module lists everything `random` can do beyond `randint` and `choice`.
 
@@ -155,7 +155,7 @@ If you see `hello, world`, you are ready. That two-step rhythm — edit the file
 - [ ] I can create a variable and explain the difference between `int`, `float`, `str`, and `bool`.
 - [ ] I can read user input, convert it to the right type, and print results with an f-string.
 - [ ] I can branch a program with `if` / `elif` / `else`, including conditions joined with `and`.
-- [ ] I can repeat work with `while` and `for` loops, and I know `Ctrl+C` rescues me from an endless one.
+- [ ] I can repeat work with `while` and `for` loops, and I know `Ctrl+C` (Control, not Command, even on a Mac) rescues me from an endless one.
 - [ ] I can write a function with parameters and a return value, and I keep calculation and printing separate.
 - [ ] I can use `import` to pull in a module and call its functions, like `random.randint`.
 - [ ] I can read a traceback from the bottom up and fix the four classic beginner errors on my own.

@@ -37,7 +37,19 @@ source .venv/bin/activate
 pip install mlflow fastapi "uvicorn[standard]" pydantic pytest httpx gradio joblib
 ```
 
-Install Docker: on WSL2 the standard route is **Docker Desktop for Windows with the WSL2 backend** — follow https://docs.docker.com/desktop/features/wsl/ and enable integration for your Ubuntu distro in Docker Desktop → Settings → Resources → WSL integration. Verify from your Ubuntu terminal:
+Install Docker:
+
+- **macOS:** download **Docker Desktop for Mac** from https://docs.docker.com/desktop/setup/install/mac-install/ (pick the Apple silicon or Intel chip version to match your Mac), drag Docker into Applications, open it and accept the terms, then open a new Terminal window. Docker Desktop needs macOS 14 or newer; on an older Mac, use the Codespace route below.
+- **Windows (WSL2):** install **Docker Desktop for Windows** from https://docs.docker.com/desktop/setup/install/windows-install/ on the Windows side, not inside Ubuntu; if the installer shows **Use WSL 2 instead of Hyper-V**, make sure it is ticked. Start Docker Desktop from the Start menu and accept the terms. Then, in Docker Desktop → Settings → Resources → WSL integration, make sure integration is on for your Ubuntu distro (it is on by default for your default distro), click **Apply**, and close and reopen your Ubuntu terminal. The WSL2 backend guide, https://docs.docker.com/desktop/features/wsl/, has the details.
+- **Linux:** install **Docker Engine** (not Docker Desktop) by following "Install using the apt repository" at https://docs.docker.com/engine/install/ubuntu/ (other distributions: https://docs.docker.com/engine/install/). Then add yourself to the `docker` group so you can run `docker` without `sudo` (membership gives root-level control through Docker, which is fine on your own computer), and log out and back in, or restart, for it to take effect:
+
+  ```bash
+  sudo usermod -aG docker $USER
+  ```
+
+No computer that can run Docker, such as a Mac on macOS 13 or older? Do the Docker milestones in a GitHub Codespace, a Linux machine in the cloud with Docker preinstalled and a free monthly allowance: commit and push your work, then on your fork's GitHub page click **Code**, open the **Codespaces** tab, create a codespace on `main`, and run the Docker commands in its terminal.
+
+Verify in your terminal:
 
 ```bash
 docker run hello-world
@@ -73,7 +85,7 @@ cd work/41-mlops-ship-your-models
 
   Checkpoint: after one run, a `mlruns/` folder exists next to your script.
 - [ ] Serialize the model correctly and log it as an artifact. **Serialization** means saving a live Python object to a file. For PyTorch save `model.state_dict()` (just the weights — rebuild the architecture in code when loading), not the whole model object; for scikit-learn use `joblib.dump(pipeline, "model.joblib")` and save the *whole pipeline* including preprocessing, not just the estimator. Log the file with `mlflow.log_artifact(...)`. Checkpoint: the saved file loads in a fresh Python session and predicts on one example.
-- [ ] Launch the dashboard with `mlflow ui` and open http://localhost:5000 in your Windows browser (WSL2 forwards localhost automatically). Checkpoint: your run appears with its params and a metric curve.
+- [ ] Launch the dashboard with `mlflow ui --port 5001` and open http://localhost:5001 in your browser (on Windows, WSL2 forwards localhost to Windows automatically). MLflow's default port, 5000, is used by AirPlay on Macs, so this lesson uses 5001 everywhere. Checkpoint: your run appears with its params and a metric curve.
 - [ ] Run at least 4 experiments varying something meaningful — e.g. lr ∈ {0.01, 0.001}, batch size ∈ {32, 128}. Select all runs in the UI and hit Compare. Checkpoint: a chart of val_accuracy across runs, and you can point at the winner and state its exact settings.
 - [ ] Screenshot the comparison view and save it as `experiments.png` in your work folder. Write 3 sentences in a `NOTES.md`: which config won, by how much, and one hypothesis why.
 
@@ -144,7 +156,7 @@ cd work/41-mlops-ship-your-models
 - [ ] A **container** is a lightweight box holding your app plus its entire environment — Python version, libraries, files — so it runs identically on any machine with Docker. Write a `Dockerfile` (the recipe for building the box). Skeleton:
 
   ```dockerfile
-  FROM python:3.11-slim
+  FROM python:3.13-slim
   WORKDIR /app
   COPY requirements.txt .
   RUN pip install --no-cache-dir -r requirements.txt
@@ -165,10 +177,10 @@ cd work/41-mlops-ship-your-models
 <details><summary>Hints</summary>
 
 - Loading the model at import time (module top level) is correct here: it happens once per container start, not once per request.
-- Torch makes images huge. For a tabular model the slim image stays small; for the CNN, expect a multi-GB image and don't worry about it yet — or serve the tabular model instead.
+- Torch makes images huge. For a tabular model the slim image stays small; for the CNN, expect a multi-GB image and don't worry about it yet — or serve the tabular model instead. If you do serve the CNN, put the line `--extra-index-url https://download.pytorch.org/whl/cpu` at the top of `requirements.txt` so the container gets the CPU-only PyTorch build: on Linux and WSL, `pip freeze` writes that build's version with `+cpu` at the end, which pip can only find on that index.
 - Determined to serve the CNN? Swap the pydantic schema for FastAPI's file-upload pattern: `from fastapi import File, UploadFile`, then `@app.post("/predict")` with `async def predict(file: UploadFile = File(...))`, read the bytes with `await file.read()`, open them with PIL (`Image.open(io.BytesIO(data))`), apply your test-time transforms and predict. Test it with `curl -F "file=@some_image.png" http://localhost:8000/predict` — note `-F` (a form upload), not a JSON body.
 - `--host 0.0.0.0` in the CMD matters: it makes the server listen on all network interfaces so traffic from outside the container can reach it. The default `127.0.0.1` only listens inside.
-- Container builds but curl hangs? Check the `-p 8000:8000` port mapping and that the CMD actually starts uvicorn (`docker logs <container-id>`).
+- Container builds but curl hangs? Check the `-p 8000:8000` port mapping and that the CMD actually starts uvicorn (`docker logs CONTAINER-ID`, with the ID from `docker ps -a`).
 
 </details>
 
@@ -183,7 +195,7 @@ cd work/41-mlops-ship-your-models
 *Part A — public demo*
 
 - [ ] Build `demo.py`: a Gradio interface (the same library you used in lesson 27) that takes your model's inputs via simple widgets and shows the prediction. Checkpoint: `python demo.py` opens a working local demo in your browser.
-- [ ] Deploy it to Hugging Face Spaces (free, needs your HF account): create a new Space at https://huggingface.co, choose the Gradio SDK, and push `demo.py`, your model file and a `requirements.txt` to it with git, exactly as you did in lesson 27. Checkpoint: the public URL works — send it to a friend and have them get a prediction on their phone.
+- [ ] Deploy it to Hugging Face Spaces (free, needs your HF account): create a new Space at https://huggingface.co, choose the Gradio SDK, and push `demo.py`, your model file and a `requirements.txt` to it with git, exactly as you did in lesson 27. Before you push, edit the settings block between the `---` lines at the top of the Space's `README.md`: set `app_file: demo.py`, because the Space runs the file named there, and add the line `python_version: "3.13"`, because Spaces use Python 3.10 unless told otherwise, which is too old for the package versions in your venv. Checkpoint: the public URL works — send it to a friend and have them get a prediction on their phone.
 
 *Part B — drift drill*
 
@@ -210,15 +222,15 @@ cd work/41-mlops-ship-your-models
 
 ## Stretch goals
 
-- **CI on push:** add a GitHub Action — a small YAML workflow in `.github/workflows/` that GitHub runs automatically on every push — that installs your service's requirements and runs `pytest`. This is **continuous integration**: your tests become a gate, not a chore. Search GitHub's docs for "Python application workflow" for the template.
+- **CI on push:** add a GitHub Action — a small YAML workflow in `.github/workflows/` that GitHub runs automatically on every push — that installs your service's requirements and runs `pytest`. This is **continuous integration**: your tests become a gate, not a chore. Search GitHub's docs for "Python application workflow" for the template, and set its `python-version` to "3.13" to match your venv (the template's older Python cannot install the versions you pinned).
 - **Batch endpoint:** add `/predict_batch` accepting a list of inputs, with pydantic validating each item, and a test proving it.
 - **Latency logging:** time each `/predict` call and log it; report p50 and p95 latency (the median and the 95th-percentile — the "slow tail" users actually feel) over 100 curl requests.
-- **Registry push:** push your Docker image to Docker Hub (free account) and pull-and-run it on any other machine — the "runs anywhere" promise, cashed in.
+- **Registry push:** push your Docker image to Docker Hub (free account) and pull-and-run it on any other machine — the "runs anywhere" promise, cashed in. Images are built for your computer's processor type, so one built on an Apple Silicon Mac may not run on an Intel or AMD machine: add `--platform linux/amd64,linux/arm64` to `docker build` to build for both.
 
 ## If you get stuck
 
-- **Docker permission or "cannot connect to daemon" errors on WSL2:** Docker Desktop must be running on Windows, and WSL integration enabled for your distro (Settings → Resources → WSL integration). Restart the Ubuntu terminal after changing it.
-- **Port confusion:** "connection refused" usually means nothing is listening (server not started, wrong port); a hang usually means a mapping problem (`-p host:container`). `docker logs <id>` shows what the app inside actually did.
+- **Docker permission or "cannot connect to the Docker daemon" errors:** on **macOS**, Docker Desktop must be running: open it from Applications and wait until it has started. On **Windows (WSL2)**, Docker Desktop must be running on Windows, and WSL integration enabled for your distro (Settings → Resources → WSL integration). Restart the Ubuntu terminal after changing it. On **Linux**, "permission denied" means you are not in the `docker` group yet, or have not logged out and back in since joining it; "cannot connect" means the Docker service is stopped, and `sudo systemctl start docker` starts it.
+- **Port confusion:** "connection refused" usually means nothing is listening (server not started, wrong port); a hang usually means a mapping problem (`-p host:container`). `docker logs CONTAINER-ID` (the ID is the first column of `docker ps -a`) shows what the app inside actually did.
 - **422 errors you didn't expect:** read the response body — pydantic tells you exactly which field failed and why. That error message is the feature you built.
 - Standing advice: read tracebacks bottom-up — the last line names the error; print shapes and values before the crash line; ask an AI assistant for a HINT, not a solution; and type every line yourself — muscle memory is the curriculum.
 
@@ -227,7 +239,7 @@ cd work/41-mlops-ship-your-models
 - FastAPI docs — https://fastapi.tiangolo.com — tutorial-style docs for the API and pydantic validation; the "First Steps" section covers everything Project 2 needs.
 - MLflow — https://mlflow.org — the local experiment tracker for Project 1; see its Tracking quickstart.
 - Weights & Biases — https://wandb.ai — the hosted alternative tracker (free tier, account required).
-- Docker Desktop WSL2 backend — https://docs.docker.com/desktop/features/wsl/ — the setup guide for your exact environment.
+- Get Docker — https://docs.docker.com/get-started/get-docker/ — Docker's install guides for macOS, Windows and Linux (on Linux, follow its link to Docker Engine); on Windows, also the WSL2 backend guide at https://docs.docker.com/desktop/features/wsl/.
 - Hugging Face — https://huggingface.co — where your Space lives; their Spaces docs cover the Gradio SDK setup.
 - Gradio docs — search for "Gradio documentation" — reference for demo widgets beyond what lesson 27 used.
 

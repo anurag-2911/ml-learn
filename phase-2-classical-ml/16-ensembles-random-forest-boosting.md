@@ -31,7 +31,10 @@
 
 2. You need a local Titanic CSV. Lesson 15 loaded the data through seaborn, which caches it outside your work folder — so you probably have no `titanic.csv` file yet; step 4 below creates one.
 
-3. Activate the venv at the repo root and install XGBoost (California housing comes bundled with scikit-learn, so no download for it):
+3. Activate the venv at the repo root and install XGBoost (scikit-learn downloads California housing for you, as in lesson 12). On a Mac, XGBoost also needs Homebrew's OpenMP library (libomp), which lets it use all your CPU cores:
+
+   - **macOS on Apple Silicon with macOS 15 or later:** run `brew install libomp` before the commands below.
+   - **macOS on an Intel Mac, or on macOS 14 and older:** without Homebrew, XGBoost cannot load, so leave out the last two lines below. In Project 3, use scikit-learn's own gradient boosting instead, which brings its own OpenMP: `HistGradientBoostingClassifier` and `HistGradientBoostingRegressor` from `sklearn.ensemble`, wherever the lesson uses `XGBClassifier` and `XGBRegressor`. They take the same `max_depth` and `learning_rate`, and `max_iter` in place of `n_estimators`. Or do Project 3 in [Google Colab](https://colab.research.google.com), a free cloud notebook with XGBoost preinstalled.
 
    ```bash
    cd ~/ml/ml-learn
@@ -118,7 +121,7 @@
 - [ ] Tune it honestly with cross-validation (lesson 14): use `sklearn.model_selection.GridSearchCV` over a small grid — `n_estimators` in {50, 100, 300}, `max_depth` in {2, 3, 4}, `learning_rate` in {0.03, 0.1, 0.3} — with `cv=5`. Print the best parameters and best CV score. Checkpoint: you can explain the pattern you see: lower learning rate wants more trees (smaller steps, more of them), and deep trees overfit small data.
 - [ ] Switch to regression: load California housing (`sklearn.datasets.fetch_california_housing`) — 20,000+ rows of census data predicting median house value. Train `xgboost.XGBRegressor`, tune the same three knobs, and evaluate with RMSE (root-mean-squared error — one line: `np.sqrt(np.mean((y_pred - y)**2))`; add an `rmse` function to your lesson-14 `mymetrics.py` now and validate it against sklearn). Checkpoint: tuned test RMSE around 0.45-0.55 (the target is in units of $100k, so that's roughly ±$50k typical error). Compare against plain `LinearRegression` on the same split — XGBoost should be clearly better, because house prices depend on *interactions* (location × income) that a straight line can't express.
 - [ ] Build the Phase-2 grand finale table. On identical Titanic splits, evaluate: your lesson-13 logistic regression, your lesson-15 single tree, your Project-2 forest, sklearn's forest, and tuned XGBoost. Write it as a markdown table in `work/16-ensembles/RESULTS.md` with columns: model, accuracy, training time, "from scratch?". Checkpoint: the ensembles sit at the top, and you can say *why* each row landed where it did.
-- [ ] Read the table and write three sentences at the bottom of RESULTS.md on the industry secret: on tabular data like this, boosted trees and forests are the state of the art — reach for deep learning when the input is images, audio, or raw text (Phase 3 onward), not when it's a spreadsheet. Optional: `pip install lightgbm` and add LightGBM (Microsoft's faster cousin of XGBoost, same ideas) as one more row.
+- [ ] Read the table and write three sentences at the bottom of RESULTS.md on the industry secret: on tabular data like this, boosted trees and forests are the state of the art — reach for deep learning when the input is images, audio, or raw text (Phase 3 onward), not when it's a spreadsheet. Optional: `pip install lightgbm` and add LightGBM (Microsoft's faster cousin of XGBoost, same ideas) as one more row. **macOS:** it needs libomp just like XGBoost, so skip it on a Mac without Homebrew. **Windows (WSL2) and Linux:** it needs Ubuntu's OpenMP library, which WSL's Ubuntu does not include, so first run `sudo apt install -y libgomp1`.
 
 <details><summary>Hints</summary>
 

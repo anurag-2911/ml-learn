@@ -28,28 +28,30 @@ Check you can still do these — if not, revisit the linked lessons:
 - Explain what cross-entropy loss measures (lesson 13/24) and what a learning-rate that is too high looks like (lesson 25).
 - You built bigram and MLP name-generators in lesson 28 — this lesson is that idea with real memory.
 
-Set up the work folder and data (venv lives at the repo root):
+Set up the work folder and data (venv lives at the repo root). PyTorch and matplotlib are probably installed already; if not, the pip lines install torch from PyTorch's own package index, as lesson 24 did, and matplotlib with a separate command, because that index does not carry it:
 
 ```bash
 cd ~/ml/ml-learn
 source .venv/bin/activate
-pip install torch matplotlib        # both likely installed since lesson 24
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install matplotlib
 mkdir -p work/29-rnn-lstm
 cd work/29-rnn-lstm
-wget -O input.txt https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt
-wc -c input.txt    # should print about 1115394 (~1.1 MB)
+curl -L -o input.txt https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt
+wc -c input.txt
 ```
+
+`wc -c input.txt` should print about 1115394 (~1.1 MB). On an Intel Mac, current PyTorch cannot be installed at all, so do this lesson in a free Google Colab notebook, as lesson 01 suggested.
 
 For Project 3, grab the surname dataset used by the official PyTorch tutorial:
 
 ```bash
 cd ~/ml/ml-learn/work/29-rnn-lstm
-wget https://download.pytorch.org/tutorial/data.zip
-sudo apt-get install -y unzip   # only if unzip is missing
-unzip data.zip                  # creates data/names/*.txt — 18 files, one language each
+curl -L -O https://download.pytorch.org/tutorial/data.zip
+unzip data.zip
 ```
 
-If that link ever moves, the zip is linked from the top of the [char-RNN classification tutorial](https://pytorch.org/tutorials/intermediate/char_rnn_classification_tutorial.html).
+`unzip` creates `data/names/*.txt` — 18 files, one language each. If the download link ever moves, the zip is linked from the top of the [char-RNN classification tutorial](https://pytorch.org/tutorials/intermediate/char_rnn_classification_tutorial.html).
 
 One assigned reading this week — it is short and a genuine joy: Karpathy's [The Unreasonable Effectiveness of Recurrent Neural Networks](https://karpathy.github.io/2015/05/21/rnn-effectiveness/). Read it *after* Project 1's first milestone, so the generated samples in the post mean something to you.
 

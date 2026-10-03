@@ -24,15 +24,19 @@
 
 ## Before you start
 
-- You need the working LLM API setup from [lesson 34](34-llm-apis-prompting.md): an API key exported in your shell and the provider's Python SDK installed. The examples here use the Anthropic SDK; if you used a different provider in lesson 34, keep using it — every provider has tool calling, only the field names differ (check their docs).
+- You need the working LLM API setup from [lesson 34](34-llm-apis-prompting.md): your API key in a `.env` file and the provider's Python SDK installed. The examples here use the Anthropic SDK; if you used a different provider in lesson 34, keep using it — every provider has tool calling, only the field names differ (check their docs).
 - Agent loops make **many** API calls per task (Project 3 makes ~30+ per eval run). Use a small/cheap model for development and check your provider's pricing page before big runs. Set a spending limit in the provider console if it offers one.
 
+Go to the repo root, activate the venv from lesson 01, install the libraries, and create your work folder:
+
 ```bash
-cd ~/ml/ml-learn                 # repo root
-source .venv/bin/activate        # the venv from lesson 01
+cd ~/ml/ml-learn
+source .venv/bin/activate
 pip install anthropic requests beautifulsoup4
 mkdir -p work/37-ai-agents && cd work/37-ai-agents
 ```
+
+Then copy your `.env` from lesson 34 into this folder with `cp ../34-llm-apis-prompting/.env .` (the `.env` line you added to `.gitignore` in lesson 34 keeps this copy out of git too). As in lesson 34's smoke test, call `load_dotenv()` before creating the client, so the SDK finds your key.
 
 For Project 2 you also need a web search library. The popular free one (DuckDuckGo-based) has been renamed more than once — search PyPI for the current DuckDuckGo search package (at the time of writing: `pip install ddgs`, formerly `duckduckgo_search`). Any library or search API that returns titles + URLs for a query works.
 

@@ -33,12 +33,19 @@ pip install kaggle optuna xgboost lightgbm
 mkdir -p work/20-end-to-end-ml-project/data
 ```
 
-On Kaggle: click your avatar → **Settings** → **API** → **Create New Token**. That downloads `kaggle.json`. Move it into place:
+XGBoost and LightGBM need OpenMP, a helper library that lets them use all your CPU cores. **macOS:** their Mac versions look for it where Homebrew installs it, so on an Apple Silicon Mac with Homebrew, run `brew install libomp`. On a Mac without Homebrew (Intel Macs, and macOS 14 or older), `import xgboost` and `import lightgbm` fail — skip both and use scikit-learn's `HistGradientBoostingRegressor` in Milestone 4, which brings its own copy of OpenMP. **Windows (WSL2) and Linux:** LightGBM needs Ubuntu's OpenMP package, which WSL's Ubuntu does not include, so run `sudo apt install -y libgomp1`. Then `python -c "import xgboost, lightgbm"` should finish without an error (on a Mac without Homebrew, skip this check).
+
+On Kaggle: click your avatar → **Settings** → **API** → **Generate New Token** (or go straight to [kaggle.com/settings/api](https://www.kaggle.com/settings/api)), and copy the token Kaggle shows you. It works like a password for your Kaggle account, so never put it in your code or your repository. The Kaggle tool reads it from the file `~/.kaggle/access_token` — create the folder and open that file in nano:
 
 ```bash
 mkdir -p ~/.kaggle
-mv /mnt/c/Users/<YourWindowsUser>/Downloads/kaggle.json ~/.kaggle/
-chmod 600 ~/.kaggle/kaggle.json
+nano ~/.kaggle/access_token
+```
+
+Paste the token (Cmd+V on a Mac, Ctrl+Shift+V in Windows and Linux terminals), save with Ctrl+O and Enter, and exit with Ctrl+X. Lock the file so only you can read it:
+
+```bash
+chmod 600 ~/.kaggle/access_token
 ```
 
 Then download and unzip the data:
@@ -135,6 +142,7 @@ sub.to_csv("submission_baseline.csv", index=False)
 
 ## If you get stuck
 
+- `Authentication required to call the Kaggle API` means the Kaggle tool found no valid token: check that `cat ~/.kaggle/access_token` prints the token you copied, or generate a new one and save it again. Kaggle's older kind of key works too: **Create Legacy API Key** (under **Legacy API Credentials** on the same settings page) downloads a `kaggle.json` file. Move it into place with `mv ~/Downloads/kaggle.json ~/.kaggle/` on macOS and Linux, or on Windows (WSL2), where your Windows files are under `/mnt/c/Users/`, with `mv /mnt/c/Users/YOUR-WINDOWS-NAME/Downloads/kaggle.json ~/.kaggle/`; then run `chmod 600 ~/.kaggle/kaggle.json`.
 - `403 Forbidden` on download almost always means you haven't clicked **Join Competition** and accepted the rules on the website.
 - Kaggle rejects your submission file? Open it and `sample_submission.csv` side by side: same column names (`Id,SalePrice`), same number of rows (1459), no index column (`index=False`).
 - Score got dramatically *worse* after a change? You probably predicted log-prices but submitted them as dollars — check that your submission's values are in the hundreds of thousands, not around 12.

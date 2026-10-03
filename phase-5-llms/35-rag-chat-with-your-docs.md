@@ -31,7 +31,7 @@ source .venv/bin/activate
 pip install sentence-transformers streamlit gradio chromadb faiss-cpu
 ```
 
-   `sentence-transformers` downloads a small embedding model (~90 MB) on first use and runs it locally on CPU — free, no account, no API key.
+   `sentence-transformers` downloads a small embedding model (~90 MB) on first use and runs it locally, even on a CPU — free, no account, no API key. It is built on PyTorch, which you installed in lesson 24. Current PyTorch has no Intel Mac version, so on an Intel Mac this install fails: do this lesson in a free Google Colab notebook, as lesson 01 suggested, and build Project 2's app with Gradio, which runs inside a notebook too.
 
 3. Create your work folder and a data folder:
 
@@ -43,10 +43,10 @@ mkdir -p work/35-rag-chat-with-your-docs/data
 
 ```bash
 cp phase-0-foundations/*.md phase-1-math/*.md phase-2-classical-ml/*.md work/35-rag-chat-with-your-docs/data/
-ls work/35-rag-chat-with-your-docs/data | wc -l   # 20 files — right in the 15-20 range
+ls work/35-rag-chat-with-your-docs/data | wc -l
 ```
 
-   Your own notes or any folder of `.md`/`.txt` files works too — RAG on documents you know well makes wrong answers easy to spot.
+   The second command counts the files: it should print 20 — right in the 15-20 range. Your own notes or any folder of `.md`/`.txt` files works too — RAG on documents you know well makes wrong answers easy to spot.
 
 ## Project 1 — RAG retrieval from scratch in numpy
 
@@ -87,7 +87,7 @@ ls work/35-rag-chat-with-your-docs/data | wc -l   # 20 files — right in the 15
 streamlit run app.py
 ```
 
-   Checkpoint: the app opens in your browser at `localhost:8501`, you upload 3 files, ask a question, and see an answer with sources.
+   Checkpoint: the app opens in your browser at `localhost:8501` (if no browser window opens by itself, open `http://localhost:8501` yourself — WSL2 forwards localhost to Windows automatically), you upload 3 files, ask a question, and see an answer with sources.
 - [ ] Embedding on every rerun is slow, and Streamlit reruns your whole script on every interaction — cache the index (look up `@st.cache_resource` in the Streamlit docs) so uploading once means embedding once. Checkpoint: the second question answers in ~2-5 seconds, not 30+.
 - [ ] Show your retrieval, not just your answer: add an expandable "retrieved chunks" section displaying the top-k chunks and their similarity scores. When an answer is bad, this panel tells you instantly whether retrieval failed (wrong chunks) or generation failed (right chunks, wrong answer) — the two failure modes of every RAG system.
 

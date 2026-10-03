@@ -27,11 +27,11 @@ Check you have what you need:
 - You finished [lesson 10](../phase-1-math/10-probability-statistics.md) — you can state Bayes' rule and explain it on a concrete example.
 - You have your metrics library from [lesson 14](14-model-evaluation.md) (accuracy, precision, recall, confusion matrix).
 
-Set up (from the repo root):
+Set up (from the repo root) — numpy and pandas you already have from Phase 0, so the install line needs only scikit-learn:
 
 ```bash
 source .venv/bin/activate
-pip install scikit-learn        # numpy/pandas you already have from Phase 0
+pip install scikit-learn
 mkdir -p work/17-naive-bayes-spam
 cd work/17-naive-bayes-spam
 ```

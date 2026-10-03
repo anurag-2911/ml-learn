@@ -24,12 +24,12 @@
 
 ## Before you start
 
-You need pandas and NumPy (lessons 05-06). PyTorch (lesson 24) is optional — Project 2 works in pure NumPy.
+You need pandas and NumPy (lessons 05-06). PyTorch (lesson 24) is optional — Project 2 works in pure NumPy. If you did phase 0, everything on the `pip install` line below is already installed.
 
 ```bash
 cd ~/ml/ml-learn
 source .venv/bin/activate
-pip install numpy pandas matplotlib   # already installed if you did phase 0
+pip install numpy pandas matplotlib
 mkdir -p work/40-recommender-systems
 cd work/40-recommender-systems
 ```
@@ -37,12 +37,12 @@ cd work/40-recommender-systems
 Download **MovieLens ml-latest-small** (100k ratings, 600 users, 9,000 movies — no account needed) from https://grouplens.org/datasets/movielens/ :
 
 ```bash
-wget https://files.grouplens.org/datasets/movielens/ml-latest-small.zip
+curl -L -O https://files.grouplens.org/datasets/movielens/ml-latest-small.zip
 unzip ml-latest-small.zip
-ls ml-latest-small/   # ratings.csv  movies.csv  tags.csv  links.csv
+ls ml-latest-small/
 ```
 
-If the wget link ever 404s, grab the "ml-latest-small" link from the MovieLens page above. You'll only need `ratings.csv` (userId, movieId, rating, timestamp) and `movies.csv` (movieId, title, genres).
+`ls` should show `ratings.csv`, `movies.csv`, `tags.csv` and `links.csv` (plus a `README.txt`). If the download link ever 404s, curl saves the site's error page under the zip's name and `unzip` fails on it — grab the "ml-latest-small" link from the MovieLens page above instead. You'll only need `ratings.csv` (userId, movieId, rating, timestamp) and `movies.csv` (movieId, title, genres).
 
 ## Project 1 — Neighborhood recommender
 

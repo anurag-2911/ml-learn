@@ -23,16 +23,18 @@
 
 ## Before you start
 
-You need your lesson-31 GPT working (it will be reused in Project 3) and the tiny Shakespeare `input.txt` from that lesson.
+You need your lesson-31 GPT working (it will be reused in Project 3) and the tiny Shakespeare `input.txt` from that lesson. The commands below install `tiktoken` — OpenAI's real tokenizer library, for Project 2 — and reuse tiny Shakespeare by copying it from your lesson-31 folder:
 
 ```bash
 cd ~/ml/ml-learn
 source .venv/bin/activate
-pip install tiktoken            # OpenAI's real tokenizer library, for Project 2
+pip install tiktoken
 mkdir -p work/32-tokenization-bpe
-cp work/31-attention-build-gpt/input.txt work/32-tokenization-bpe/   # reuse tiny Shakespeare
+cp work/31-attention-build-gpt/input.txt work/32-tokenization-bpe/
 cd work/32-tokenization-bpe
 ```
+
+Projects 1 and 2 need no PyTorch and run on any computer. Project 3 retrains your lesson-31 GPT, and current PyTorch has no Intel Mac version, so on an Intel Mac do Project 3 in Google Colab, as in lesson 31.
 
 Watch Karpathy's "Let's build the GPT Tokenizer" from the [Zero to Hero playlist](https://www.youtube.com/playlist?list=PLAqhIrjkxbuWI23v9cThsA9GvCAUhRvKZ) alongside Project 1 — pause the video, build each piece yourself, then compare. His reference implementation lives at [minbpe](https://github.com/karpathy/minbpe); resist reading its source until your own version works.
 
@@ -81,7 +83,7 @@ Watch Karpathy's "Let's build the GPT Tokenizer" from the [Zero to Hero playlist
   print([(i, gpt2.decode([i])) for i in ids])
   ```
 
-- [ ] Tokenize `"strawberry"` and `" strawberry"` (leading space!) with both. Checkpoint: at least one version splits into multiple tokens, and none of the chunks is a single letter — write down why "how many r's in strawberry" is therefore hard for an LLM: it sees token ids like `[496, 675, 8299]`, never the letters r-a-w.
+- [ ] Tokenize `"strawberry"` and `" strawberry"` (leading space!) with both. Checkpoint: at least one version splits into multiple tokens, and none of the chunks is a single letter — write down why "how many r's in strawberry" is therefore hard for an LLM: it sees token ids like `[496, 675, 15717]`, never the letters r-a-w.
 - [ ] Tokenize numbers: `"127"`, `"677"`, `"12345678"`, `"3.14159"`. Note how inconsistently digits are grouped (sometimes 3 digits per token, sometimes 1 or 2). This is a big reason LLM arithmetic is shaky — the model must memorize math over arbitrary digit chunks.
 - [ ] Tokenize a URL, a snippet of Python (try one with 8 leading spaces of indentation), and `"  lots   of   spaces"`. Checkpoint: GPT-4's tokenizer handles runs of whitespace in visibly fewer tokens than GPT-2's — a deliberate fix that made GPT-4 much better at Python.
 - [ ] Measure cost by language: take an English paragraph and a Hindi paragraph of similar meaning (write or translate a few sentences), and compute `len(enc.encode(text)) / len(text)` — tokens per character — for both languages on both tokenizers. Checkpoint: Hindi costs several times more tokens per character than English on GPT-2, and is still clearly worse on GPT-4. Since API pricing and context windows are per token, the same meaning literally costs more and fits less in non-English languages.

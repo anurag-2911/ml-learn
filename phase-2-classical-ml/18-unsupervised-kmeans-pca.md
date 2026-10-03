@@ -43,11 +43,7 @@ mkdir -p work/18-unsupervised-kmeans-pca
 cd work/18-unsupervised-kmeans-pca
 ```
 
-**Dataset downloads: none.** Project 1 generates fake data, Project 2 uses any photo you already own, and Project 3's digits ship inside scikit-learn. To copy a photo from Windows into WSL:
-
-```bash
-cp /mnt/c/Users/<YourWindowsName>/Pictures/some-photo.jpg photo.jpg
-```
+**Dataset downloads: none.** Project 1 generates fake data, Project 2 uses any photo you already own, and Project 3's digits ship inside scikit-learn. Put a photo of your own in your work folder as `photo.jpg`. To drag one in, open the folder in your file manager: `open .` on macOS, `explorer.exe .` on Windows (WSL2), `xdg-open .` on Linux. Or copy it in the terminal: on macOS and Linux, `cp ~/Pictures/YOUR-PHOTO.jpg photo.jpg`; on Windows (WSL2) your Windows files are under `/mnt/c/Users/`, so `cp /mnt/c/Users/YOUR-WINDOWS-NAME/Pictures/YOUR-PHOTO.jpg photo.jpg`.
 
 Pick a colorful photo (a sunset, a market, a parrot) — the effect is much more dramatic than on a grey screenshot.
 
@@ -127,7 +123,7 @@ Pick a colorful photo (a sunset, a market, a parrot) — the effect is much more
 - [ ] Scatter-plot `X2` colored by the true digit: `plt.scatter(X2[:,0], X2[:,1], c=digits.target, cmap="tab10", s=8)` plus `plt.colorbar()`. Note we use labels only to *color the picture*, never to compute the projection. Checkpoint: clear islands — 0s clumped together far from 1s, 6s in their own region. Some digits smear into each other (4/9, 3/8/5 are lookalikes); that's honest, not a bug.
 - [ ] Print the **explained variance**: `eigvals[-2:].sum() / eigvals.sum()`. Checkpoint: roughly 0.2 — two dimensions carry about a fifth of the total variance, yet the map is already readable.
 - [ ] Sanity-check against the professionals: `from sklearn.decomposition import PCA; X2_sk = PCA(n_components=2).fit_transform(X)`. Checkpoint: sklearn's scatter matches yours up to a possible mirror flip of either axis (an eigenvector times −1 is an equally valid eigenvector).
-- [ ] Now try **t-SNE**, a nonlinear map-maker designed purely for pretty 2D visualization: `from sklearn.manifold import TSNE; X2_t = TSNE(n_components=2, random_state=0).fit_transform(X)` (takes ~a minute). Plot it the same way. Checkpoint: ten tight, well-separated islands — noticeably crisper than PCA. **UMAP** (`pip install umap-learn`) is a faster modern alternative; try it if curious. Use these as tools — you will not implement them.
+- [ ] Now try **t-SNE**, a nonlinear map-maker designed purely for pretty 2D visualization: `from sklearn.manifold import TSNE; X2_t = TSNE(n_components=2, random_state=0).fit_transform(X)` (takes ~a minute). Plot it the same way. Checkpoint: ten tight, well-separated islands — noticeably crisper than PCA. **UMAP** (`pip install umap-learn`) is a faster modern alternative; try it if curious (not on an Intel Mac: numba, a library it needs, has no current Intel Mac version; use Google Colab, which has UMAP preinstalled). Use these as tools — you will not implement them.
 - [ ] One-sentence journal entry: when would you reach for PCA (fast, linear, keeps global structure, reusable as a preprocessing step) vs t-SNE/UMAP (slower, for visualization only)? You'll use exactly this trick to draw maps of *word meanings* in [lesson 30](../phase-4-nlp-transformers/30-embeddings-word2vec.md).
 
 <details><summary>Hints</summary>

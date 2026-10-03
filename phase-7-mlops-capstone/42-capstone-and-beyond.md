@@ -41,9 +41,11 @@ cd work/42-capstone
 There is no fixed pip install list this time — your dependencies depend on the project you choose. Install what you need as you need it (inside the venv), and record every install in a `requirements.txt` from day one:
 
 ```bash
-pip install <whatever-you-need>
+pip install WHATEVER-YOU-NEED
 pip freeze > requirements.txt
 ```
+
+`pip freeze` lists every package in the venv, including all those from earlier lessons, so before you publish, trim `requirements.txt` to the packages your project actually uses, as in lesson 41. On **Windows (WSL2)** and **Linux**, also delete the `+cpu` (or other `+` ending) from any torch or torchvision version left in it: pip finds such builds only on PyTorch's own index, so a Hugging Face Space or a stranger's computer could not install them.
 
 One warning before you begin: the capstone will feel different from every lesson so far, because nobody hands you milestones — you write them. That discomfort is the point. It is what working on real ML projects feels like.
 
@@ -138,7 +140,10 @@ One warning before you begin: the capstone will feel different from every lesson
 <details><summary>Hints</summary>
 
 - Write the Results section first — it forces honesty and the rest of the README organizes itself around it.
-- Record the demo GIF early; it is the single highest-value 30 minutes of this whole step. On Ubuntu, `peek` or a screen recording + an online GIF converter works fine.
+- Record the demo GIF early; it is the single highest-value 30 minutes of this whole step. A short screen recording + an online GIF converter works fine, and every system has a screen recorder built in:
+  - **macOS:** press Cmd+Shift+5, choose to record the entire screen or a selected portion, and click **Record**; to stop, click the stop button in the menu bar. The video is saved on your Desktop.
+  - **Windows (WSL2):** in Snipping Tool, select **Record**, then **New** (or press Win+Shift+R), select the area to record and select **Start**; to stop, select **Stop**, then save the video. Windows 10's Snipping Tool cannot record; there, switch to your browser and press Win+Alt+R to start and stop an Xbox Game Bar recording, which is saved in Videos → Captures.
+  - **Linux:** on Ubuntu, press Ctrl+Shift+Alt+R, choose **Selection** or **Screen** and click the big round red button; to stop, click the red indicator in the top bar. The video is saved in `~/Videos/Screencasts`.
 - Fear of posting is normal and nearly universal. Post anyway. The realistic worst case is silence, and the best case is your next opportunity.
 
 </details>

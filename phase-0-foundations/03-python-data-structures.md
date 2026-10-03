@@ -31,11 +31,11 @@ cd ~/ml/ml-learn
 source .venv/bin/activate
 mkdir -p work/03-python-data-structures
 cd work/03-python-data-structures
-wget https://www.gutenberg.org/cache/epub/11/pg11.txt -O alice.txt
+curl -L -o alice.txt https://www.gutenberg.org/cache/epub/11/pg11.txt
 head -n 20 alice.txt
 ```
 
-`wget` downloads a file from a URL, and `head` shows its first lines — you should see "The Project Gutenberg eBook of Alice's Adventures in Wonderland". If the URL ever stops working, go to gutenberg.org, search for "Alice's Adventures in Wonderland" (ebook #11), and copy the "Plain Text UTF-8" link instead.
+`curl` downloads a file from a URL (`-L` follows redirects to wherever the file has moved, and `-o alice.txt` names the saved file), and `head` shows its first lines — you should see "The Project Gutenberg eBook of Alice's Adventures in Wonderland". If the URL ever stops working, go to gutenberg.org, search for "Alice's Adventures in Wonderland" (ebook #11), and copy the "Plain Text" link (under "Other formats & older devices") instead.
 
 Checkpoint: `wc -w alice.txt` (word count) prints roughly **29,500 words**.
 
@@ -45,7 +45,7 @@ Checkpoint: `wc -w alice.txt` (word count) prints roughly **29,500 words**.
 
 **Milestones**
 
-- [ ] Read the whole book into one string. A *string* is text; a 174,000-character string is still just text. Start with:
+- [ ] Read the whole book into one string. A *string* is text; a 164,000-character string is still just text. Start with:
 
   ```python
   with open("alice.txt", encoding="utf-8") as f:
@@ -53,7 +53,7 @@ Checkpoint: `wc -w alice.txt` (word count) prints roughly **29,500 words**.
   print(len(text), "characters")
   ```
 
-  The `with open(...)` pattern opens a file and closes it automatically when the block ends. Checkpoint: you should see about **174,000 characters**.
+  The `with open(...)` pattern opens a file and closes it automatically when the block ends. Checkpoint: you should see about **164,000 characters**.
 - [ ] Lowercase everything with `text = text.lower()` so `The` and `the` count as the same word. Then split the string into a **list** of words with `words = text.split()` — `.split()` with no arguments cuts a string wherever there is whitespace. Checkpoint: `len(words)` is around **29,500**, `words[0]` is `"the"` (indexing: position 0 is the first item), and `words[:10]` (slicing: the first ten items) shows the opening words of the Gutenberg header.
 - [ ] Clean the punctuation. Right now `"hearts."` and `"hearts"` are different words. `.strip(chars)` removes any of the given characters from both ends of a string (only the ends — that is what you want, so `don't` keeps its apostrophe). Use a **list comprehension**, which builds a new list from an old one in one line:
 

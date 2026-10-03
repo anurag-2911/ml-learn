@@ -31,7 +31,11 @@
 cd ~/ml/ml-learn
 source .venv/bin/activate
 python3 -c "import numpy, pandas, sklearn, matplotlib, seaborn; print('ok')"
-# If anything is missing:
+```
+
+If anything is missing (you see `ModuleNotFoundError` instead of `ok`), install the packages:
+
+```bash
 pip install numpy pandas scikit-learn matplotlib seaborn
 ```
 
