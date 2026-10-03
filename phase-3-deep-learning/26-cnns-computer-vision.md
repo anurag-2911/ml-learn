@@ -42,10 +42,12 @@ As in lesson 24, torch and torchvision come from PyTorch's own package index. If
 
 **CIFAR-10** (60,000 tiny 32×32 photos in 10 classes: plane, car, bird, cat, deer, dog, frog, horse, ship, truck) downloads automatically via `torchvision.datasets.CIFAR10(root="data", download=True)`. No account is needed, and the download is about 170 MB.
 
+**Keep the dataset and the photo out of git.** The fork is public, and a phone photo often records where it was taken (GPS data inside the file). The CIFAR-10 download also keeps its 170 MB archive in `data/`, over GitHub's 100 MB file limit, so a commit that includes it makes every later `git push` fail. In this folder, run `printf 'data/\nphoto.jpg\n' > .gitignore`. Checkpoint: `git check-ignore data/cifar-10-python.tar.gz photo.jpg` prints both names.
+
 **Free GPU, 2-minute setup (first lesson where it genuinely helps).** Training Project 2 takes roughly 1–3 hours on a laptop CPU but about 10–15 minutes on a free cloud GPU. There are two options, and both need a (free) account:
 
 - **Google Colab** (needs a Google account): go to colab.research.google.com → New notebook → menu *Runtime → Change runtime type → T4 GPU*. Paste the training script into a cell.
-- **Kaggle** (needs a Kaggle account, which lesson 20 requires anyway): kaggle.com → Create → Notebook → right-hand *Settings → Accelerator → GPU*.
+- **Kaggle** (needs a Kaggle account, which lesson 20 requires anyway, plus a one-time phone verification under the avatar → *Settings* → *Phone Verification*; without it the GPU and internet options stay locked): kaggle.com → Create → Notebook → right-hand *Settings → Accelerator →* a GPU option, and switch *Internet* on, because the CIFAR-10 download needs it.
 
 One line makes the training script portable: `device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"`. Then move the model and each batch with `.to(device)`. The line picks an NVIDIA GPU (`cuda`, as on Colab and Kaggle), else the built-in GPU of an Apple Silicon Mac (`mps`, macOS 14 or later), else the CPU. Develop locally with 2–3 epochs; do the real 20–30-epoch run on the GPU.
 
@@ -58,14 +60,14 @@ One line makes the training script portable: `device = "cuda" if torch.cuda.is_a
 - [ ] Load the photo as a grayscale NumPy array. Starter:
 
   ```python
-  from PIL import Image
+  from PIL import Image, ImageOps
   import numpy as np
-  img = np.array(Image.open("photo.jpg").convert("L"), dtype=np.float64)
+  img = np.array(ImageOps.exif_transpose(Image.open("photo.jpg")).convert("L"), dtype=np.float64)
   print(img.shape, img.min(), img.max())   # e.g. (768, 1024) 0.0 255.0
   ```
 
   Checkpoint: the output shows a 2D shape and pixel values between 0 and 255.
-- [ ] Write a function `conv2d(image, kernel)` that slides the kernel over the image. Loops are fine here, because clarity matters more than speed. For a `(H, W)` image and `(kh, kw)` kernel, the output shape is `(H - kh + 1, W - kw + 1)` (the filter cannot hang off the edge). Test it on a tiny 5×5 array of zeros with a single 1 in the middle, using a 3×3 kernel of all ones. Checkpoint: the output is 3×3 and the center row/column pattern shows the kernel "stamped" around the 1.
+- [ ] Write a function `conv2d(image, kernel)` that slides the kernel over the image. Loops are fine here, because clarity matters more than speed. For a `(H, W)` image and `(kh, kw)` kernel, the output shape is `(H - kh + 1, W - kw + 1)` (the filter cannot hang off the edge). Test it on a tiny 5×5 array of zeros with a single 1 in the middle, using a 3×3 kernel of all ones. Checkpoint: the output is 3×3 and every value is 1, because each 3×3 window contains the single 1. Then try a kernel with distinct values, such as `np.arange(9).reshape(3, 3)`: the output is that kernel flipped upside down and left to right, which confirms that rows and columns are not mixed up.
 - [ ] Apply these three classics to the photo and save each result with `Image.fromarray(...)` (clip values to 0–255 and convert to `uint8` first):
 
   ```python
@@ -75,7 +77,7 @@ One line makes the training script portable: `device = "cuda" if torch.cuda.is_a
   ```
 
   Checkpoint: the edge output clearly outlines every shape in the photo on a mostly-black background; blur is visibly softer; sharpen is visibly crisper.
-- [ ] Try the Sobel kernel `[[-1,0,1],[-2,0,2],[-1,0,1]]`, which responds only to *vertical* edges. Checkpoint: vertical lines in the photo glow; horizontal lines mostly vanish. Pause on this result: 9 numbers just detected "vertical edge" everywhere in the image at once.
+- [ ] Try the Sobel kernel `[[-1,0,1],[-2,0,2],[-1,0,1]]`, which responds only to *vertical* edges. Checkpoint: vertical lines in the photo glow; horizontal lines mostly vanish. This kernel gives negative values where the image goes from bright to dark (left to right), and clipping turns those black, so save `np.abs(out)` (then clip to 0–255) to see both sides of every vertical edge. Pause on this result: 9 numbers just detected "vertical edge" everywhere in the image at once.
 - [ ] Add a `stride` parameter (jump `stride` pixels per step) and a `padding` parameter (wrap the image with `np.pad` before convolving). Checkpoint: with `padding=1, stride=1` and a 3×3 kernel, the output shape equals the input shape; with `stride=2` it is about half.
 - [ ] Write the key idea as a comment at the top of the script, rephrased rather than copied: these kernels were designed *by hand*, but a CNN puts kernels exactly like these into `nn.Conv2d` layers and **learns their 9 numbers by gradient descent**, discovering whichever detectors best reduce the loss.
 
@@ -84,7 +86,7 @@ One line makes the training script portable: `device = "cuda" if torch.cuda.is_a
 - The core of `conv2d` is two nested loops over output positions; at each position, slice a `kh × kw` patch with `image[i:i+kh, j:j+kw]` and compute `np.sum(patch * kernel)`.
 - If the output is a scrambled mess, check that the code slices `[row, column]`; mixing up i/j is the classic bug. Print `patch.shape` inside the loop once.
 - Saved image looks wrong, or all white? Convolution outputs can go below 0 and above 255. Use `np.clip(out, 0, 255).astype(np.uint8)` before `Image.fromarray`.
-- Slow on a huge photo? Resize first: `Image.open("photo.jpg").convert("L").resize((400, 300))`.
+- Slow on a huge photo? Resize first: `ImageOps.exif_transpose(Image.open("photo.jpg")).convert("L").resize((400, 300))`.
 
 </details>
 
@@ -108,11 +110,11 @@ One line makes the training script portable: `device = "cuda" if torch.cuda.is_a
   head:  Flatten → Linear(128*4*4 → 256) → ReLU → Linear(256 → 10)
   ```
 
-  Each block halves the spatial size while adding channels: from pixels toward "is there a wheel here?". Checkpoint: `sum(p.numel() for p in model.parameters())` is well under the MLP's count, and a forward pass on one batch outputs shape `(batch, 10)`.
+  Each block halves the spatial size while adding channels: from pixels toward "is there a wheel here?". Checkpoint: with exactly these layer sizes, `sum(p.numel() for p in model.parameters())` prints 620,362. The three conv layers hold only 93,248 of them, fewer than the first `Linear` of an MLP with just 32 hidden units (3072 × 32 + 32 = 98,336), and almost all the rest sit in the head's first `Linear`. A forward pass on one batch outputs shape `(batch, 10)`.
 - [ ] **Overfit one batch** (lesson 25 ritual) before any long run. Checkpoint: loss on a single batch drops below 0.01 within a few hundred steps. Also sanity-check that the very first loss is close to `ln(10)` ≈ 2.30, the loss of random guessing over 10 classes.
 - [ ] Train for about 15 epochs without augmentation, plotting train and test accuracy per epoch. Checkpoint: train accuracy runs well above test (a visible gap), because the network is memorizing. That gap is overfitting, and augmentation is the cure.
 - [ ] Add augmentation to the **training** transform only (never the test set): `transforms.RandomCrop(32, padding=4)` and `transforms.RandomHorizontalFlip()` before `ToTensor`. Each epoch now sees slightly shifted/mirrored variants, so exact-pixel memorization stops paying off.
-- [ ] Full run: 20–30 epochs (on the free GPU if the local computer is slow), optionally dropping the learning rate ×10 around epoch 20. Checkpoint: **test accuracy ≥ 80%**. Save the weights with `torch.save(model.state_dict(), "cifar_cnn.pt")`; Project 3 and lesson 27 need them.
+- [ ] Full run: 20–30 epochs (on the free GPU if the local computer is slow), optionally dropping the learning rate ×10 around epoch 20. Checkpoint: **test accuracy ≥ 80%**. Save the weights with `torch.save(model.state_dict(), "cifar_cnn.pt")`; Project 3 needs them. After a run on Colab or Kaggle, download `cifar_cnn.pt` before closing the notebook, because the session's files are deleted when it ends (Colab: run `from google.colab import files; files.download("cifar_cnn.pt")` in a new cell; Kaggle: the *Output* section of the right-hand panel), and put it in `work/26-cnns-computer-vision`.
 
 <details><summary>Hints</summary>
 
@@ -134,9 +136,9 @@ One line makes the training script portable: `device = "cuda" if torch.cuda.is_a
 - [ ] Reload the trained model (`model.load_state_dict(torch.load("cifar_cnn.pt", map_location="cpu"))`, then `model.eval()`). `map_location="cpu"` lets weights saved on a Colab or Kaggle GPU load on a computer without an NVIDIA GPU, such as a Mac.
 - [ ] **Learned filters:** the first conv layer's weights are a tensor of shape `(32, 3, 3, 3)`. These are 32 learned RGB kernels, direct cousins of the Project 1 kernels. Normalize each to 0–1 and show all 32 in a matplotlib grid. Checkpoint: several filters look like oriented edges or color-contrast blobs. Nobody designed them; gradient descent did.
 - [ ] **Feature maps:** run one test image through the network layer by layer and plot a handful of channels after each conv block (grab intermediate outputs by calling the blocks manually, or with a *forward hook*, a function that PyTorch calls with a layer's output; search "pytorch forward hook"). Checkpoint: early maps look like edge-detected versions of the image; deeper maps are smaller and increasingly abstract blobs.
-- [ ] **Confusion matrix:** a 10×10 grid where cell (i, j) counts test images of true class i predicted as class j (the lesson-14 metrics library, or `sklearn.metrics.confusion_matrix`). Plot with `plt.imshow` and class-name tick labels. Checkpoint: a bright diagonal, with the biggest off-diagonal glow at cat↔dog, the classic confusion.
+- [ ] **Confusion matrix:** a 10×10 grid where cell (i, j) counts test images of true class i predicted as class j (`sklearn.metrics.confusion_matrix(y_true, y_pred)`; the lesson-14 `confusion_matrix` handles only two classes). Plot with `plt.imshow` and class-name tick labels. Checkpoint: a bright diagonal, with the biggest off-diagonal glow at cat↔dog, the classic confusion.
 - [ ] Pull up 9 misclassified images with predicted vs true labels. Checkpoint: some are genuinely hard even for a human. That is a lesson in what "80% accuracy" actually means.
-- [ ] **Stretch (start of the ResNet idea):** make the network deeper (6+ conv layers) and watch it train *worse*: deep plain stacks degrade. Now add a skip connection: each block computes `output = relu(conv(x) + x)`, giving gradients a shortcut past the layers (channel counts must match, so use 1×1 convs or keep channels constant). Checkpoint: the deeper skip-connected version trains at least as well as the 3-block CNN. This experiment rediscovers ResNet's core trick; the CS231n notes have the architecture story from LeNet → VGG → ResNet.
+- [ ] **Stretch (start of the ResNet idea):** make the network much deeper (about 20 plain conv layers, keeping the channel count constant within each block) and watch it train *worse* than the 3-block CNN: very deep plain stacks degrade. (A few extra layers, such as the second conv per block from the Project 2 hints, still help.) Now add a skip connection: each block computes `output = relu(conv(x) + x)`, giving gradients a shortcut past the layers (channel counts must match, so use 1×1 convs or keep channels constant). Checkpoint: the deeper skip-connected version trains at least as well as the 3-block CNN. This experiment rediscovers ResNet's core trick; the CS231n notes have the architecture story from LeNet → VGG → ResNet.
 
 <details><summary>Hints</summary>
 
@@ -158,7 +160,7 @@ One line makes the training script portable: `device = "cuda" if torch.cuda.is_a
 ## Getting unstuck
 
 - **Read the error bottom-up.** The last lines name the failing operation, and in CNNs it is almost always a shape mismatch.
-- **Print shapes everywhere.** Temporarily add `print(x.shape)` between layers in `forward`. Know the conv arithmetic: output size = `(input + 2*padding - kernel) / stride + 1`.
+- **Print shapes everywhere.** Temporarily add `print(x.shape)` between layers in `forward`. Know the conv arithmetic: output size = `(input + 2*padding - kernel) // stride + 1`, where `//` rounds down.
 - **Trust the ladder:** overfit one batch → short local run → full GPU run. Never debug a 30-epoch run; debug a 50-step one.
 - If training diverges (loss → NaN), the learning rate is too high or normalization is missing.
 - Ask an AI assistant for a **hint**, not a solution (for example, "why might my CNN be stuck at 10% on CIFAR-10?"), and do not paste its code.

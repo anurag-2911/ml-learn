@@ -2,7 +2,7 @@
 
 **Phase 3 — Deep Learning** · Estimated time: 4-5 days · Prerequisites: [08 · Linear Algebra by Writing Your Own](../phase-1-math/08-linear-algebra-by-code.md), [09 · Calculus You Can Run: Gradient Descent](../phase-1-math/09-calculus-and-gradient-descent.md), [13 · Logistic Regression from Scratch](../phase-2-classical-ml/13-logistic-regression.md)
 
-> In 1958, newspapers announced a machine that would soon "walk, talk, see, write, and be conscious of its existence." It was called the perceptron, and it was a single artificial neuron. Eleven years later, one short mathematical argument about a toy problem with only four rows of data helped freeze neural network research for a decade. This lesson builds the 1958 machine, runs it into the 1969 wall, and then breaks through that wall with a hidden layer. That idea is the seed of everything in the rest of this curriculum, GPT included.
+> In 1958, newspapers announced a machine that would soon "walk, talk, see, write, reproduce itself and be conscious of its existence." It was called the perceptron, and it was a single artificial neuron. Eleven years later, one short mathematical argument about a toy problem with only four rows of data helped freeze neural network research for a decade. This lesson builds the 1958 machine, runs it into the 1969 wall, and then breaks through that wall with a hidden layer. That idea is the seed of everything in the rest of this curriculum, GPT included.
 
 ## What this lesson builds
 
@@ -55,8 +55,8 @@ Build Frank Rosenblatt's perceptron (a single artificial neuron) in raw NumPy, t
 - [ ] Write `predict(x, w, b)` that returns 1 if `np.dot(w, x) + b > 0`, else 0. This function is a **neuron**: it multiplies each input by a weight (how much that input matters), adds them up with a bias `b` (how eager the neuron is to fire), and passes the sum through an **activation function** (here a hard step: fire or don't). Checkpoint: with hand-picked `w = [1, 1]` and `b = -1.5`, the neuron computes AND perfectly on all four rows. This neuron was programmed by hand-picking its weights. Remember that for Project 2.
 - [ ] Implement the **perceptron learning rule**, which finds weights automatically. For each training example: compute `error = y - y_hat`, then update `w = w + lr * error * x` and `b = b + lr * error`. In plain words: if the neuron fired when it should not have, lower the weights of the inputs that were active; if it stayed silent when it should have fired, raise them; if it was right, touch nothing. Loop over the whole dataset for many epochs (an epoch is one full pass through the data).
 - [ ] Train from small random weights on AND, then on OR, with a learning rate around 0.1, printing accuracy each epoch. Checkpoint: both reach 4/4 correct (100% accuracy) within about 20 epochs.
-- [ ] Plot the trained neuron's **decision line** for AND: the four input points colored by label, plus the line where `w1*x1 + w2*x2 + b = 0`. One side of the line means "fire", the other "don't". A dataset that some straight line can split perfectly like this is called **linearly separable**, and it is the exact boundary of what a single neuron can learn. Checkpoint: the line cleanly separates the one orange point from the three blue ones.
-- [ ] Now XOR. Run the same code with `y_xor` and give it every chance: train for 1000 epochs and try several learning rates. Watch the accuracy printout carefully. Checkpoint: accuracy tops out at 3/4 = 75% and never improves. The weights keep thrashing forever, always sacrificing one point to get the other three.
+- [ ] Plot the trained neuron's **decision line** for AND: the four input points colored by label, plus the line where `w1*x1 + w2*x2 + b = 0`. One side of the line means "fire", the other "don't". A dataset that some straight line can split perfectly like this is called **linearly separable**, and it is the exact boundary of what a single neuron can learn. Checkpoint: the line cleanly separates the one class-1 point `(1,1)` from the three class-0 points.
+- [ ] Now XOR. Run the same code with `y_xor` and give it every chance: train for 1000 epochs and try several learning rates. Watch the accuracy printout carefully. Checkpoint: accuracy never reaches 4/4. After a few epochs the end-of-epoch accuracy freezes at one value, usually 2/4 = 50% (sometimes 1/4 = 25%), even though the best possible straight line would get 3/4 = 75%. The weights keep thrashing forever: with the rows in a fixed order, each epoch's four corrections cancel each other out, so the rule never settles on any line.
 - [ ] Plot the four XOR points and try to place a single straight line that puts `(0,1)` and `(1,0)` on one side and `(0,0)` and `(1,1)` on the other. Spend a minute on it. The line is not merely hard to find: there is provably no such line. XOR is not linearly separable, and this tiny fact (published by Minsky and Papert in 1969) is what stalled the field. Save this plot as the "impossible" exhibit.
 
 <details><summary>Hints</summary>
@@ -64,12 +64,12 @@ Build Frank Rosenblatt's perceptron (a single artificial neuron) in raw NumPy, t
 - Update the weights one sample at a time (loop over the four rows inside each epoch), exactly as the rule states. This is not gradient descent yet, though it will feel similar.
 - To draw the decision line, solve for `x2`: `x2 = -(w1*x1 + b) / w2`, then plot it over `x1` from -0.5 to 1.5. Guard against `w2` being zero.
 - If training on AND or OR does not converge, print `w`, `b`, and `error` every epoch for a few epochs. The most common bug is updating with `y_hat` instead of `error`.
-- For the XOR run, also plot accuracy vs. epoch. A flat line at 0.75 tells the story better than any paragraph.
+- For the XOR run, also plot accuracy vs. epoch. A flat line stuck below 1.0 (usually at 0.5) tells the story better than any paragraph.
 
 </details>
 
 **Definition of done**
-The perceptron trains itself to 100% on AND and OR, and the XOR accuracy plot is flat at 75%. Explain out loud, using the word "line", why no amount of training will ever fix it.
+The perceptron trains itself to 100% on AND and OR, and the XOR accuracy plot stays flat below 100% (usually at 50%). Explain out loud, using the word "line", why no amount of training will ever fix it.
 
 ## Project 2 — Break the wall
 
@@ -78,7 +78,7 @@ Defeat XOR by giving the network a hidden layer. First set every weight by hand 
 
 **Milestones**
 
-- [ ] The insight, by hand: notice that XOR can be written from pieces the perceptron *can* learn ("XOR is true when OR is true AND AND is false"). So build a two-stage circuit in NumPy: neuron `h1` computes OR (hand weights from Project 1), neuron `h2` computes AND, and a final neuron takes `(h1, h2)` as *its* inputs with weights like `w = [1, -1]`, `b = -0.5` ("fire if h1 fires and h2 doesn't"). Checkpoint: 4/4 on XOR with zero training. Neurons `h1` and `h2` form a **hidden layer**: a row of neurons between input and output whose job is to transform the inputs into new features that make the problem easy.
+- [ ] The insight, by hand: notice that XOR can be written from pieces the perceptron *can* learn ("XOR is true when OR is true AND AND is false"). So build a two-stage circuit in NumPy: neuron `h1` computes OR (hand weights `w = [1, 1]`, `b = -0.5`, or the weights trained on OR in Project 1), neuron `h2` computes AND (the hand weights from Project 1), and a final neuron takes `(h1, h2)` as *its* inputs with weights like `w = [1, -1]`, `b = -0.5` ("fire if h1 fires and h2 doesn't"). Checkpoint: 4/4 on XOR with zero training. Neurons `h1` and `h2` form a **hidden layer**: a row of neurons between input and output whose job is to transform the inputs into new features that make the problem easy.
 - [ ] See *why* it works: for each of the four inputs, compute the hidden pair `(h1, h2)` and scatter-plot the points in this new hidden space, colored by their XOR label. Checkpoint: `(0,1)` and `(1,0)` land on the same spot, and now one straight line separates the classes. The hidden layer bent the space until the impossible problem became linearly separable. This is the single most important picture in deep learning.
 - [ ] Now make it *learn*. Build a 2-2-1 network (2 inputs → 2 hidden neurons → 1 output) with smooth activations instead of the hard step, so lesson 09's tools apply: `tanh` on the hidden layer, sigmoid (lesson 13) on the output, and binary cross-entropy loss (lesson 13 again). Write the forward pass as two matrix multiplies plus activations:
 
@@ -98,8 +98,8 @@ Defeat XOR by giving the network a hidden layer. First set every weight by hand 
 - Initialize weights with `np.random.randn(...) * 0.5`. All-zero weights make both hidden neurons identical forever (they get identical updates and never differentiate).
 - Vectorize `forward` over the whole dataset at once (shapes: `X` is `(n, 2)`, `W1` is `(2, hidden)`, `W2` is `(hidden, 1)`); otherwise numeric gradients on moons will crawl.
 - Classic numeric-gradient bug: forgetting to restore a parameter to its original value after nudging it. Nudge, measure, *un-nudge*, then move to the next parameter.
-- Loss stuck near 0.693 (that is ln 2) means the network outputs 0.5 for everything. Re-initialize with a different seed or raise the learning rate.
-- XOR training will occasionally get stuck below 4/4 from an unlucky start. That is real and interesting (see Stretch goals); just rerun with a new seed.
+- Loss stuck near 0.35 (half of ln 2) with 2/4 accuracy means the network has solved two corners and parked the other two at an output of 0.5, a local minimum. Re-initialize with a different seed. Loss stuck near 0.693 (that is ln 2) means the network outputs 0.5 for everything; re-initialize or raise the learning rate.
+- XOR training gets stuck below 4/4 from an unlucky start in roughly one run out of four (sometimes closer to one in three). That is real and interesting (see Stretch goals); just rerun with a new seed.
 
 </details>
 
@@ -113,9 +113,9 @@ Spend one focused hour in TensorFlow Playground (a neural network driven from th
 
 **Milestones**
 
-- [ ] Open https://playground.tensorflow.org. Choose the **spiral** dataset (bottom-left of the four data thumbnails), keep only the raw `X1` and `X2` features, and use the minus button to remove *all* hidden layers. Press play. Checkpoint: test loss plateaus around 0.4-0.5 and the background is split by one straight line: the Project 1 wall, live on screen.
+- [ ] Open https://playground.tensorflow.org. Choose the **spiral** dataset (bottom-right of the four data thumbnails; hovering shows its name), keep only the raw `X1` and `X2` features, and use the minus button to remove *all* hidden layers. Press play. Checkpoint: test loss plateaus around 0.4-0.5 and the background is split by one straight line: the Project 1 wall, live on screen.
 - [ ] Add one hidden layer of 4 neurons with `tanh` activation and retrain. Hover over each hidden neuron: its thumbnail shows the feature it has learned. Checkpoint: each hidden neuron shows a simple stripe-like pattern, and the output stitches those stripes into something spiral-like but still failing. The thumbnails show a hidden layer inventing features, just like the hand-built OR and AND neurons.
-- [ ] Grow the network until the spiral is solved: try 2 hidden layers of 8 neurons each with ReLU (**ReLU** is the activation `max(0, x)`, a hinge that is the modern default because it trains fast). Let it run a few hundred epochs. Checkpoint: test loss below about 0.05 and the orange/blue background wraps the spiral correctly. Take a screenshot:
+- [ ] Grow the network until the spiral is solved: try 2 hidden layers of 8 neurons each with ReLU (**ReLU** is the activation `max(0, x)`, a hinge that is the modern default because it trains fast). Let it run until the epoch counter passes about 1,000. Checkpoint: test loss around 0.1 or lower and the orange/blue background wraps the spiral. If the loss is still above 0.3 by then, press reset and run again. Take a screenshot:
 
   - **macOS:** press Cmd+Shift+4 and drag a box around the playground; the screenshot is saved on the Desktop.
   - **Windows (WSL2):** press Win+Shift+S and drag a box around the playground; Windows 11 saves the screenshot in Pictures → Screenshots (on Windows 10, click the notification that pops up and save the snip from the window that opens).
@@ -152,8 +152,8 @@ The solved-spiral screenshot is saved, plus three written sentences in a notes f
 
 ## Resources
 
-- **3Blue1Brown — "But what is a neural network?"** — the best visual explanation of neurons, layers, and weights ever made. It is chapter 1 of a 4-part series; watch all four parts as homework for this lesson (search YouTube for "3Blue1Brown neural networks").
-- **TensorFlow Playground** — https://playground.tensorflow.org — the browser sandbox for Project 3. Keep it bookmarked: lessons 24 and 25 return to it.
+- **3Blue1Brown — "But what is a neural network?"** — the best visual explanation of neurons, layers, and weights ever made. It is chapter 1 of 3Blue1Brown's deep learning series; watch chapters 1-4 (through "Backpropagation calculus") as homework for this lesson (search YouTube for "3Blue1Brown neural networks"). The later chapters cover transformers and fit Phase 4.
+- **TensorFlow Playground** — https://playground.tensorflow.org — the browser sandbox for Project 3. Keep it bookmarked: it is the quickest way to test an intuition about layers, activations or learning rates later in the course.
 
 ## Skills unlocked
 

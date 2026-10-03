@@ -2,13 +2,13 @@
 
 **Phase 3 — Deep Learning** · Estimated time: 1 week · Prerequisites: [22 · Build micrograd](22-micrograd-backpropagation.md), [23 · Neural Network in Pure NumPy](23-mlp-numpy-mnist.md)
 
-> Lesson 22 built backpropagation by hand, and lesson 23 trained a real digit classifier in pure NumPy: hundreds of lines of gradients, loops and shape bugs. PyTorch is the industry-standard library that automates all of that. Every line of PyTorch code in this lesson maps to something already built in those two lessons, so nothing in the framework is a black box. The lesson introduces tensors, autograd, layers, data loaders and optimizers, and uses them to re-fit a line and to rebuild the MNIST network in a fraction of the code. It ends with a clean, reusable training script that the next nine lessons build on.
+> Lesson 22 built backpropagation by hand, and lesson 23 trained a real digit classifier in pure NumPy: hundreds of lines of gradients, loops and shape bugs. PyTorch is the industry-standard library that automates all of that. Every line of PyTorch code in this lesson maps to something already built in those two lessons, so nothing in the framework is a black box. The lesson introduces tensors, autograd, layers, data loaders and optimizers, and uses them to re-fit a line and to rebuild the MNIST network in a fraction of the code. It ends with a clean, reusable training script that later lessons build on.
 
 ## What this lesson builds
 
 - **Project 1 — Autograd feels familiar:** a script that recreates the lesson-22 expression graph in PyTorch, proves that the gradients match micrograd, then fits `y = wx + b` using nothing but tensors and `.backward()`.
 - **Project 2 — MNIST, take two:** the lesson-23 digit classifier rebuilt in PyTorch with `nn.Module`, `DataLoader` and Adam, matching or beating the NumPy accuracy, then saved to disk and reloaded to predict.
-- **Project 3 — A training template:** a clean `train.py` with reusable train/eval functions, loss and accuracy curves, and best-model checkpointing: the skeleton that lessons 25–33 reuse.
+- **Project 3 — A training template:** a clean `train.py` with reusable train/eval functions, loss and accuracy curves, and best-model checkpointing: the skeleton that later PyTorch lessons reuse.
 
 ## Concepts covered
 
@@ -55,7 +55,7 @@ If the computer does have an NVIDIA GPU set up in WSL2 or on Linux, get the righ
 python -c "import torch; print(torch.__version__, torch.cuda.is_available(), torch.backends.mps.is_available())"
 ```
 
-It prints the version, then `True` or `False` for an NVIDIA GPU (`cuda`) and for an Apple Silicon Mac's GPU (`mps`, macOS 14 or newer). A CPU is completely fine for this whole lesson, since MNIST is small. When later lessons need more computing power, Google Colab and Kaggle notebooks (kaggle.com, account required) provide free GPU time in the browser.
+It prints the version, then `True` or `False` for an NVIDIA GPU (`cuda`) and for an Apple Silicon Mac's GPU (`mps`, macOS 14 or newer). A CPU is completely fine for this whole lesson, since MNIST is small. When later lessons need more computing power, Google Colab and Kaggle notebooks (kaggle.com; GPUs need an account with a verified phone number) provide free GPU time in the browser.
 
 Create the work folder for this lesson:
 
@@ -72,16 +72,16 @@ mkdir -p work/24-pytorch-fundamentals && cd work/24-pytorch-fundamentals
 - [ ] In `autograd_hello.py`, create scalar tensors with gradient tracking on: `a = torch.tensor(2.0, requires_grad=True)`. `requires_grad=True` tells PyTorch "record every operation on this tensor so gradients can flow back to it". That is exactly what the micrograd `Value` class did automatically.
 - [ ] Rebuild the exact tiny expression graph from lesson 22. If that was Karpathy's graph, it is `e = a*b`, `d = e + c`, `L = d*f` with `a=2, b=-3, c=10, f=-2`. Print `L`. Checkpoint: `L` is `-8.0`, the same number micrograd gave.
 - [ ] Call `L.backward()` and print `a.grad`, `b.grad`, `c.grad`, `f.grad`. Checkpoint: the gradients match the micrograd run exactly (for the example above: `a.grad=6.0`, `b.grad=-4.0`, `c.grad=-2.0`, `f.grad=4.0`). What happened inside that call is exactly what the hand-written micrograd code does.
-- [ ] Run `L.backward()` a second time in a fresh script but *without* resetting, using `retain_graph=True`, and print `a.grad` again. Checkpoint: the gradient has **doubled**. PyTorch accumulates gradients into `.grad` instead of overwriting them, which is why every training loop must zero them out each step.
-- [ ] In a new script, `fit_line.py`, generate fake data: 100 points of `y = 3x + 2` plus a little noise, using `torch.randn` (lesson 12 did the same with NumPy).
+- [ ] In a fresh script, rebuild the same graph and call `L.backward(retain_graph=True)` (the flag keeps the graph alive for another pass), print `a.grad`, then call `L.backward()` a second time without resetting anything and print `a.grad` again. Checkpoint: the gradient has **doubled**. PyTorch accumulates gradients into `.grad` instead of overwriting them, which is why every training loop must zero them out each step.
+- [ ] In a new script, `fit_line.py`, generate fake data: 100 points of `y = 3x + 2` plus a little noise, using `torch.randn` (lesson 09 did the same with NumPy).
 - [ ] Create `w` and `b` as tensors with `requires_grad=True`, both starting at 0. Write a loop of about 200 steps: compute predictions `y_pred = w*x + b`, compute the mean squared error loss, call `loss.backward()`, then update the parameters by hand inside a `with torch.no_grad():` block (`w -= lr * w.grad`), and finally zero both grads with `w.grad.zero_()` and `b.grad.zero_()`. The `no_grad` block means "do not record these operations": updating weights is bookkeeping, not part of the math being differentiated.
-- [ ] Print the loss every 20 steps. Checkpoint: the loss falls steadily, and `w` ends near `3.0` and `b` near `2.0` (within about ±0.2). This is lesson 12 again, but this time autograd computed every derivative.
+- [ ] Print the loss every 20 steps. Checkpoint: the loss falls steadily, and `w` ends near `3.0` and `b` near `2.0` (within about ±0.2). This is the lesson-09 line fit again, but this time autograd computed every derivative.
 
 <details><summary>Hints</summary>
 
 - `RuntimeError: element 0 of tensors does not require grad` means the loss was built from tensors that are not connected to `w` and `b`. Check that no step accidentally converted to NumPy or used `.detach()`.
 - Trying to backward twice through the same graph raises an error by design. Each forward pass builds a fresh graph, so the loop recomputes `y_pred` and `loss` every iteration.
-- If the loss explodes to `inf`, the learning rate is too high. Try `0.01` or `0.001`.
+- If the loss explodes to `inf`, the learning rate is too high. Try `0.1` or `0.01` (a much smaller rate such as `0.001` needs thousands of steps instead of 200).
 - `.item()` turns a one-element tensor into a plain Python number for printing.
 
 </details>
@@ -94,11 +94,12 @@ mkdir -p work/24-pytorch-fundamentals && cd work/24-pytorch-fundamentals
 
 **Milestones**
 
+- [ ] Keep the dataset out of git. The download below lands in a `data/` folder inside the work folder (over 60 MB), and the fork is public. Run `echo "work/24-pytorch-fundamentals/data/" >> ~/ml/ml-learn/.gitignore` once. Checkpoint: after the first run of `mnist_torch.py`, `git status -u` lists nothing inside `data/`.
 - [ ] In `mnist_torch.py`, load MNIST via torchvision, which downloads it automatically (no account needed): `datasets.MNIST("data", train=True, download=True, transform=transforms.ToTensor())`. `ToTensor` converts each image to a float tensor scaled to 0–1, the same normalization that lesson 23 did by hand.
 - [ ] Wrap the train and test sets in `DataLoader`s (`batch_size=64`, `shuffle=True` for train only). A `DataLoader` is an iterator that hands out shuffled mini-batches: the slicing-and-shuffling code from lesson 23, automated. Checkpoint: looping `for images, labels in train_loader:` once and printing shapes gives `torch.Size([64, 1, 28, 28])` and `torch.Size([64])`.
 - [ ] Define the same architecture as lesson 23 using `nn.Sequential`: `nn.Flatten()`, then `nn.Linear(784, 128)`, `nn.ReLU()`, `nn.Linear(128, 10)`. `nn.Linear` creates the weight matrix and bias automatically, randomly initialized and with `requires_grad` already on. Print the model, and count parameters with `sum(p.numel() for p in model.parameters())`. Checkpoint: 101,770 parameters (or the matching count, if the lesson-23 network used different layer sizes).
 - [ ] Set up `loss_fn = nn.CrossEntropyLoss()` (softmax + cross-entropy fused, the lesson-23 loss in one object; it takes raw scores, so the model has no softmax layer) and `optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)`. Adam is a smarter cousin of SGD that adapts the step size per weight; lesson 25 explains why.
-- [ ] **Overfit one batch first.** Take a single batch and train on only that batch for ~100 steps with the canonical loop:
+- [ ] **Overfit one batch first.** Take a single batch and train on only that batch for ~200 steps with the canonical loop:
 
   ```python
   optimizer.zero_grad()          # reset grads (they accumulate, as Project 1 showed)
@@ -128,7 +129,7 @@ mkdir -p work/24-pytorch-fundamentals && cd work/24-pytorch-fundamentals
 
 ## Project 3 — A training template
 
-**Goal:** Refactor Project 2 into a clean, reusable `train.py`. Lessons 25 through 33 all start from this file, so an hour of tidying now pays off for months.
+**Goal:** Refactor Project 2 into a clean, reusable `train.py`. Lesson 26 starts from this file, and later PyTorch lessons reuse its loop, so an hour of tidying now pays off for months.
 
 **Milestones**
 
@@ -146,12 +147,12 @@ mkdir -p work/24-pytorch-fundamentals && cd work/24-pytorch-fundamentals
       # data -> model -> loss -> optimizer -> epoch loop -> plot
   ```
 
-- [ ] Both functions return average loss *and* accuracy, so one function serves any classification task. Guard the entry point with `if __name__ == "__main__": main()` (from lesson 04).
+- [ ] Both functions return average loss *and* accuracy, so one function serves any classification task. Guard the entry point with `if __name__ == "__main__": main()`, so that `main()` runs only when the file itself is run (`python3 train.py`), not when another script imports its functions.
 - [ ] In the epoch loop, call both functions, print a one-line summary per epoch (`epoch 3: train loss 0.081 acc 0.976 | test loss 0.092 acc 0.972`), and append all four numbers to history lists.
 - [ ] Checkpoint the best model: whenever test accuracy beats the best so far, `torch.save` the `state_dict` to `best_model.pt` and print a message saying so. This way, the best weights are never lost to a bad epoch late in training.
 - [ ] After training, plot two side-by-side charts with matplotlib (lesson 07): loss curves and accuracy curves, each with train and test lines, labeled, saved as `curves.png`. Checkpoint: both training curves improve smoothly, and the test curves track them closely. A widening gap between train and test is overfitting, the problem that lesson 25 tackles.
-- [ ] Prove reusability: change *only* the model definition (say, hidden size 128 → 256) and rerun. Checkpoint: everything works untouched and `best_model.pt` updates only if the new run actually wins.
-- [ ] Commit the template to git with a clear message, because lesson 25 starts from a copy of this file.
+- [ ] Prove reusability: change *only* the model definition (say, hidden size 128 → 256) and rerun. Checkpoint: everything works untouched. The best-so-far accuracy starts fresh on every run, so the new run overwrites `best_model.pt` with the 256-unit weights; to keep both, copy the old file aside before the rerun (for example to `best_model_h128.pt`).
+- [ ] Commit the template to git with a clear message, because lesson 26 starts from a copy of this file.
 
 <details><summary>Hints</summary>
 
@@ -165,9 +166,9 @@ mkdir -p work/24-pytorch-fundamentals && cd work/24-pytorch-fundamentals
 
 ## Stretch goals
 
-- Write a custom `Dataset` class (implement `__len__` and `__getitem__`) that serves MNIST from the raw files used in lesson 23, and confirm that `DataLoader` consumes it without complaint.
+- Write a custom `Dataset` class (implement `__len__` and `__getitem__`) that serves MNIST from `mnist_prepared.npz`, the arrays saved in lesson 23 (`../23-mlp-numpy-mnist/mnist_prepared.npz`), and confirm that `DataLoader` consumes it without complaint.
 - Race SGD vs Adam: same model, 5 epochs each, both loss curves on one plot. Which wins on MNIST, and by how much?
-- Upload the script to a free GPU notebook (Colab, or kaggle.com with an account) and time one epoch on the GPU vs the computer's own CPU (on an Apple Silicon Mac, set `device = "cpu"` by hand for that run, and time `"mps"` too). The lessons from 26 onward lean on that speedup.
+- Upload the script to a free GPU notebook (Colab, or kaggle.com with a phone-verified account) and time one epoch on the GPU vs the computer's own CPU (on an Apple Silicon Mac, set `device = "cpu"` by hand for that run, and time `"mps"` too). The lessons from 26 onward lean on that speedup.
 - Rewrite the model as an explicit `nn.Module` subclass with `__init__` and `forward()` instead of `nn.Sequential`. That form is needed once architectures stop being straight lines.
 
 ## Getting unstuck

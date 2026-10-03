@@ -13,7 +13,7 @@
 ## Concepts covered
 
 - **Decision tree**: a model that predicts by asking a sequence of learned if/else questions about the features.
-- **Gini impurity**: a 0-to-0.5 score for how mixed the labels in a group are (0 = all the same class, 0.5 = a perfect 50/50 mix).
+- **Gini impurity**: a score for how mixed the labels in a group are, from 0 (all the same class) up to 0.5 for a perfect 50/50 mix of two classes (with k classes the maximum is 1 - 1/k).
 - **Entropy**: an alternative score for how mixed up a group is, from information theory. Either works; Gini is just cheaper to compute.
 - **Best split**: the (feature, threshold) question that produces the largest drop in impurity, found by a brute-force search over the candidates.
 - **Recursive tree building**: applying best-split to the data, then applying the same function to each half, until a stopping rule fires.
@@ -54,6 +54,14 @@ df = sns.load_dataset("titanic")   # 891 rows; columns include survived, pclass,
 mkdir -p work/15-decision-trees && cd work/15-decision-trees
 ```
 
+5. Copy the lesson 14 metrics library here so that it can be imported (`from mymetrics import accuracy, confusion_matrix`):
+
+```bash
+cp ../14-model-evaluation/mymetrics.py .
+```
+
+(Adjust the path if the lesson 14 `mymetrics.py` lives elsewhere.)
+
 ## Project 1 — Split scorer
 
 **Goal:** Write the two functions at the heart of every tree: `gini(labels)`, which scores how mixed a group is, and `best_split(X, y)`, which finds the question that unmixes it most. Then verify that the data itself says "split on sex first".
@@ -61,7 +69,7 @@ mkdir -p work/15-decision-trees && cd work/15-decision-trees
 **Milestones**
 
 - [ ] Prepare the data in `prepare_data.py`: load Titanic with seaborn, keep the columns `survived, pclass, sex, age, fare, sibsp, parch`, map `sex` to numbers (`male`→0, `female`→1), and drop rows with missing `age` (`df.dropna()`; NaN handling was covered in lesson 6). Split the data into a NumPy feature matrix `X` and a label vector `y = survived`. Checkpoint: `X.shape` is about `(714, 6)` and `y.mean()` is about `0.41` (41% of these passengers survived).
-- [ ] Split into train/test (80/20, fixed `random_state`) using the lesson-14 helper or `sklearn.model_selection.train_test_split`. All fitting below uses only the training set.
+- [ ] Split into train/test (80/20, `random_state=0`; the accuracy checkpoints in this lesson assume this seed, and another seed can move test accuracy by 0.05 or more, because ~143 test rows is a small sample) with `sklearn.model_selection.train_test_split` (the hand-written index-shuffling split from lessons 11 and 13 also works, but it picks different test rows, so the checkpoint numbers will shift). All fitting below uses only the training set.
 - [ ] Write `gini(labels)`: for each class, compute its proportion `p`; return `1 - sum(p**2)`. Intuition: the chance that two randomly drawn passengers from this group have *different* labels. Checkpoint: `gini([0,0,0,0]) == 0.0`, `gini([0,0,1,1]) == 0.5`, `gini([0,0,0,1])` is `0.375`.
 - [ ] Write `split_score(X_col, y, threshold)`: send samples with `X_col <= threshold` left, the rest right, and return the **weighted** Gini: `(n_left*gini_left + n_right*gini_right) / n`. Weighting matters: a pure group of 2 should not count as much as an impure group of 500. Checkpoint: a threshold that separates classes perfectly on a toy array scores `0.0`.
 - [ ] Write `best_split(X, y)`: for every feature column, take the sorted unique values and try the midpoints between consecutive ones as thresholds; return the `(feature_index, threshold, score)` with the lowest weighted Gini. Skip "splits" that put everything on one side.
@@ -70,7 +78,7 @@ mkdir -p work/15-decision-trees && cd work/15-decision-trees
 <details><summary>Hints</summary>
 
 - `gini` should work for any labels, not just 0/1. `np.unique(labels, return_counts=True)` gives the counts; divide them by `len(labels)` for proportions.
-- Guard the empty case: `gini([])` on an empty side will divide by zero. Return 0.0 for an empty group (or skip such splits in the caller).
+- Guard the empty case: with the `np.unique` recipe, `gini([])` on an empty side does not crash but silently returns 1.0 (an empty array divided by 0 is still empty). Return 0.0 explicitly for an empty group (or skip such splits in the caller).
 - Boolean masks from lesson 5 do the split in one line: `left = y[X[:, f] <= t]`, `right = y[X[:, f] > t]`.
 - Brute force is fine here: 6 features × at most a few hundred thresholds is very little work. Get it correct first; speed later.
 </details>
@@ -89,7 +97,7 @@ Recursion (a function that calls itself on smaller pieces of the problem) is the
 - [ ] Write `make_leaf(y)`: returns a leaf Node predicting the majority class of `y`. Checkpoint: `make_leaf([1,1,0]).prediction == 1`.
 - [ ] Write the skeleton of `build_tree(X, y, depth, max_depth)` with **base cases only**. It returns a leaf when: (1) all labels in `y` are the same, (2) `depth >= max_depth`, (3) there are fewer than `min_samples` rows (start with 2), or (4) `best_split` found no split that beats the current impurity. Temporarily make the "otherwise" branch also return a leaf. Checkpoint: the function runs on the full training set without recursing and predicts 0 (the majority died) for everything: a working but terrible depth-0 tree.
 - [ ] Now add the recursive step: call `best_split`, partition rows into left (`<= threshold`) and right, and return an internal Node whose children are `build_tree(X_left, y_left, depth+1, max_depth)` and `build_tree(X_right, y_right, depth+1, max_depth)`. Checkpoint: `build_tree(..., max_depth=1)` returns a root splitting on `sex` with two leaves: women→survived, men→died.
-- [ ] Write `predict_one(node, x)`: while the node is not a leaf, go left if `x[node.feature] <= node.threshold`, else right; return the leaf's prediction. Wrap it in `predict(node, X)` for a whole matrix. Checkpoint: the depth-1 tree scores about 0.78 accuracy on the test set, so one question already beats the first attempts in lesson 11.
+- [ ] Write `predict_one(node, x)`: while the node is not a leaf, go left if `x[node.feature] <= node.threshold`, else right; return the leaf's prediction. Wrap it in `predict(node, X)` for a whole matrix. Checkpoint: the depth-1 tree scores about 0.78 accuracy on the test set, so one question already roughly matches the lesson 13 logistic regression and clearly beats the "everyone dies" baseline (about 0.59 on all 714 rows).
 - [ ] Write `print_tree(node, feature_names, indent=0)`: recursively print `"  " * indent` plus either `predict <class> (n=..., gini=...)` for leaves or `if <feature> <= <threshold>:` for internal nodes. Checkpoint: printing a depth-3 tree shows readable nested rules. The top line mentions `sex`, and inside the male branch there should be a split on `age`, the "children" half of the famous rule.
 - [ ] The overfitting experiment: for `max_depth` in `[1, 2, 3, 5, 8, None]` (use e.g. 999 for None), train and record train and test accuracy; print a table and plot both curves against depth (lesson 7 skills). Checkpoint: train accuracy climbs toward ~0.95+ while test accuracy peaks around depth 3-5 (~0.78-0.82) and then flattens or *drops*. The gap between the curves is overfitting, drawn by the from-scratch tree.
 - [ ] Look at the unlimited-depth tree with `print_tree`. Checkpoint: the printout shows absurd, hyper-specific rules (e.g. splits on `fare <= 26.1` inside splits on `fare <= 26.3`) that clearly memorize individual passengers. Cutting these branches off is the idea called **pruning**; `max_depth` is pruning-in-advance.
@@ -114,7 +122,7 @@ Recursion (a function that calls itself on smaller pieces of the problem) is the
 - [ ] Visualize it: `from sklearn.tree import plot_tree`, then `plot_tree(clf, feature_names=..., class_names=["died","survived"], filled=True)` inside a matplotlib figure; save it as a PNG. Checkpoint: the diagram's root box says `sex <= 0.5` with gini ≈ 0.48, matching the Project 1 numbers.
 - [ ] Tune depth with cross-validation (lesson 14): for `max_depth` in 1-15, run `cross_val_score(clf, X_train, y_train, cv=5)` and plot mean CV accuracy vs depth. Checkpoint: the curve rises, peaks around depth 3-6, then declines or plateaus. Pick the best depth from *this* curve, not from test accuracy (the test set stays untouched until the end).
 - [ ] Retrain at the chosen depth on the full training set, evaluate **once** on the test set, and report accuracy plus the confusion matrix from the lesson-14 metrics library. Checkpoint: test accuracy is around 0.78-0.83.
-- [ ] Inspect `clf.feature_importances_` (each feature's total share of impurity reduction, summing to 1) and draw a bar chart. Checkpoint: `sex` is the most important feature, with `fare`, `age` and `pclass` behind it.
+- [ ] Inspect `clf.feature_importances_` (each feature's total share of impurity reduction, summing to 1) and draw a bar chart. Checkpoint: `sex` is the most important feature by a wide margin, usually followed by `pclass` and `age`; `fare`, `sibsp` and `parch` share the small remainder.
 - [ ] The no-scaling experiment: standardize `X` with `StandardScaler` (lesson 12 made this *necessary*), retrain the tree, and compare predictions. Checkpoint: the predictions are identical. A threshold question like `age <= 6.5` just becomes `scaled_age <= -1.6`, and the tree does not care. Write two sentences in a comment on why scaling mattered for gradient-descent models but not here.
 
 <details><summary>Hints</summary>

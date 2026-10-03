@@ -26,15 +26,16 @@
 1. This lesson needs the decision tree code from lesson 15 and the metrics library from lesson 14. Confirm that they exist:
 
    ```bash
+   cd ~/ml/ml-learn
    ls work/15-decision-trees/ work/14-model-evaluation/
    ```
 
-2. The lesson also needs a local Titanic CSV. Lesson 15 loaded the data through seaborn, which caches it outside the work folder, so there is probably no `titanic.csv` file yet. Step 4 below creates one.
+2. The lesson also needs a local Titanic CSV in this lesson's folder. Lesson 14 saved one in `work/14-model-evaluation/`, and lesson 15 loaded the data through seaborn instead. Step 4 below writes a fresh copy here.
 
 3. Activate the venv at the repo root and install XGBoost (scikit-learn downloads California housing automatically, as in lesson 12). On a Mac, XGBoost also needs Homebrew's OpenMP library (libomp), which lets it use all the CPU cores:
 
    - **macOS on Apple Silicon with macOS 15 or later:** run `brew install libomp` before the commands below.
-   - **macOS on an Intel Mac, or on macOS 14 and older:** without Homebrew, XGBoost cannot load, so leave out the last two lines below. In Project 3, use scikit-learn's own gradient boosting instead, which brings its own OpenMP: `HistGradientBoostingClassifier` and `HistGradientBoostingRegressor` from `sklearn.ensemble`, wherever the lesson uses `XGBClassifier` and `XGBRegressor`. They take the same `max_depth` and `learning_rate`, and `max_iter` in place of `n_estimators`. Or do Project 3 in [Google Colab](https://colab.research.google.com), a free cloud notebook with XGBoost preinstalled.
+   - **macOS on an Intel Mac, or on macOS 14 and older:** without Homebrew, XGBoost cannot load, so leave out the last two lines below. In Project 3, use scikit-learn's own gradient boosting instead, which brings its own OpenMP: `HistGradientBoostingClassifier` and `HistGradientBoostingRegressor` from `sklearn.ensemble`, wherever the lesson uses `XGBClassifier` and `XGBRegressor`. They take the same `max_depth` and `learning_rate`, and `max_iter` in place of `n_estimators`. Or do Project 3 in [Google Colab](https://colab.research.google.com), a free cloud notebook with XGBoost preinstalled: upload `titanic.csv`, `mymetrics.py`, and the logistic regression, tree and forest code with Colab's Files panel first, then download RESULTS.md and the edited `mymetrics.py` back into `work/16-ensembles/` when done, and copy that `mymetrics.py` over the lesson-14 one.
 
    ```bash
    cd ~/ml/ml-learn
@@ -50,11 +51,17 @@
    python3 -c "import seaborn as sns; sns.load_dataset('titanic').to_csv('work/16-ensembles/titanic.csv', index=False)"
    ```
 
-5. Copy (or import) the lesson-15 tree into this folder, so that it can be modified freely without breaking lesson 15.
+5. Copy the lesson-15 tree code and the lesson-14 metrics library into this folder, so that they can be modified freely without breaking the earlier lessons, then work from this folder:
+
+   ```bash
+   cp work/15-decision-trees/*.py work/16-ensembles/
+   cp work/14-model-evaluation/mymetrics.py work/16-ensembles/
+   cd work/16-ensembles
+   ```
 
 ## Project 1 — Crowd wisdom demo
 
-**Goal**: Prove with a plot that 100 mediocre trees voting together beat any single one of them. This is bagging (**b**ootstrap **agg**regat**ing**).
+**Goal**: Prove with a plot that 100 mediocre trees voting together beat a typical single one of them. This is bagging (**b**ootstrap **agg**regat**ing**).
 
 **Milestones**
 
@@ -62,9 +69,9 @@
 - [ ] Write a function `bootstrap_sample(X, y)` that returns a new dataset the *same size* as the original, built by picking rows at random **with replacement** (the same row can appear twice; on average about 37% of rows are left out entirely). This is a bootstrap sample. Checkpoint: run it, then count how many *unique* original rows made it in. Roughly 63% of them should be there.
 - [ ] Train one lesson-15 tree (depth limit around 5-8) on one bootstrap sample and record its test accuracy. Repeat 100 times, storing all 100 trees and all 100 individual accuracies. Checkpoint: individual tree accuracies scatter over a visible range, typically somewhere around 0.74-0.82. That scatter *is* variance: each tree overfits its own sample differently.
 - [ ] Write `majority_vote(trees, X)`: every tree predicts, and each row's final answer is whichever class got more votes. For k = 1, 2, 3, ..., 100, compute the test accuracy of the first k trees voting together.
-- [ ] Plot ensemble accuracy vs. number of trees (matplotlib, from lesson 7). Add a horizontal dashed line at the *best* single tree's accuracy. Checkpoint: the curve is noisy at the left, climbs, then flattens. The flat part sits at or above the best single tree, and clearly above the *average* tree. The crowd beats its members.
+- [ ] Plot ensemble accuracy vs. number of trees (matplotlib, from lesson 7). Add a horizontal dashed line at the *average* single tree's accuracy, and a dotted line at the *best* single tree's. Checkpoint: the curve is noisy at the left, climbs, then flattens. The flat part sits clearly above the average tree, in the upper part of the single-tree range. It usually stays a little below the best single tree: with only ~143 test rows, the best of 100 scores is partly luck, and that tree could only be picked by looking at the test set. The crowd reliably beats its typical member.
 - [ ] Write a one-paragraph note in a comment or README: why does averaging reduce variance but not bias? (Hint: 100 copies of the *same* wrong opinion do not cancel; 100 *different* wrong opinions do.)
-- [ ] **Out-of-bag bonus**: for each tree, the ~37% of rows it never trained on are its **out-of-bag (OOB)** rows: a free, built-in test set. For each training row, collect votes only from trees that did *not* see it, and compute OOB accuracy. Checkpoint: OOB accuracy lands within a couple of points of the held-out test accuracy. The ensemble has been evaluated without spending any test data.
+- [ ] **Out-of-bag bonus**: for each tree, the ~37% of rows it never trained on are its **out-of-bag (OOB)** rows: a free, built-in test set. For each training row, collect votes only from trees that did *not* see it, and compute OOB accuracy. Checkpoint: OOB accuracy lands within a few points of the held-out test accuracy (the ~143-row test set is small, so gaps of 3-5 points are normal). The ensemble has been evaluated without spending any test data.
 
 <details><summary>Hints</summary>
 
@@ -75,7 +82,7 @@
 
 </details>
 
-**Definition of done**: A saved plot showing majority-vote accuracy vs. crowd size 1→100, where the flattened ensemble beats the best single tree, plus a computed OOB accuracy close to test accuracy.
+**Definition of done**: A saved plot showing majority-vote accuracy vs. crowd size 1→100, where the flattened ensemble sits clearly above the average single tree, plus a computed OOB accuracy close to test accuracy.
 
 ## Project 2 — Random forest from scratch
 
@@ -86,7 +93,7 @@
 - [ ] Modify the lesson-15 tree so that at *every split*, instead of scanning all features for the best split, it first picks a random subset of features (a common default: the square root of the number of features, rounded) and scans only those. Make the subset size a parameter, `max_features`.
 - [ ] Sanity-check the modified tree alone: train it a few times on the full Titanic training set. Checkpoint: different runs now produce *different* root splits; the trees have become individuals. (The original tree picked the same root every time.)
 - [ ] Write a `RandomForest` class with `__init__(n_trees=100, max_depth=8, max_features='sqrt')`, `fit(X, y)` (bootstrap sample + randomized tree, n_trees times), and `predict(X)` (majority vote). This is Project 1's loop, packaged the way scikit-learn packages models; the same shape appears everywhere from here on.
-- [ ] Train the forest on Titanic and evaluate it with the lesson-14 metrics (accuracy, precision, recall). Checkpoint: test accuracy is around 0.80 or better, and at least as good as the Project 1 bagging ensemble (usually a touch better).
+- [ ] Train the forest on Titanic and evaluate it with the lesson-14 metrics (accuracy, precision, recall). Checkpoint: test accuracy is around 0.80, within a few points of the Project 1 bagging ensemble. With only six features and ~143 test rows, either one can come out ahead on a given split; the forest's edge shows more clearly on data with many features.
 - [ ] Now the race: train `sklearn.ensemble.RandomForestClassifier` with the same `n_estimators` and `max_depth` on the same split. Checkpoint: the from-scratch forest lands within a few points of sklearn's accuracy. Sklearn will be dramatically faster, because it runs optimized C code, not because it has a smarter algorithm. The *ideas* are identical.
 - [ ] Ask sklearn's forest which features mattered: print `model.feature_importances_` next to the feature names, sorted. Checkpoint: sex and fare (or ticket class) sit near the top. The forest has rediscovered what was found by hand in lesson 15.
 
@@ -103,12 +110,12 @@
 
 ## Project 3 — Boosting in practice
 
-**Goal**: Bagging builds trees *in parallel* and averages them. **Boosting** builds them *in sequence*: each new small tree is trained to correct the mistakes the ensemble has made so far. **Gradient boosting** is the modern form: each new tree predicts the current errors (the gradient of the loss, hence the name), and its predictions are added on with a small **learning rate** (a shrink factor that keeps any single tree from overcorrecting). This project does not build gradient boosting from scratch. Instead, it focuses on mastering the tool that everyone actually uses: XGBoost.
+**Goal**: Bagging builds trees *in parallel* and averages them. **Boosting** builds them *in sequence*: each new small tree is trained to correct the mistakes the ensemble has made so far. **Gradient boosting** is the modern form: each new tree predicts the current errors (the *negative* gradient of the loss, hence the name), and its predictions are added on with a small **learning rate** (a shrink factor that keeps any single tree from overcorrecting). This project does not build gradient boosting from scratch. Instead, it focuses on mastering the tool that everyone actually uses: XGBoost.
 
 **Milestones**
 
 - [ ] Start with a 20-line warm-up that builds intuition. Fit a depth-2 *regression* tree to some 1-D toy data, using `sklearn.tree.DecisionTreeRegressor(max_depth=2)` for both stages (or the regression tree from the lesson-15 stretch goals, if it was built; the lesson-15 *classifier* cannot fit residuals). Then compute the residuals (true minus predicted), fit a second tree *to the residuals*, and add the two predictions. Checkpoint: the two-tree sum fits the data visibly better than either tree alone. That is gradient boosting's entire trick; everything else is refinement.
-- [ ] Train a default `xgboost.XGBClassifier` on the Titanic split:
+- [ ] Train a baseline `xgboost.XGBClassifier` with modest, hand-picked settings on the Titanic split (XGBoost's own defaults are `max_depth=6` and `learning_rate=0.3`):
 
   ```python
   from xgboost import XGBClassifier
@@ -119,9 +126,9 @@
 
   Checkpoint: accuracy is in the same neighborhood as the random forest (Titanic is small and noisy, so do not expect miracles; expect parity or a small edge).
 - [ ] Tune it honestly with cross-validation (lesson 14): use `sklearn.model_selection.GridSearchCV` over a small grid (`n_estimators` in {50, 100, 300}, `max_depth` in {2, 3, 4}, `learning_rate` in {0.03, 0.1, 0.3}) with `cv=5`. Print the best parameters and the best CV score. Checkpoint: the scores follow a pattern that can be explained: a lower learning rate wants more trees (smaller steps, more of them), and deep trees overfit small data.
-- [ ] Switch to regression: load California housing (`sklearn.datasets.fetch_california_housing`), 20,000+ rows of census data for predicting median house value. Train `xgboost.XGBRegressor`, tune the same three knobs, and evaluate with RMSE (root-mean-squared error, which takes one line: `np.sqrt(np.mean((y_pred - y)**2))`; add an `rmse` function to the lesson-14 `mymetrics.py` now and validate it against sklearn). Checkpoint: tuned test RMSE is around 0.45-0.55 (the target is in units of $100k, so that is roughly ±$50k typical error). Compare against plain `LinearRegression` on the same split. XGBoost should be clearly better, because house prices depend on *interactions* (location × income) that a straight line cannot express.
-- [ ] Build the final Phase-2 results table. On identical Titanic splits, evaluate the lesson-13 logistic regression, the lesson-15 single tree, the Project-2 forest, sklearn's forest, and tuned XGBoost. Write it as a markdown table in `work/16-ensembles/RESULTS.md` with columns: model, accuracy, training time, "from scratch?". Checkpoint: the ensembles sit at the top, and it is clear *why* each row landed where it did.
-- [ ] Read the table and write three sentences at the bottom of RESULTS.md on what practitioners in industry know: on tabular data like this, boosted trees and forests are the state of the art; deep learning is the tool to reach for when the input is images, audio, or raw text (Phase 3 onward), not when it is a spreadsheet. Optional: `pip install lightgbm` and add LightGBM (Microsoft's faster cousin of XGBoost, same ideas) as one more row. **macOS:** it needs libomp just like XGBoost, so skip it on a Mac without Homebrew. **Windows (WSL2) and Linux:** it needs Ubuntu's OpenMP library, which WSL's Ubuntu does not include, so first run `sudo apt install -y libgomp1`.
+- [ ] Switch to regression: load California housing (`sklearn.datasets.fetch_california_housing`), 20,000+ rows of census data for predicting median house value. Train `xgboost.XGBRegressor`, tune the same three knobs, and evaluate with RMSE (root-mean-squared error, which takes one line: `np.sqrt(np.mean((y_pred - y)**2))`; add an `rmse` function to the lesson-14 `mymetrics.py` now, copy that file here again, and validate it against sklearn). Checkpoint: tuned test RMSE is around 0.45-0.55 (the target is in units of $100k, so that is roughly ±$50k typical error). Compare against plain `LinearRegression` on the same split. XGBoost should be clearly better, because house prices depend on *interactions* (location × income) that a straight line cannot express.
+- [ ] Build the final Phase-2 results table. On identical Titanic splits, evaluate the lesson-13 logistic regression, the lesson-15 single tree, the Project-2 forest, sklearn's forest, and tuned XGBoost. Write it as a markdown table in `work/16-ensembles/RESULTS.md` with columns: model, accuracy, training time, "from scratch?". Checkpoint: the ensembles sit at or near the top. On ~143 test rows one passenger is worth 0.7 points, so a simple model can tie or edge ahead on a given split; 5-fold cross-validation scores (lesson 14) settle close calls. It is clear *why* each row landed where it did.
+- [ ] Read the table and write three sentences at the bottom of RESULTS.md on what practitioners in industry know: on tabular data like this, boosted trees and forests are the state of the art; deep learning is the tool to reach for when the input is images, audio, or raw text (Phase 3 onward), not when it is a spreadsheet. Optional: `pip install lightgbm` and add LightGBM (a faster cousin of XGBoost, originally built at Microsoft, same ideas) as one more row. **macOS:** it needs libomp just like XGBoost, so skip it on a Mac without Homebrew. **Windows (WSL2) and Linux:** it needs Ubuntu's OpenMP library, which WSL's Ubuntu does not include, so first run `sudo apt install -y libgomp1`.
 
 <details><summary>Hints</summary>
 
@@ -137,7 +144,7 @@
 ## Stretch goals
 
 - Implement out-of-bag scoring *inside* the `RandomForest` class as `oob_score_`, computed during `fit`, and verify it against sklearn's `oob_score=True`.
-- Write gradient boosting from scratch for regression: start from the mean, loop "fit small tree to residuals, add prediction × learning_rate", and watch training RMSE fall each round. It takes ~40 lines using the lesson-15 tree.
+- Write gradient boosting from scratch for regression: start from the mean, loop "fit small tree to residuals, add prediction × learning_rate", and watch training RMSE fall each round. It takes ~40 lines using the regression tree from the lesson-15 stretch goals, or `sklearn.tree.DecisionTreeRegressor(max_depth=3)` (the lesson-15 classifier cannot fit residuals).
 - Plot validation error vs. `n_estimators` for XGBoost with a huge tree count (2000) and a tiny learning rate. Find the point where more trees stop helping, then read about `early_stopping_rounds` in the XGBoost docs and use it.
 - Feature-importance face-off: compare the forest's importances with XGBoost's on California housing. Do they agree on the top three features?
 

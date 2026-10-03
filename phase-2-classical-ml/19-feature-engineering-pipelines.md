@@ -58,10 +58,10 @@ curl -L -o train.csv https://raw.githubusercontent.com/datasciencedojo/datasets/
 - [ ] **Feature 1 — `title`:** every passenger's `Name` contains a title ("Mr.", "Mrs.", "Master.", "Rev.", ...). Extract it with a pandas string operation, group rare titles into an "Other" bucket, and one-hot encode it. *One-hot encoding* means turning one category column into several 0/1 columns, one per category. Models need numbers, and one-hot avoids inventing a fake order between categories. Re-run CV and add a scoreboard row. Checkpoint: `df["title"].value_counts()` shows Mr, Miss, Mrs, Master as the top four.
 - [ ] **Feature 2 — `family_size`:** `SibSp + Parch + 1` (siblings/spouses + parents/children + self). One line of domain sense: people traveled in groups, and groups lived or died together. Score it and add a row.
 - [ ] **Feature 3 — `is_alone`:** 1 when `family_size == 1`, else 0. This is an *interaction-style* feature: a new column that captures a pattern the model would otherwise have to discover itself. Score it and add a row.
-- [ ] **Feature 4 — `deck`:** the first letter of `Cabin` (A–G). Most values are missing. Keep them as their own category `"U"` for unknown, because *missingness is a signal*: not having a recorded cabin correlates with lower-class tickets. Score it and add a row.
+- [ ] **Feature 4 — `deck`:** the first letter of `Cabin` (A–G, plus a single passenger on deck T). Most values are missing. Keep them as their own category `"U"` for unknown, because *missingness is a signal*: not having a recorded cabin correlates with lower-class tickets. Score it and add a row.
 - [ ] **Feature 5 — `fare_per_person`:** `Fare / family_size`, a *ratio feature*. A £60 fare means something different for a family of six than for a solo traveler. Score it and add a row.
 - [ ] Invent at least one feature beyond these five (ideas: `age_bucket` child/adult/senior; `name_length`, since text lengths are surprisingly predictive; `Pclass * is_alone`). Score it honestly even if it flops: flops belong on the scoreboard too.
-- [ ] Final run: all features together. Checkpoint: the best CV accuracy beats the baseline, typically landing around 0.82–0.84. Also note which features *did not* help; knowing that is the skill.
+- [ ] Final run: all features together. Checkpoint: CV accuracy typically lands around 0.81–0.84, often within a point of the baseline and sometimes slightly below it with a random forest. Gaps under about one point are cross-validation noise (print `scores.std()` to see it). Also note which features *did not* help; knowing that is the skill.
 
 <details><summary>Hints</summary>
 
@@ -110,7 +110,7 @@ print(scores.mean())
 df["group_survival_rate"] = df.groupby("Ticket")["Survived"].transform("mean")
 X = df[["Pclass", "Fare", "group_survival_rate"]]
 scores = cross_val_score(model, X, y, cv=5)
-print(scores.mean())                        # wow, 0.95+!
+print(scores.mean())                        # wow, 0.90+!
 ```
 
   This is *target leakage*: the new feature is computed **from the target column itself**. Each passenger's own outcome is baked into their group's average. Checkpoint: the broken version scores suspiciously high (0.90+); after the fix (drop the feature, or compute it per-fold from training rows only, excluding the current row), the score returns to earth.
@@ -158,23 +158,23 @@ preprocess = ColumnTransformer([
 
 - [ ] Chain it with the model into one object: `clf = Pipeline([("preprocess", preprocess), ("model", RandomForestClassifier(random_state=42))])`. Run `cross_val_score(clf, X, y, cv=5)` on the **raw** X (no manual preprocessing beforehand). Checkpoint: CV accuracy within a point or two of the Project 1 best, but now with zero leakage by construction, because each fold refits the imputer, scaler and encoder on that fold's training rows only.
 - [ ] Tune preprocessing and model together. In a pipeline, parameters are addressed as `stepname__substep__param` (double underscores walk down the tree). Grid-search at least: `preprocess__num__imputer__strategy` (`"median"` vs `"mean"`), `model__n_estimators` (e.g. 100, 300), and `model__max_depth` (e.g. 5, 10, None). Print `grid.best_params_` and `grid.best_score_`. Checkpoint: `GridSearchCV(clf, param_grid, cv=5)` runs without errors and `best_score_` matches or beats the plain CV score.
-- [ ] Prove reusability: with `joblib.dump(grid.best_estimator_, "titanic_pipeline.joblib")`, save the fitted pipeline, reload it in a fresh Python session, and call `.predict()` on a hand-made dataframe with one imaginary passenger. Checkpoint: one `.predict()` call on raw-looking data returns 0 or 1, with no manual preprocessing needed.
-- [ ] Swap `RandomForestClassifier` for another model from earlier lessons (logistic regression, gradient boosting) by changing **one line**. Notice that scaling now actually matters for logistic regression ([lesson 12](12-linear-regression.md) foreshadowed this: gradient-based and distance-based models care about feature scale; trees do not).
+- [ ] Prove reusability: with `joblib.dump(grid.best_estimator_, "titanic_pipeline.joblib")`, save the fitted pipeline, reload it in a fresh Python session, build a hand-made dataframe with one imaginary passenger in the `train.csv` columns, run it through the Project 1 feature-engineering code (the pipeline expects `title`, `family_size`, `deck` and `fare_per_person` to exist already), and call `.predict()` on it. Checkpoint: one `.predict()` call returns 0 or 1, with no manual imputing, scaling or encoding. (The first stretch goal starts moving the feature engineering inside the pipeline too.)
+- [ ] Swap `RandomForestClassifier` for another model from earlier lessons (logistic regression, gradient boosting) by changing **one line**. Notice that scaling now actually matters for logistic regression ([lesson 12](12-linear-regression.md) foreshadowed this: gradient-based and distance-based models care about feature scale; trees do not). Then swap `StandardScaler` for `MinMaxScaler` in the numeric transformer (`MinMaxScaler` squeezes each column into the range 0 to 1; `StandardScaler` centers it at mean 0 with standard deviation 1) and compare the CV scores of logistic regression and the random forest.
 
 <details><summary>Hints</summary>
 
 - `handle_unknown="ignore"` on `OneHotEncoder` avoids an error when a CV fold or future data contains a category the training fold never saw.
-- If `ColumnTransformer` complains about column names, check for typos with `X.columns.tolist()`; it fails on the first missing name.
+- If `ColumnTransformer` complains about column names, compare the names its error lists (it lists every missing one at once) with `X.columns.tolist()` to find typos or engineered columns that were never created.
 - `grid.cv_results_` is a dict that can be loaded into `pd.DataFrame` to see every combination's score, not just the winner.
 - Keep the grid small (≤ 24 combinations) or a 5-fold search gets slow; widen it once it works.
 </details>
 
-**Definition of done:** `pipeline.py` produces a tuned, saved, reloadable pipeline that predicts from raw data in one call, and the reason it cannot leak can be explained.
+**Definition of done:** `pipeline.py` produces a tuned, saved, reloadable pipeline that predicts in one call from a dataframe that has the Project 1 columns, and the reason it cannot leak can be explained.
 
 ## Stretch goals
 
 - Add a custom transformer: write a class with `fit` and `transform` methods (or use `FunctionTransformer`) that does the title-extraction *inside* the pipeline, so even feature engineering happens per-fold.
-- **Meet regularization at last:** on the California housing data from [lesson 12](12-linear-regression.md), compare `LinearRegression` against `Ridge(alpha=10)` and `Lasso(alpha=0.01)` (all in `sklearn.linear_model`), each inside a scaling pipeline. **Ridge** is linear regression plus a penalty on the size of the weights. The penalty *shrinks* them, which tames overfitting. **Lasso**'s penalty can shrink a weight all the way to zero, deleting useless features automatically. Print the three models' coefficients side by side and watch the shrinkage happen. Lesson 20 uses `Ridge` and assumes it is already familiar.
+- **Meet regularization at last:** on the California housing data from [lesson 12](12-linear-regression.md), compare `LinearRegression` against `Ridge(alpha=1000)` and `Lasso(alpha=0.01)` (all in `sklearn.linear_model`), each inside a scaling pipeline. **Ridge** is linear regression plus a penalty on the size of the weights. The penalty *shrinks* them, which tames overfitting. **Lasso**'s penalty can shrink a weight all the way to zero, deleting useless features automatically. Print the three models' coefficients side by side and watch the shrinkage happen. Lesson 20 uses `Ridge` and assumes it is already familiar.
 - Try `OrdinalEncoder` instead of one-hot for `deck` and `Pclass` and measure the difference. Then write two sentences on when an ordinal (ordered) encoding is justified.
 - Add a `missing_Age` indicator column (1 if `Age` was missing) via `SimpleImputer(add_indicator=True)` and check whether missingness itself predicts survival.
 - Do the [Kaggle feature engineering course](https://www.kaggle.com/learn/feature-engineering) and apply one technique it teaches (e.g. mutual information ranking) to the Titanic features.
@@ -183,7 +183,7 @@ preprocess = ColumnTransformer([
 
 - **Shape errors after `ColumnTransformer`:** its output is a plain array with reordered columns. Use `preprocess.get_feature_names_out()` to see what came out, and print `.shape` before and after each step.
 - **"could not convert string to float":** a text column slipped into the numeric list, or raw X was passed to a bare model instead of the pipeline. Print `X.dtypes`.
-- **Scores identical for every grid combination:** the grid probably tunes a parameter name that does not exist; sklearn silently accepts nothing, but `clf.get_params().keys()` lists every legal `step__param` name.
+- **Scores identical for every grid combination:** the tuned parameter probably has no effect on this data, for example an imputer strategy on columns with no missing values. A misspelled name is not the cause: sklearn raises `ValueError: Invalid parameter ...` for a name that does not exist, and `clf.get_params().keys()` lists every legal `step__param` name. Load `grid.cv_results_` into `pd.DataFrame` to see which parameter actually changes the score.
 - Standing advice: read the error traceback bottom-up (the last line names the real problem), print shapes and `head()`s liberally, ask an AI assistant for a **hint** not a solution, and type all code by hand (muscle memory is the point).
 
 ## Resources

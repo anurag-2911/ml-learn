@@ -75,14 +75,14 @@ python3 -c "import seaborn as sns; sns.load_dataset('titanic').to_csv('work/14-m
 
   Checkpoint: every assert passes. If a number disagrees with sklearn, sklearn is right: find the bug.
 - [ ] Add the ROC curve. The classifier can output a *probability* (`model.predict_proba(X_te)[:, 1]`), and predicting "sick" means "probability above some threshold". The **ROC curve** plots true-positive rate (= recall) against false-positive rate (FP / (FP + TN)) as that threshold sweeps from 1 down to 0. Write `roc_curve(y_true, scores)`: sort by score descending, walk down the list moving the threshold past one prediction at a time, and record (FPR, TPR) at each step. Plot it with matplotlib. Checkpoint: the curve starts at (0,0), ends at (1,1), and bulges toward the top-left corner.
-- [ ] Write `auc(fpr, tpr)`: the **AUC** (area under the ROC curve), computed with the trapezoid rule from the integration intuition in [lesson 09](../phase-1-math/09-calculus-and-gradient-descent.md). AUC = 1.0 is a perfect ranker, and 0.5 is coin-flipping. Checkpoint: the AUC is within 0.01 of `metrics.roc_auc_score(y_te, scores)`, and it is above 0.9 for this dataset.
+- [ ] Write `auc(fpr, tpr)`: the **AUC** (area under the ROC curve), computed with the trapezoid rule: for each pair of neighboring points on the curve, add the area of the strip between them, `(fpr[i+1] - fpr[i]) * (tpr[i] + tpr[i+1]) / 2`, and sum the strips. AUC = 1.0 is a perfect ranker, and 0.5 is coin-flipping. Checkpoint: the AUC is within 0.01 of `metrics.roc_auc_score(y_te, scores)`, and it is above 0.9 for this dataset.
 
 <details><summary>Hints</summary>
 
 - Every metric is just arithmetic on the four confusion-matrix cells. Write `confusion_matrix` first, then define precision/recall/F1 *in terms of it* so a fix in one place fixes all of them.
 - Counting TP without a loop: `np.sum((y_true == 1) & (y_pred == 1))`. The `&` needs the parentheses.
 - For the ROC walk: after sorting by score descending, each position i means "the top i predictions are called positive". TP at position i = number of 1-labels among the first i; FP = i minus that. `np.cumsum` on the sorted labels gives every TP count in one line.
-- If the AUC is *exactly* 0.5 or the curve is a straight diagonal, the hard 0/1 predictions were probably passed in instead of the probabilities.
+- If the AUC lands well below 0.9 or disagrees with sklearn, and the curve has a single sharp corner followed by a roughly straight run to (1,1), the hard 0/1 predictions from `model.predict` were probably passed in instead of the probabilities from `predict_proba`.
 
 </details>
 
@@ -94,7 +94,7 @@ python3 -c "import seaborn as sns; sns.load_dataset('titanic').to_csv('work/14-m
 
 **Milestones**
 
-- [ ] Prepare Titanic exactly as in lesson 13 (numeric features, missing ages filled, `sex` encoded as 0/1). Put the prep in a function, because it is called several times.
+- [ ] Prepare Titanic with the same six features as lesson 13 (`sex` encoded as 0/1, three one-hot class columns, missing ages filled with the median, `fare`), but leave `age` and `fare` unscaled: scaling happens inside each fold (see Hints). Put the prep in a function, because it is called several times.
 - [ ] Write `my_kfold_indices(n, k, seed)`: shuffle the row indices `0..n-1` with a fixed seed, chop them into k nearly-equal folds, and return a list of `(train_idx, val_idx)` pairs. Each fold takes one turn as the validation set while the other k−1 folds are used for training. Checkpoint: with n=891 and k=5, every row appears in exactly one validation fold, and no `(train, val)` pair shares an index (`assert len(np.intersect1d(tr, va)) == 0`).
 - [ ] Write `my_cross_val(model, X, y, k)`: for each fold, fit a *fresh clone* of the model on the training rows, score accuracy on the validation rows (use `mymetrics.accuracy` from Project 1), and return the k scores. Use `sklearn.base.clone(model)` so that folds do not contaminate each other.
 - [ ] Run the match: `KNeighborsClassifier(n_neighbors=5)` vs `LogisticRegression(max_iter=1000)`, k=5, the same folds for both (that is what makes it fair). Print each model's scores as `mean ± std` (`np.mean`, `np.std`). Checkpoint: five scores per model, each roughly 0.6-0.85, and they *differ across folds*. That spread is exactly why one split cannot be trusted.
@@ -118,10 +118,10 @@ python3 -c "import seaborn as sns; sns.load_dataset('titanic').to_csv('work/14-m
 **Milestones**
 
 - [ ] Set up the clinic. Use Titanic. The two patients to examine are already familiar from lesson 11: `KNeighborsClassifier(n_neighbors=1)` (memorizes everything; suspected **overfitter**) and `KNeighborsClassifier(n_neighbors=150)` (averages over almost everyone; suspected **underfitter**).
-- [ ] Write `learning_curve(model, X_train, y_train, X_val, y_val, sizes)`: for each size in `[50, 100, 200, 400, 600, all]`, fit a fresh clone on just the first `size` training rows, then record accuracy on (a) those same training rows and (b) the untouched validation set. Return both lists.
+- [ ] Write `learning_curve(model, X_train, y_train, X_val, y_val, sizes)`: for each size in `[200, 300, 400, 500, 600, all]` (kNN cannot ask for more neighbors than it has training rows, so k=150 needs more than 150), fit a fresh clone on just the first `size` training rows, then record accuracy on (a) those same training rows and (b) the untouched validation set. Return both lists.
 - [ ] Plot patient 1 (k=1): training accuracy and validation accuracy vs training size, on one chart, with a legend. Checkpoint: training accuracy is pinned at (or near) **1.0** for every size, while validation accuracy sits far below, leaving a big, persistent **gap**. That gap is **variance**: the model memorized noise that does not transfer. This is **overfitting**.
-- [ ] Plot patient 2 (k=150). Checkpoint: *both* curves are low and close together, and adding more data barely helps. That is **bias**: the model is too simple (too smoothed-out) to capture the pattern, no matter how much data it gets. This is **underfitting**.
-- [ ] Write the prescription in comments: more data helps a high-variance model but not a high-bias one; a high-bias model needs more capacity or better features. Verify one claim: fit k=1 with double the data and confirm the gap shrinks a little. Checkpoint: it does.
+- [ ] Plot patient 2 (k=150). Checkpoint: *both* curves are low and close together, and past the first size or two (where 150 neighbors is most of the training rows, so the model is close to a majority vote) adding more data barely helps. That is **bias**: the model is too simple (too smoothed-out) to capture the pattern, no matter how much data it gets. This is **underfitting**.
+- [ ] Write the prescription in comments: more data helps a high-variance model but not a high-bias one; a high-bias model needs more capacity or better features. Verify one claim: fit k=1 on half of the training rows and then on all of them (double the data), and compare the two gaps. Checkpoint: the gap with all the rows is usually a little smaller (one split is noisy, so an occasional tie or reversal can happen).
 - [ ] Now hunt the leak. Here is a pipeline that looks reasonable but is subtly broken. Type it in and run it:
 
   ```python
@@ -139,7 +139,7 @@ python3 -c "import seaborn as sns; sns.load_dataset('titanic').to_csv('work/14-m
 
   Find the sin before reading on. The scaler computed its mean and spread from **all** rows, including the test rows. The test set was supposed to simulate *future patients the model has never seen*, but their statistics leaked into training. That is **data leakage**.
 - [ ] Fix it: split first, `fit_transform` the scaler on training rows only, and `transform` (*not* fit) the test rows. Checkpoint: on Titanic the score barely moves; this leak is real but mild. That is the dangerous part: leakage usually does not announce itself.
-- [ ] See a loud leak, so that the smell is never forgotten. Add a poisoned feature (a noisy copy of the answer) and watch: `X_leaky = np.column_stack([X, y + rng.normal(0, 0.1, len(y))])`. Retrain with an honest split. Checkpoint: accuracy jumps to ~0.95+, absurdly better than anything from Project 2. In real projects this happens with features computed *after* the outcome was known (e.g. "days until patient discharged" when predicting illness). When a score looks too good to be true, hunt for the leak.
+- [ ] See a loud leak, so that the smell is never forgotten. Add a poisoned feature (a noisy copy of the answer) and watch: `rng = np.random.default_rng(42)`, then `X_leaky = np.column_stack([X, y + rng.normal(0, 0.1, len(y))])`. Retrain with the fixed pipeline from the previous step (split first, fit the scaler on the training rows only). Checkpoint: accuracy jumps to ~0.95+, absurdly better than anything from Project 2. In real projects this happens with features computed *after* the outcome was known (e.g. "days until patient discharged" when predicting illness). When a score looks too good to be true, hunt for the leak.
 
 <details><summary>Hints</summary>
 

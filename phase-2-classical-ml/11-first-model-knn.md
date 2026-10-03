@@ -31,7 +31,7 @@ This lesson is the vocabulary foundation for everything that follows, so here is
 
 ## Before starting
 
-- This lesson assumes the NumPy lesson is finished: indexing arrays, using `np.sqrt`, `np.sum` and `np.argsort`, and knowing what `axis=` means.
+- This lesson assumes the NumPy lesson is finished: indexing arrays, using `np.sum`, and knowing what `axis=` means. Two new functions appear here: `np.sqrt` (square root of every element) and `np.argsort`, which returns the indices that would sort an array, smallest value first (`np.argsort(np.array([3, 1, 2]))` gives `[1 2 0]`).
 - Making a basic matplotlib line plot is also assumed ([lesson 07](../phase-0-foundations/07-data-visualization.md)).
 - Activate the venv and install this week's tools (scikit-learn is the standard Python ML library; the lesson builds kNN by hand first, then uses sklearn's version in Project 3):
 
@@ -43,7 +43,7 @@ mkdir -p work/11-first-model-knn
 cd work/11-first-model-knn
 ```
 
-- No dataset download is needed: the Iris dataset (150 real flowers measured in 1936, 4 measurements each, 3 species) ships inside scikit-learn. Verify the install:
+- No dataset download is needed: the Iris dataset (150 real flowers measured by the botanist Edgar Anderson and made famous by Ronald Fisher's 1936 paper; 4 measurements each, 3 species) ships inside scikit-learn. Verify the install:
 
 ```bash
 python3 -c "from sklearn.datasets import load_iris; print(load_iris().data.shape)"
@@ -72,7 +72,7 @@ Checkpoint: it prints `(150, 4)`, meaning 150 examples and 4 features. That shap
   ```
 
   Checkpoint: say out loud what row 0 means ("a flower with sepal length 5.1 cm ... labeled setosa").
-- [ ] Write a train/test split by hand. Shuffle the row indices with `np.random.permutation(150)` (seed it first with `np.random.seed(42)` so that runs are repeatable), then take the first 120 shuffled indices as training and the last 30 as test. Build `X_train, y_train, X_test, y_test` by fancy-indexing. Why shuffle? The iris rows are sorted by species, so an unshuffled split would train on two species and test on the third. Checkpoint: `X_train.shape == (120, 4)` and `set(y_test)` contains all three labels.
+- [ ] Write a train/test split by hand. Shuffle the row indices with `np.random.permutation(150)` (seed it first with `np.random.seed(42)` so that runs are repeatable), then take the first 120 shuffled indices as training and the last 30 as test. Build `X_train, y_train, X_test, y_test` by fancy-indexing. Why shuffle? The iris rows are sorted by species (50 of each), so an unshuffled split would put only 20 virginica flowers in training and make the test set nothing but virginica. Checkpoint: `X_train.shape == (120, 4)` and `set(y_test)` contains all three labels.
 - [ ] Write `euclidean(a, b)`: the straight-line distance between two 4-feature flowers, `sqrt(sum((a - b) ** 2))`. Each flower is a point in 4-dimensional space; the formula is exactly the Pythagoras coded in [lesson 08](../phase-1-math/08-linear-algebra-by-code.md), just with 4 coordinates. Checkpoint: `euclidean(X[0], X[1])` is about `0.5385`.
 - [ ] Write `predict_one(x, X_train, y_train, k)`: compute the distance from `x` to *every* training flower (a loop is fine; there is a loop-free NumPy way in the hints), find the indices of the k smallest distances with `np.argsort`, and take the majority vote of their labels with `np.bincount(...).argmax()`. Checkpoint: `predict_one(X_test[0], X_train, y_train, k=5)` equals `y_test[0]`.
 - [ ] Notice what just happened: there was no "training" step. kNN learns by *storing* the training set, and all the work happens at prediction time. Most later models are the opposite.
@@ -84,7 +84,7 @@ Checkpoint: it prints `(150, 4)`, meaning 150 examples and 4 features. That shap
 - Distances to *all* training rows without a loop: `np.sqrt(np.sum((X_train - x) ** 2, axis=1))`. Broadcasting subtracts `x` from every row at once, and `axis=1` sums across each row's 4 features. Result shape: `(120,)`.
 - `np.argsort(distances)[:k]` gives the *indices* of the k nearest flowers; feed those indices into `y_train` to get their labels.
 - `np.bincount(labels).argmax()` returns the most common label. Use an odd `k` so that votes cannot tie 3 ways as easily.
-- If accuracy is suspiciously bad (~0.33), the data was probably not shuffled, or `y` was indexed with different indices than `X`. Train rows and their labels must stay paired.
+- If accuracy is suspiciously bad (~0.33), `y` was probably indexed with different indices than `X`. Train rows and their labels must stay paired. If `set(y_test)` holds a single label, the data was not shuffled.
 
 </details>
 
@@ -99,8 +99,8 @@ Checkpoint: it prints `(150, 4)`, meaning 150 examples and 4 features. That shap
 - [ ] Create a new file, `k_experiment.py`, that reuses the Project 1 functions (import them or copy them in). Write `accuracy(X_eval, y_eval, X_train, y_train, k)` that predicts every row of `X_eval` and returns the fraction correct.
 - [ ] For every k from 1 to 25, compute two numbers: accuracy on the **test set** and accuracy on the **training set itself** (i.e. predict each training flower using the training data). Store both lists.
 - [ ] Checkpoint before plotting: at k=1, training accuracy is exactly 1.0. Make sure the reason is clear before moving on: each training flower's nearest neighbor *is itself*, at distance 0. The model is a pure memorizer, and a memorizer gets full marks on questions it has already seen.
-- [ ] Plot both curves on one chart: x-axis k, y-axis accuracy, one line per set, with a legend and axis labels (skills from [lesson 07](../phase-0-foundations/07-data-visualization.md)). Save it as `k_experiment.png`. Checkpoint: the train curve starts at 1.0 and drifts down; the test curve starts *below* the train curve, is best somewhere in the middle (roughly k=3–15), and sags at large k.
-- [ ] Read the gap. Where train accuracy is high but test accuracy is lower (small k), the model has memorized training quirks that do not generalize: that is **overfitting**. Where both are mediocre (large k; imagine k=120, where every prediction is just the overall majority vote), the model is too crude: that is **underfitting**. The best k balances the two.
+- [ ] Plot both curves on one chart: x-axis k, y-axis accuracy, one line per set, with a legend and axis labels (skills from [lesson 07](../phase-0-foundations/07-data-visualization.md)). Save it as `k_experiment.png`. Checkpoint: the train curve starts at exactly 1.0 at k=1 and then wobbles between about 0.95 and 0.98. With seed 42 the test curve is almost flat: about 0.967 (29 of 30 flowers) for every k from 1 to 22, dropping to about 0.933 at k=23–25. Iris is an easy dataset and 30 test flowers are few, so this split cannot tell small and medium k apart on the test set; the visible sign of memorization is the gap at k=1, where training is perfect and test is not. Rerunning with `np.random.seed(1)` shows a clearer pattern: test accuracy 0.933 at k=1, rising to 1.0 by k=9.
+- [ ] Read the gap. Where train accuracy is perfect but test accuracy is lower (k=1), the model has memorized training quirks that do not generalize: that is **overfitting**. Where both are mediocre (large k; imagine k=120, where every prediction is just the overall majority vote), the model is too crude: that is **underfitting**. The best k balances the two.
 - [ ] In a file `overfitting.md`, write 3 original sentences: why k=1 is perfect on training data, why that perfection does not carry to test data, and why testing on training data is therefore a lie. This is why a model must never be tested on its training data: such a test measures memory, not learning.
 
 <details><summary>Hints</summary>
@@ -115,7 +115,7 @@ Checkpoint: it prints `(150, 4)`, meaning 150 examples and 4 features. That shap
 
 ## Project 3 — Same thing in 4 lines
 
-**Goal:** Meet scikit-learn, the library used for all of Phase 2, and confirm that its kNN agrees with the from-scratch version. Every sklearn model uses the same three-verb pattern: `fit` (learn from training data), `predict` (answer for new data), `score` (accuracy in one call).
+**Goal:** Meet scikit-learn, the library used for all of Phase 2, and confirm that its kNN agrees with the from-scratch version. Every sklearn model uses the same three-verb pattern: `fit` (learn from training data), `predict` (answer for new data), `score` (one-call evaluation: accuracy for classifiers, R² for regressors).
 
 **Milestones**
 
@@ -146,7 +146,7 @@ Checkpoint: it prints `(150, 4)`, meaning 150 examples and 4 features. That shap
 
 ## Stretch goals
 
-- **Feature scaling teaser:** multiply one feature column by 100 (pretend it was measured in different units) and rerun. Accuracy drops, because the big feature dominates the distance. Fix it by standardizing each column (subtract mean, divide by standard deviation). This is why preprocessing exists ([lesson 19](19-feature-engineering-pipelines.md) covers it in depth).
+- **Feature scaling teaser:** multiply the sepal length column (`X[:, 0]`) by 100 (pretend it was measured in different units) and rerun. Accuracy drops (from about 0.97 to about 0.63 with seed 42 and k=5), because the big feature dominates the distance. Scaling petal length instead barely changes accuracy, because that feature already separates the species well on its own. Fix it by standardizing each column (subtract mean, divide by standard deviation). This is why preprocessing exists ([lesson 19](19-feature-engineering-pipelines.md) covers it in depth).
 - **Decision-boundary picture:** using only 2 features (petal length and width), classify every point on a fine grid and color the plane by predicted class with `plt.contourf`. Compare the map for k=1 (jagged islands) with k=15 (smooth regions). The difference is overfitting made visible.
 - **Try another distance:** Manhattan distance (`sum(|a - b|)`) instead of Euclidean. Does the best k change? Does accuracy?
 - **Harder dataset:** rerun everything on `sklearn.datasets.load_wine` (13 features, 3 classes). Does scaling matter more there?

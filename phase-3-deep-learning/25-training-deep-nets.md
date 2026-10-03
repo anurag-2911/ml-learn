@@ -40,20 +40,24 @@
 
    On an Intel Mac, current PyTorch cannot be installed at all, so do this lesson in a free Google Colab notebook, as lesson 01 suggested.
 
-2. Download FashionMNIST, a set of grayscale 28×28 images of clothing and a drop-in replacement for MNIST (no account needed):
+2. Create the work folder, keep its dataset folder out of git (the downloads take about 80 MB, and the fork is public), and download FashionMNIST into it. FashionMNIST is a set of grayscale 28×28 images of clothing and a drop-in replacement for MNIST (no account needed):
 
    ```bash
-   python3 -c "from torchvision import datasets; datasets.FashionMNIST('data', train=True, download=True); datasets.FashionMNIST('data', train=False, download=True)"
+   mkdir -p work/25-training-deep-nets
+   echo "work/25-training-deep-nets/data/" >> .gitignore
+   python3 -c "from torchvision import datasets; datasets.FashionMNIST('work/25-training-deep-nets/data', train=True, download=True); datasets.FashionMNIST('work/25-training-deep-nets/data', train=False, download=True)"
    ```
 
-3. Create the work folder and download the names dataset that makemore trains on (32k first names, one per line; lesson 28 covers this same file properly):
+   Run this lesson's scripts from inside `work/25-training-deep-nets`. That way `datasets.FashionMNIST('data', ...)` finds this copy, and the MNIST loader copied from lesson 24 also downloads into the ignored `data/` folder. Checkpoint: `git status -u` lists nothing inside `data/`.
+
+3. Download the names dataset that makemore trains on (32k first names, one per line; lesson 28 covers this same file properly):
 
    ```bash
    mkdir -p work/25-training-deep-nets
    curl -L --create-dirs -o work/25-training-deep-nets/names.txt https://raw.githubusercontent.com/karpathy/makemore/master/names.txt
    ```
 
-4. A note for Project 1: makemore Part 3 continues code built in makemore Parts 1-2, which this curriculum covers later ([lesson 28](../phase-4-nlp-transformers/28-language-models-makemore.md)). Those videos are *not* needed first. The first ~15 minutes of Part 3 walk through the complete starter code: loading `names.txt`, building the character vocabulary (`stoi`/`itos`), the context windows, the embedding table `C`, and the train/dev/test split. Pause there and type *all* of it, not just the new material, because every checkpoint in Project 1 depends on it.
+4. A note for Project 1: makemore Part 3 continues code built in makemore Parts 1-2, which this curriculum covers later ([lesson 28](../phase-4-nlp-transformers/28-language-models-makemore.md)). Those videos are *not* needed first. The "starter code" chapter at the start of Part 3 (about 1:22 to 4:19) shows the complete starter code: loading `names.txt`, building the character vocabulary (`stoi`/`itos`), the context windows, the embedding table `C`, and the train/dev/test split. Pause there and type *all* of it, not just the new material, because every checkpoint in Project 1 depends on it.
 
 5. Read [A Recipe for Training Neural Networks](https://karpathy.github.io/2019/04/25/recipe/) once now (30 min). Not all of it will sink in yet. Read it again after Project 2, when it will feel like a summary of firsthand experience.
 
@@ -63,7 +67,7 @@
 
 **Milestones**
 
-- [ ] Open [the Karpathy playlist](https://www.youtube.com/playlist?list=PLAqhIrjkxbuWI23v9cThsA9GvCAUhRvKZ) and start Part 3, "Building makemore Part 3: Activations & Gradients, BatchNorm". Note: the video continues a character-level language model (a net that predicts the next letter of a name) built in earlier videos, which lesson 28 covers properly. That is fine: type the starter code in full during the first ~15 minutes (see "Before starting", step 4), and from there on treat the model as "an MLP with an embedding table in front". Type every line by hand into `work/25-training-deep-nets/makemore3.py` (or a notebook); never copy-paste.
+- [ ] Open [the Karpathy playlist](https://www.youtube.com/playlist?list=PLAqhIrjkxbuWI23v9cThsA9GvCAUhRvKZ) and start Part 3, "Building makemore Part 3: Activations & Gradients, BatchNorm". Note: the video continues a character-level language model (a net that predicts the next letter of a name) built in earlier videos, which lesson 28 covers properly. That is fine: type the starter code in full from the "starter code" chapter at the start of the video (see "Before starting", step 4), and from there on treat the model as "an MLP with an embedding table in front". Type every line by hand into `work/25-training-deep-nets/makemore3.py` (or a notebook); never copy-paste.
 - [ ] First lesson from the video: *check the loss at initialization*. Before any training, a classifier that knows nothing should predict all classes equally, so its expected loss is `-ln(1/num_classes)`. Checkpoint: for the 27 characters in makemore the formula gives ≈ 3.29; the naive net in the video starts far higher (≈ 27), because it is *confidently wrong* at init. Fix it as Karpathy does (shrink the final layer's weights) and watch the starting loss drop to ≈ 3.3.
 - [ ] Reproduce the tanh-saturation histogram: plot a histogram (a bar chart of how often each value occurs) of the hidden layer's tanh outputs. Checkpoint: with too-large initialization the histogram is two spikes at −1 and +1 (saturated: the neuron's gradient there is ~0, so it stops learning); after scaling the weights down, it shows a healthy spread across (−1, 1).
 - [ ] Follow the Kaiming initialization discussion: multiplying inputs by a weight matrix changes their spread (standard deviation), so initial weights are scaled by `gain / sqrt(fan_in)` (`fan_in` is the number of inputs to the layer) to keep the spread constant layer after layer. Checkpoint: explain in one sentence why deeper nets make this *more* important (small errors in scale compound at every layer: shrink×shrink×shrink → vanish, grow×grow×grow → explode).
@@ -81,16 +85,16 @@
           layer.register_forward_hook(make_hook(name))
   ```
 
-- [ ] Make a figure with one activation histogram per layer, in two versions. Bad init: initialize all `Linear` weights with `torch.nn.init.normal_(w, std=1.0)`. Good init: PyTorch's default (Kaiming-style). Checkpoint: bad init shows saturation piling up at ±1 that gets *worse* with depth; good init shows similar healthy spreads at every layer.
-- [ ] Do the same for gradients: after `loss.backward()`, plot a histogram of `layer.weight.grad` per layer, and print each one's standard deviation. Checkpoint: with bad init the gradient spreads differ by orders of magnitude across layers (vanishing/exploding gradients: the same disease as in the activations, seen on the backward pass); with good init they are within roughly one order of magnitude of each other.
-- [ ] Swap `tanh` for `ReLU` and repeat with bad init (try `std=0.05` too). A ReLU outputs `max(0, x)`, so a neuron whose input is always negative outputs 0 forever and gets zero gradient: a **dead ReLU**. Checkpoint: compute the fraction of exactly-zero activations per layer; with bad small init it is far above the healthy ~50%.
+- [ ] Make a figure with one activation histogram per layer, in two versions. Bad init: initialize all `Linear` weights with `torch.nn.init.normal_(w, std=1.0)`. Good init: Kaiming init with the tanh gain from the video, `torch.nn.init.kaiming_normal_(w, nonlinearity='tanh')` (std `(5/3) / sqrt(fan_in)`). PyTorch's default init is not enough here: it is Kaiming-style but has no tanh gain, so its spread shrinks a little at every layer. Checkpoint: bad init piles most values (about 80%) up at ±1 in every layer, starting with the first; good init shows similar healthy spreads at every layer.
+- [ ] Do the same for gradients: after `loss.backward()`, plot a histogram of `layer.weight.grad` per layer, and print each one's standard deviation. Checkpoint: with bad init the gradient spreads drift apart across layers, often by 10x or more (vanishing/exploding gradients: the same disease as in the activations, seen on the backward pass); with good init the hidden layers' spreads are nearly equal (within about 2x).
+- [ ] Swap `tanh` for `ReLU` and repeat with bad init (try `std=0.01` too). A ReLU outputs `max(0, x)`, so a neuron whose input is always negative outputs 0 forever and gets zero gradient: a **dead ReLU**. Checkpoint: on a batch of a few hundred images, compute per layer the fraction of neurons that output exactly 0 for *every* image. With `std=0.01`, roughly 40-50% of the neurons from the second layer on are dead; with `std=1.0`, about 10% or less. (The fraction of zero *values* stays near 50% in every layer whatever the init, because a ReLU zeroes about half of any roughly symmetric input.)
 
 <details><summary>Hints</summary>
 
-- The video is 1h45m. Budget 2-3 sessions, pausing to type and rerun. Speed 1.25× works; 2× does not (for learning).
+- The video is 1h56m. Budget 2-3 sessions, pausing to type and rerun. Speed 1.25× works; 2× does not (for learning).
 - For the per-layer figure, `fig, axes = plt.subplots(1, n_layers, figsize=(16, 3))` then `axes[i].hist(a.flatten().numpy(), bins=50)` gives the strip-of-histograms look from the video.
 - If the hooks fire multiple times, the code is calling `model(x)` more than once. Clear `acts` before each forward pass.
-- Dead-ReLU fraction: `(a == 0).float().mean()` on the post-ReLU activation tensor.
+- Dead-neuron fraction: `(a == 0).all(dim=0).float().mean()` on the post-ReLU activation tensor of a whole batch (shape `[batch, units]`).
 
 </details>
 
@@ -107,9 +111,9 @@
 - [ ] About optimizers: **SGD** takes a plain step downhill (`weight -= lr * grad`), usually with **momentum**, a running velocity that smooths the steps. **Adam** additionally adapts the step size for each individual weight based on the history of its gradients, which makes it far less sensitive to the choice of learning rate. They need different learning rates: start with SGD at `lr=0.1, momentum=0.9` and Adam at `lr=1e-3`.
 - [ ] Run the full grid: 2 inits × 2 optimizers × 2 BatchNorm settings = 8 runs. Fix everything else: the same seed via `torch.manual_seed(42)`, the same batch size, and the same number of epochs (3-5 epochs is plenty). Record the training loss every ~50 steps and the final test accuracy for each run. Save the recorded curves to disk (e.g. one `.npy` or CSV per run) so that a plotting mistake does not force a re-train.
 - [ ] Plot all 8 loss curves on *one* chart, labeled, with a legend. Log-scale on the y-axis (`plt.yscale('log')`) makes the differences readable. Save as `bakeoff.png`. Checkpoint: the curves visibly separate into a fast group and a slow/stuck group.
-- [ ] Make a results table (in a `RESULTS.md` in the work folder): one row per run, columns for config and final test accuracy. Checkpoint: the best configuration reaches test accuracy above 0.86; bad-init + SGD + no BatchNorm is clearly the worst, likely stuck near 2.30 loss (i.e. still guessing) or far behind.
+- [ ] Make a results table (in a `RESULTS.md` in the work folder): one row per run, columns for config and final test accuracy. Checkpoint: the best configuration reaches test accuracy above 0.86; bad-init + SGD + no BatchNorm is clearly the worst: stuck near 2.30 loss (i.e. still guessing), far behind, or diverged to `nan` within the first few steps (exploding activations meet a large learning rate). A `nan` run is a valid result here, not a bug to fix: it draws no line on the log-scale chart, so mark it in the legend (e.g. `bad/sgd/noBN (diverged)`) and record its test accuracy (≈ 0.10) in the table.
 - [ ] Study the interactions, not just the winners: does BatchNorm *rescue* bad init? (It largely should; that robustness is a big reason it is everywhere.) Does Adam close the gap on its own? Which lever mattered most?
-- [ ] Add one more run: the best config plus a learning-rate schedule. **Warmup** means starting with a tiny learning rate for the first few hundred steps and ramping up (this protects the net while it is still in a random, fragile state); a **decay schedule** (e.g. cosine) then shrinks the rate over training so the net can settle into a minimum. Try `torch.optim.lr_scheduler.CosineAnnealingLR`. Checkpoint: the end of its loss curve is smoother (less noisy) than the unscheduled version.
+- [ ] Add one more run: the best config plus a learning-rate schedule. **Warmup** means starting with a tiny learning rate for the first few hundred steps and ramping up (this protects the net while it is still in a random, fragile state); a **decay schedule** (e.g. cosine) then shrinks the rate over training so the net can settle into a minimum. Try `torch.optim.lr_scheduler.CosineAnnealingLR`. Checkpoint: the end of its loss curve sits lower than the unscheduled version's, and its test accuracy is higher (typically by 1-2 points).
 - [ ] Write **5 conclusions** at the bottom of `RESULTS.md`. Each must cite numbers measured in the bake-off ("Adam with bad init reached X% vs SGD's Y%, so ..."), not folklore.
 
 <details><summary>Hints</summary>
@@ -131,7 +135,7 @@
 
 - [ ] Watch "Building makemore Part 4: Becoming a Backprop Ninja" from [the playlist](https://www.youtube.com/playlist?list=PLAqhIrjkxbuWI23v9cThsA9GvCAUhRvKZ). This one *must* be done as an exercise, not watched like a movie: Karpathy poses each gradient as a puzzle. Pause, derive it on paper, write the line, then watch the solution.
 - [ ] Set up his `cmp` helper, which compares a manually computed gradient with autograd's and prints whether they match exactly and the maximum difference. It is the judge for the whole project.
-- [ ] Exercise 1: backprop through the loss and the network one tensor at a time (logits, hidden states, weights, biases, embeddings...). Work backwards from the loss; at each step ask "how does the loss change if this value wiggles?" This is the chain rule, exactly as in the micrograd built in [lesson 22](22-micrograd-backpropagation.md), but now with matrices. Checkpoint: `cmp` prints `exact: True` (or `maxdiff` below 1e-9; tiny floating-point differences are fine) for every tensor.
+- [ ] Exercise 1: backprop through the loss and the network one tensor at a time (logits, hidden states, weights, biases, embeddings...). Work backwards from the loss; at each step ask "how does the loss change if this value wiggles?" This is the chain rule, exactly as in the micrograd built in [lesson 22](22-micrograd-backpropagation.md), but now with matrices. Checkpoint: `cmp` prints `approximate: True` for every tensor. The tensors near the loss match exactly (`exact: True`); from `hpreact` backwards, float32 rounding leaves a `maxdiff` of roughly 1e-10 to 1e-8, which is fine.
 - [ ] Exercise 2: derive the gradient of cross-entropy-from-logits as a single simplified expression. Checkpoint: the one-liner is (softmax minus one-hot) / batch_size, and `cmp` approves.
 - [ ] Exercise 3: the same for BatchNorm, with one condensed backward expression instead of ten intermediate tensors. This is the hardest math in the lesson; paper first, code second. Checkpoint: `cmp` approves.
 - [ ] Final step: train the network using *only the manual gradients* (autograd off for the update). Checkpoint: the loss decreases just as it did with autograd. The manual backward pass now replaces PyTorch's.

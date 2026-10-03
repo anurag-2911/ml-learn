@@ -22,7 +22,7 @@
 
 This lesson needs everything from lessons [12](12-linear-regression.md), [14](14-model-evaluation.md), [15](15-decision-trees.md), [16](16-ensembles-random-forest-boosting.md) and [19](19-feature-engineering-pipelines.md): pipelines, cross-validation, one-hot encoding, gradient boosting. If any of those feel shaky, first skim the code in those lessons' work folders. It is the best reference at hand.
 
-**Kaggle needs a free account.** It is the one signup this curriculum asks for, and it is worth it: Kaggle is where much of the ML world practices in public. Sign up at [kaggle.com](https://www.kaggle.com), then on the [House Prices competition page](https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques) click **Join Competition** and accept the rules (downloads fail with a 403 error until the rules are accepted).
+**Kaggle needs a free account.** It is the one signup this lesson asks for, and it is worth it: Kaggle is where much of the ML world practices in public. Sign up at [kaggle.com](https://www.kaggle.com), then on the [House Prices competition page](https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques) click **Join Competition** and accept the rules (downloads fail with a 403 error until the rules are accepted).
 
 Set up the Kaggle command-line tool and the work folder:
 
@@ -96,19 +96,19 @@ sub.to_csv("submission_baseline.csv", index=False)
 
 *Milestone 3 — Linear model + features (days 4–6).* Now build a local validation scoreboard, so that ideas can be tested without spending submissions (Kaggle allows only a handful per day).
 
-- [ ] Write `evaluate(model)` using 5-fold `cross_val_score` on `log1p(SalePrice)` with RMSE, mirroring the competition metric. Checkpoint: it scores the median baseline around 0.40 locally. Local and leaderboard scores roughly agree, which is what makes the scoreboard trustworthy.
+- [ ] Write `evaluate(model)` using 5-fold `cross_val_score` on `log1p(SalePrice)` with RMSE, mirroring the competition metric. Pass `scoring="neg_root_mean_squared_error"` (scikit-learn negates error scores so that higher is always better, so flip the sign of the mean), and wrap the median baseline as a model with `DummyRegressor(strategy="median")` from `sklearn.dummy`. Checkpoint: it scores the median baseline around 0.40 locally. Local and leaderboard scores roughly agree, which is what makes the scoreboard trustworthy.
 - [ ] Build a scikit-learn `Pipeline` (lesson 19): impute missing values, one-hot encode categoricals, then `Ridge` regression on the log target. (`Ridge` is linear regression plus the regularization from lesson 19, a penalty that shrinks weights to prevent overfitting. It copes with the many one-hot columns far better than plain `LinearRegression`.) Predict, `np.expm1` back to dollars, submit. Checkpoint: leaderboard around **0.15–0.20**, a big jump from 0.40.
 - [ ] Improve the features using what the EDA showed: fill "missing means none" columns with `"None"`/0, add a `TotalSF` (total square footage) feature, log-transform skewed numerics, and try dropping the outlier houses from question 4. Test each idea against the local CV, keep what helps, and log every attempt in `SCOREBOARD.md`. Checkpoint: local CV below **0.14**.
 
 *Milestone 4 — Gradient boosting (days 7–8).*
 
-- [ ] Swap the final estimator for gradient boosting (lesson 16): try `HistGradientBoostingRegressor`, XGBoost or LightGBM with default settings. Checkpoint: it beats the best linear model's local CV without any tuning.
-- [ ] Submit the best boosted model. Checkpoint: leaderboard around **0.13–0.14**, and `SCOREBOARD.md` now tells a story of steady descent.
+- [ ] Swap the final estimator for gradient boosting (lesson 16): try `HistGradientBoostingRegressor`, XGBoost or LightGBM with default settings. `HistGradientBoostingRegressor` needs dense input, so for it create the encoder as `OneHotEncoder(handle_unknown="ignore", sparse_output=False)`. Checkpoint: local CV lands around 0.125–0.14, usually a little *worse* than the feature-engineered Ridge. That is normal on a dataset this small: a linear model fed good features is hard to beat, and the boosted model earns its place in Milestone 5's blend.
+- [ ] Submit the best boosted model and log it in `SCOREBOARD.md` even if it does not beat Ridge: a step that goes up is part of the story. Checkpoint: leaderboard around **0.13–0.14**.
 
 *Milestone 5 — Tune and ensemble (days 9–10).*
 
-- [ ] Tune the boosted model: `GridSearchCV` over a small grid (learning rate, tree depth, number of trees), or let Optuna do the search. Its homepage has a 10-line quickstart; search for "Optuna quickstart". Checkpoint: tuning buys a small but real local CV improvement (expect ~0.002–0.005, not a dramatic gain).
-- [ ] Blend: average the predictions of the tuned boosted model and the best linear model (in log space). Try weights like 0.5/0.5 and 0.7/0.3, chosen by local CV. Checkpoint: the blend beats both parents. This is why ensembling wins competitions.
+- [ ] Tune the boosted model: `GridSearchCV` over a small grid (learning rate, tree depth, number of trees), or let Optuna do the search. Its homepage has a 10-line quickstart; search for "Optuna quickstart". Checkpoint: tuning buys a small but real local CV improvement: about 0.005 for `HistGradientBoostingRegressor` or LightGBM, and about 0.01–0.015 for XGBoost, whose defaults (trees 6 levels deep, learning rate 0.3) are too aggressive for a dataset this small.
+- [ ] Blend: average the predictions of the tuned boosted model and the best linear model (in log space). Try weights like 0.5/0.5, 0.7/0.3 and 0.3/0.7, and keep whichever scores best on local CV (usually the one that gives more weight to the better parent). Checkpoint: the blend beats both parents. This is why ensembling wins competitions.
 - [ ] Submit the final blend. Checkpoint: leaderboard around **0.125 or lower**, comfortably in the upper half. (Ignore the impossible ~0.00 scores at the very top. They come from people who looked up the true answers, which are public for this old competition. The honest comparison is with earlier attempts and with the baseline.)
 
 *Milestone 6 — Error analysis: read the model's mistakes (day 11).*
@@ -120,7 +120,7 @@ sub.to_csv("submission_baseline.csv", index=False)
 *Milestone 7 — The README that gets people hired (days 12–14).*
 
 - [ ] Write `README.md` in the work folder with: (1) the problem in two sentences, (2) three EDA findings with one chart, (3) the approach as the story of the workflow just completed, (4) the full scoreboard table from `SCOREBOARD.md`, (5) what the error analysis revealed, (6) "what I'd try next": a ranked list of 3+ ideas not yet tried. Checkpoint: a stranger could understand what was done and why in five minutes without opening a notebook.
-- [ ] Commit everything, **make the repo public on GitHub, and share the README** with a friend or anywhere fellow learners gather. A public, honest write-up of a real project is worth more than any certificate. This step marks the lesson's milestone: the complete ML workflow, carried out end to end on a problem that nobody had simplified in advance.
+- [ ] Keep the competition data out of git: anyone can download it from Kaggle, so the repo needs only the code and the write-up. From the repo root, run `echo "work/20-end-to-end-ml-project/data/" >> .gitignore` (if the data was already committed, also run `git rm -r --cached work/20-end-to-end-ml-project/data`). Checkpoint: `git status -u` lists nothing inside `data/`. Then commit and push everything else, **open `work/20-end-to-end-ml-project/README.md` on the fork's GitHub page (the fork is already public), and share it** with a friend or anywhere fellow learners gather. A public, honest write-up of a real project is worth more than any certificate. This step marks the lesson's milestone: the complete ML workflow, carried out end to end on a problem that nobody had simplified in advance.
 
 <details><summary>Hints</summary>
 
@@ -147,6 +147,7 @@ sub.to_csv("submission_baseline.csv", index=False)
 - Kaggle rejects the submission file? Open it and `sample_submission.csv` side by side: same column names (`Id,SalePrice`), same number of rows (1459), no index column (`index=False`).
 - Score got dramatically *worse* after a change? The predictions were probably log-prices, submitted as if they were dollars. Check that the submission's values are in the hundreds of thousands, not around 12.
 - A pipeline crash mid-`cross_val_score` usually means a column with NaN slipped past the imputer. To find it, print `X.isna().sum()[lambda s: s > 0]`.
+- `Sparse data was passed for X, but dense data is required` from `HistGradientBoostingRegressor` means the one-hot encoder's output is sparse (mostly zeros, stored compactly), which that model does not accept. Create the encoder as `OneHotEncoder(handle_unknown="ignore", sparse_output=False)`.
 - Standing advice: read the error message bottom-up (the last line names the real problem), print shapes and a few values at every step, ask an AI assistant for a **hint** rather than a solution, and type all code by hand: copy-pasting teaches the clipboard, not the learner.
 
 ## Resources

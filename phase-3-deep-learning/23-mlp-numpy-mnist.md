@@ -8,7 +8,7 @@
 
 - **Project 1 — Load and look:** a script that downloads MNIST (70,000 handwritten digits), plots a labeled grid of them, and prepares clean normalized train/validation/test arrays.
 - **Project 2 — The network:** a 784-128-10 neural network in pure NumPy (vectorized forward pass, softmax + cross-entropy, matrix-form backprop, minibatch SGD), trained to 95%+ test accuracy.
-- **Project 3 — Look inside:** visualizations of what the network learned: first-layer weights as images, a confusion matrix built with the metrics code from lesson 14, and a gallery of its 25 most confidently-wrong predictions.
+- **Project 3 — Look inside:** visualizations of what the network learned: first-layer weights as images, a 10×10 confusion matrix that extends the metrics code from lesson 14, and a gallery of its 25 most confidently-wrong predictions.
 
 ## Concepts covered
 
@@ -25,27 +25,30 @@
 
 Check that these are in place; if not, revisit the linked lessons:
 
-- Multiply matrices in NumPy and predict the result's shape (lesson 05: `(64,784) @ (784,128)` → `(64,128)`).
+- Multiply matrices in NumPy and predict the result's shape (lesson 08: `(64,784) @ (784,128)` → `(64,128)`).
 - Explain what a gradient is and write a basic gradient descent loop (lesson 09).
 - Explain what backprop does, from building micrograd (lesson 22).
-- Have the hand-written accuracy + confusion-matrix functions from lesson 14 ready.
+- Have the hand-written accuracy function from lesson 14 ready, and know how its 2x2 confusion matrix is built (Project 3 extends it to 10 classes).
 
 Install the packages for this lesson (from the repo root, inside the venv):
 
 ```bash
 cd ~/ml/ml-learn
 source .venv/bin/activate
-pip install numpy matplotlib scikit-learn
+pip install numpy pandas matplotlib scikit-learn
 ```
 
-scikit-learn is used **only** to download MNIST; every line of the model is pure NumPy.
+scikit-learn (with pandas, which `fetch_openml` uses to parse the file) is used **only** to download MNIST; every line of the model is pure NumPy.
 
 Create the work folder for this lesson:
 
 ```bash
 mkdir -p work/23-mlp-numpy-mnist
 cd work/23-mlp-numpy-mnist
+echo '*.npz' > .gitignore
 ```
+
+The `.gitignore` line keeps the data and model files out of git. The prepared arrays alone take about 220 MB when saved uncompressed, GitHub rejects any file over 100 MB, and `download_mnist.py` can rebuild them at any time. Checkpoint: `git check-ignore mnist.npz` prints `mnist.npz`.
 
 ## Project 1 — Load and look
 
@@ -63,12 +66,13 @@ cd work/23-mlp-numpy-mnist
   X = mnist.data.astype(np.float32)      # shape (70000, 784)
   y = mnist.target.astype(np.int64)      # shape (70000,)
   np.savez_compressed('mnist.npz', X=X, y=y)
+  print(X.shape)                         # (70000, 784)
   ```
 
-  The first run downloads ~50 MB and may take a few minutes. Checkpoint: `mnist.npz` exists and `X.shape` prints `(70000, 784)`.
+  The first run downloads about 15 MB and may take a few minutes. Checkpoint: `mnist.npz` exists and `X.shape` prints `(70000, 784)`.
 - [ ] In a new script `explore.py`, load the `.npz`, take one row of `X`, and print its min, max, and shape. Each image is a flat vector of 784 pixel brightnesses (0–255). Reshape one to `(28, 28)` and print a few rows: the digit is almost visible in the numbers.
 - [ ] Plot a 5×5 grid of digits with `plt.imshow(img, cmap='gray')`, each subplot titled with its label. Checkpoint: 25 handwritten digits appear, and every title matches the digit in its subplot.
-- [ ] Normalize pixels to the range 0–1 by dividing by 255.0. This matters: gradient descent behaves badly when inputs are large. Lesson 19 showed the same thing with feature scaling.
+- [ ] Normalize pixels to the range 0–1 by dividing by 255.0. This matters: gradient descent behaves badly when inputs are large. Lesson 12 showed the same thing with feature scaling.
 - [ ] Split the data: the standard MNIST split is the first 60,000 for training and the last 10,000 for **test** (touched only once, at the very end). Carve the last 10,000 of the training portion off as the **validation set** (used every epoch to monitor progress). The result is 50,000 train / 10,000 val / 10,000 test.
 - [ ] Write a `one_hot(y, num_classes=10)` function that turns labels into one-hot vectors. Checkpoint: `one_hot(y_train).shape` is `(50000, 10)` and every row sums to exactly 1.
 - [ ] Save all six arrays to `mnist_prepared.npz` so Project 2 starts with one `np.load`.
@@ -76,7 +80,7 @@ cd work/23-mlp-numpy-mnist
 <details><summary>Hints</summary>
 
 - If `fetch_openml` is slow or flaky, just let it retry. It caches under `~/scikit_learn_data/`, so the wait happens only once. (Alternative: `torchvision.datasets.MNIST` also works if PyTorch is already installed, but PyTorch is not needed yet.)
-- For one-hot, avoid a Python loop: create a zeros array of shape `(n, 10)` and use fancy indexing (`arr[np.arange(n), y] = 1`), straight from lesson 05.
+- For one-hot, avoid a Python loop: create a zeros array of shape `(n, 10)` and use fancy indexing: `arr[np.arange(n), y] = 1` sets, in each row `i`, the column `y[i]` to 1 (the same paired-index pattern as `d[np.arange(len(X)), labels]` in lesson 18).
 - `imshow` output looks inverted or odd? Check that the image was reshaped to `(28, 28)` and not `(784,)`, and that it was not normalized twice.
 
 </details>
@@ -129,7 +133,7 @@ cd work/23-mlp-numpy-mnist
 **Milestones**
 
 - [ ] Load `model.npz`. Each **column** of `W1` (784 numbers) is one hidden neuron's weights, and 784 numbers can be reshaped to `28×28` and shown as an image. Plot the first 64 neurons in an 8×8 grid (`cmap='gray'` or `'RdBu'`). Checkpoint: the images are not pure noise; many look like blobs, edges, and stroke fragments. The network invented its own pen-stroke detectors without being told to.
-- [ ] Compute predictions on the full test set and build a **confusion matrix** with the hand-written functions from [lesson 14](../phase-2-classical-ml/14-model-evaluation.md), not sklearn's. Plot it with `plt.imshow` plus the counts written in each cell. Checkpoint: the diagonal is heavy; the biggest off-diagonal cells are believable pairs like 4↔9, 3↔5, 7↔2.
+- [ ] Compute predictions on the full test set and build a 10×10 **confusion matrix** by hand, not with sklearn. The `confusion_matrix` from [lesson 14](../phase-2-classical-ml/14-model-evaluation.md) handles only two classes, so generalize it: cell `(i, j)` counts the test images of true digit `i` predicted as digit `j` (`cm = np.zeros((10, 10), dtype=int)`, then `np.add.at(cm, (y_test, preds), 1)`). Check it once against `sklearn.metrics.confusion_matrix(y_test, preds)`, as lesson 14 did. Plot it with `plt.imshow` plus the counts written in each cell. Checkpoint: the diagonal is heavy; the biggest off-diagonal cells are believable pairs like 4↔9, 3↔5, 7↔2.
 - [ ] Find the **25 most confidently-wrong** test predictions: among all misclassified images, the ones where the network gave its (wrong) answer the highest probability. Plot them in a 5×5 grid titled `true→predicted (confidence)`.
 - [ ] Study that gallery and write 5 sentences in a `notes.md`: Which mistakes would a human also make? Are any labels arguably wrong in the dataset itself? (Some are.) What does that imply about ever reaching 100%?
 

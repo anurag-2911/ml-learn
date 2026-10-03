@@ -19,7 +19,7 @@
 - **The training loop**: predict → loss → gradient → update, the template that every model in the course follows, up to and including GPT.
 - **Reading a loss curve**: what smooth descent, wild spikes, and flat lines each say about training.
 - **Feature scaling**: why gradient descent fails when features live on wildly different scales, and how standardization fixes it.
-- **R² (R-squared)**: how much better the model is than just guessing the average, on a 0-to-1 scale.
+- **R² (R-squared)**: how much better the model is than just guessing the average: 1.0 is perfect, 0.0 is no better than the average, and negative is worse.
 
 ## Before starting
 
@@ -32,7 +32,7 @@ source .venv/bin/activate
 pip install numpy matplotlib scikit-learn
 ```
 
-**Get the dataset.** This lesson uses the California Housing dataset: ~20,000 census districts, each with 8 numeric features (median income, house age, rooms per household, ...) and a target (the district's median house value, in units of $100,000). No account is needed: scikit-learn downloads it (about 1 MB) and caches it in `~/scikit_learn_data` the first time it is loaded. Test it now:
+**Get the dataset.** This lesson uses the California Housing dataset: ~20,000 census districts, each with 8 numeric features (median income, house age, rooms per household, ...) and a target (the district's median house value, in units of $100,000). No account is needed: scikit-learn downloads it (under 0.5 MB) and caches it in `~/scikit_learn_data` the first time it is loaded. Test it now:
 
 ```bash
 python3 -c "
@@ -62,7 +62,7 @@ cd work/12-linear-regression
 - [ ] Scatter-plot `x` vs `y` with matplotlib (use `alpha=0.1`, since there are 20k points). **Checkpoint: a cloud sloping up-and-right, with a suspicious horizontal line of points at y = 5.0.** The dataset caps prices at $500k. Real data has flaws; note it and move on.
 - [ ] Write `predict(x, w, b)` returning `w * x + b`. This is the entire model: a prediction rule with two learnable parameters. Start with `w = 0.0, b = 0.0`, the model that predicts $0 for every house.
 - [ ] Write `mse(y_pred, y)`: the mean of the squared differences, `mean((y_pred - y)**2)`. Squaring makes every error positive and punishes big misses hardest. **Checkpoint: with w=0, b=0, the loss is about 5.6.** That number is the "maximally clueless" baseline.
-- [ ] Write `gradients(x, y, w, b)` returning `dw` and `db`, the derivatives of MSE with respect to `w` and `b`. Derive them on paper first, exactly like the hand derivations in lesson 09 (chain rule on `(w*x + b - y)²`). They come out to means over the data.
+- [ ] Write `gradients(x, y, w, b)` returning `dw` and `db`, the derivatives of MSE with respect to `w` and `b`. Derive them on paper first, using two facts from lesson 09: the slope of `u**2` is `2*u`, and the chain rule (outer slope times inner slope) applied to `(w*x + b - y)²`, where the inner part `w*x + b - y` has slope `x` with respect to `w` and `1` with respect to `b`. They come out to means over the data.
 - [ ] Trust nothing: verify the analytic gradient numerically. Nudge `w` by `1e-4`, recompute the loss, and check that `(loss_new - loss_old) / 1e-4` is close to `dw` (the same trick as in lesson 09). **Checkpoint: they agree to 3+ significant digits.**
 - [ ] Write the training loop, and recognize it as *the* template:
 
@@ -78,7 +78,7 @@ cd work/12-linear-regression
 
   Use `lr = 0.01` (the learning rate: how big each nudge is). Print the loss every 20 steps. **Checkpoint: the loss falls from ~5.6 and levels off around 0.7; it never rises.**
 - [ ] Plot the loss curve (`losses` vs step number). **Checkpoint: a smooth downhill slide that flattens out, the signature of healthy training.** Save it as `loss_curve.png`. This exact plot is drawn for every model trained from here on.
-- [ ] Plot the scatter again with the fitted line on top. **Checkpoint: the line cuts through the middle of the cloud; w lands around 0.4 and b around 0.4–0.5** (interpretation: each extra $10k of income predicts roughly $40k more house value).
+- [ ] Plot the scatter again with the fitted line on top. **Checkpoint: the line cuts through the middle of the cloud; after 200 steps w lands around 0.45 and b around 0.3** (interpretation: each extra $10k of income predicts roughly $45k more house value). b is still creeping upward at this point: with 2000 steps the pair settles at the exact best fit, w ≈ 0.42 and b ≈ 0.45.
 
 <details><summary>Hints</summary>
 
@@ -99,7 +99,7 @@ cd work/12-linear-regression
 
 - [ ] In `linreg8.py`, load the full `X` of shape `(20640, 8)` and `y`. Split into train and test: shuffle indices with `np.random.default_rng(42).permutation(len(y))`, take the first 80% for training, the rest for testing. **Checkpoint: train is `(16512, 8)`, test is `(4128, 8)`.** The test set stays locked away until the final milestone.
 - [ ] Upgrade the model: `w` is now a vector of shape `(8,)` (one weight per feature) and prediction is one matrix multiply: `X @ w + b` (lesson 08). The gradients vectorize the same way: `dw` becomes shape `(8,)`, using `X.T` in place of `x`. MSE does not change at all.
-- [ ] Re-run the gradient check from Project 1 on one element of `w`. **Checkpoint: analytic and numeric agree again.** It is cheap insurance, worth repeating every time.
+- [ ] Re-run the gradient check from Project 1 on `w[0]` (the `MedInc` weight). **Checkpoint: analytic and numeric agree again.** It is cheap insurance, worth repeating every time. (On the raw `Population` weight the check drifts apart, because a `1e-4` nudge is too coarse for a feature whose values run into the thousands. That is a first hint of the scaling problem coming up next.)
 - [ ] Now train on the **raw** features with the same `lr = 0.01`. **Checkpoint: the loss explodes to astronomical numbers or `nan` within a few steps.** This is not a bug in the code; it is the lesson. Lower `lr` until training survives, and notice that it now crawls uselessly.
 - [ ] Diagnose it: print each feature's mean and standard deviation (a measure of how spread out values are, from lesson 10). **Checkpoint: `Population` has values in the thousands while `AveBedrms` sits near 1.** One learning rate cannot fit both: big-scale features get huge gradients (explosion) while small-scale ones get tiny ones (crawl).
 - [ ] Fix it with **standardization**: for each feature column, subtract its mean and divide by its standard deviation, so every feature has mean ~0 and spread ~1. Compute the means and stds **on the training set only**, then apply those same numbers to the test set. The test set must never leak information into training.
@@ -124,7 +124,7 @@ cd work/12-linear-regression
 
 **Milestones**
 
-- [ ] In `compare.py`, fit sklearn on **the same standardized training data** used in Project 2:
+- [ ] In `compare.py`, rebuild what Project 2 used: copy the loading, the seed-42 split, the standardization (name the results `X_train_std` and `X_test_std`), the standardized training loop and `r_squared` from `linreg8.py`, so that `w` and `b` exist here too. Then fit sklearn on **the same standardized training data**:
 
   ```python
   from sklearn.linear_model import LinearRegression

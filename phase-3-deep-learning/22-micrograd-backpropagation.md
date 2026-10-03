@@ -7,7 +7,7 @@
 ## What this lesson builds
 
 - **Project 1:** A `micrograd` engine, typed line by line alongside Karpathy's video. It consists of a `Value` class with automatic backpropagation and an `MLP` (multi-layer perceptron) built on top of it.
-- **Project 2:** An extended engine with `exp`, `log`, `sigmoid`, `relu` and division, plus a `grad_check.py` script that verifies every operation against numerical gradients.
+- **Project 2:** An extended engine with `log`, `sigmoid` and `relu`, plus a `grad_check.py` script that verifies every operation against numerical gradients.
 - **Project 3:** A trained micrograd MLP that solves XOR and the `make_moons` dataset, with a plot of the decision boundary, learned by an engine built from nothing.
 
 ## Concepts covered
@@ -56,20 +56,20 @@ cd work/22-micrograd-backpropagation
 
 - [ ] **Warm-up: derivatives numerically.** Follow the video's opening: define `f(x) = 3*x**2 - 4*x + 5` and estimate its slope at `x = 3.0` by computing `(f(x + h) - f(x)) / h` with a tiny `h`. This is lesson 09 again, on purpose. Checkpoint: the slope comes out at about **14.0**.
 - [ ] **A bare `Value`.** Create `engine.py` with a `Value` class holding `self.data`, plus `__repr__` so printing shows the number, plus `__add__` and `__mul__` so `Value(2.0) + Value(3.0)` and `a * b` work. Each result is a new `Value`. Checkpoint: `Value(2.0) * Value(-3.0) + Value(10.0)` prints a Value with `data=4.0`.
-- [ ] **Remember the graph.** Give each `Value` a `_prev` (the child Values that produced it) and `_op` (the operation name). Now every result remembers where it came from. This chain of parents *is* the computational graph. If graphviz is installed, build the little `draw_dot` helper from the video and look at the expression as an actual picture.
+- [ ] **Remember the graph.** Give each `Value` a `_prev` (the child Values that produced it) and `_op` (the operation name). Now every result remembers where it came from. This chain of parents *is* the computational graph. If graphviz is installed, build the little `draw_dot` helper from the video and look at the expression as an actual picture. A notebook displays the returned graph by itself; in a plain `.py` file, save it with `draw_dot(L).render('graph', format='svg')` and open the resulting `graph.svg`.
 - [ ] **Backprop by hand, once.** Build the video's example: `a=2.0, b=-3.0, c=10.0; e=a*b; d=e+c; f=-2.0; L=d*f`. Add a `grad` field (start at 0) and fill in every node's gradient *manually*, using local gradient × upstream gradient at each step. A `+` node passes the upstream gradient through unchanged; a `*` node multiplies it by the *other* input's data. Checkpoint: `a.grad == 6.0` and `b.grad == -4.0`. Verify one of them by nudging the input by `h=0.001` and watching how much `L` moves.
 - [ ] **`_backward` closures.** Now automate the previous step: inside `__add__` and `__mul__`, define a small function `_backward()` that pushes the output's `grad` into the inputs' `grad`s, and store it on the result. Two rules that save hours: always **`+=` into grads, never `=`** (a Value used twice must accumulate both contributions; try `b = a + a` to see why), and gradients flow from output to inputs.
 - [ ] **`tanh` and a real neuron.** Add a `tanh()` method. Lesson 21 showed why a squashing function is needed. Its local gradient is `1 - t**2`, where `t` is the output. Rebuild the video's two-input neuron `(x1*w1 + x2*w2 + b).tanh()` and backprop through it by calling the `_backward`s in reverse order by hand. Checkpoint: with the video's numbers, `w2.grad` is **0.0** (because `x2` is 0, and a weight on a dead input gets no gradient).
-- [ ] **The real `backward()`.** Write the topological sort: a recursive walk that lists every node so each one appears after all nodes that depend on it, then set `self.grad = 1.0` and call each node's `_backward()` in reverse topological order. This is the moment micrograd becomes an autograd engine. Checkpoint: `L.backward()` reproduces every gradient from the by-hand pass, with no manual steps.
+- [ ] **The real `backward()`.** Write the topological sort: a recursive walk that lists every node so each one appears after all the nodes it depends on (its inputs), then set `self.grad = 1.0` and call each node's `_backward()` in reverse topological order, which starts at the output. This is the moment micrograd becomes an autograd engine. Checkpoint: `L.backward()` reproduces every gradient from the by-hand pass, with no manual steps.
 - [ ] **Python plumbing.** Make the engine pleasant to use: let `Value + 3` work (wrap plain numbers in `Value` inside `__add__`), and add `__radd__`/`__rmul__` so `3 * Value(2.0)` works too (Python calls these when the left operand is a plain number). Follow the video's segment on this.
 - [ ] **`Neuron`, `Layer`, `MLP`.** In `nn.py`, build the three classes from the video: a `Neuron` holds random weight `Value`s and does `w·x + b` then `tanh`; a `Layer` is a list of Neurons; an `MLP` is a list of Layers. Checkpoint: `MLP(3, [4, 4, 1])` called on `[2.0, 3.0, -1.0]` returns a single `Value` strictly between -1 and 1.
-- [ ] **Train it.** Use the video's tiny dataset (4 input examples, targets `[1.0, -1.0, -1.0, 1.0]`) with mean squared error loss (from lesson 12: the average of squared prediction errors). Write the familiar loop from lesson 09: forward → loss → **zero all grads** → `loss.backward()` → `p.data -= lr * p.grad` for every parameter. Checkpoint: loss falls below **0.05** within a few hundred steps, and the four predictions are close to their targets.
-- [ ] **The zero-grad bug.** Karpathy deliberately shows the most common bug in deep learning: forgetting to reset grads to zero each step, so gradients pile up across iterations. Break the loop on purpose, watch the loss misbehave, and fix it. The same bug comes back in PyTorch (`optimizer.zero_grad()`), and this step shows exactly what it is.
+- [ ] **Train it.** Create `train_tiny.py`, which imports `MLP` from `nn.py`, and use the video's tiny dataset (4 input examples, targets `[1.0, -1.0, -1.0, 1.0]`) with mean squared error loss (from lesson 12: the average of squared prediction errors). Write the familiar loop from lesson 09: forward → loss → **zero all grads** → `loss.backward()` → `p.data -= lr * p.grad` for every parameter. Checkpoint: loss falls below **0.05** within a few hundred steps, and the four predictions are close to their targets.
+- [ ] **The zero-grad bug.** Near the end of the video, Karpathy finds a bug he made by accident, and it is the most common bug in deep learning: forgetting to reset grads to zero each step, so gradients pile up across iterations. Break the loop on purpose and compare it with the fixed loop. On this tiny dataset the buggy loop usually still drives the loss down, often faster, because the piled-up gradients act like a huge learning rate; the bug hides on easy problems and breaks training on harder ones. Then fix it. The same bug comes back in PyTorch (`optimizer.zero_grad()`), and this step shows exactly what it is.
 
 <details><summary>Hints</summary>
 
 - If gradients come out doubled or wrong when a variable is reused (like `b = a + a`), a `_backward` somewhere uses `=` instead of `+=`.
-- If `backward()` misses some nodes, the topological sort is probably not marking nodes as visited *before* recursing into children. Trace it on a 3-node graph on paper.
+- If inputs end up with zero grads after `backward()`, check the topological sort: `topo.append(v)` must come *after* the loop that recurses into `v._prev`, so each node lands after its inputs. If grads come out wrong (usually too large) on a graph that reuses a node, the `visited` check is missing and that node is processed twice. Trace it on a 3-node graph on paper.
 - `tanh` backward in one line: `self.grad += (1 - t**2) * out.grad`. If the loss will not drop, print a few `.grad`s after `backward()`. All zeros means the graph is disconnected somewhere (often a plain float slipped in where a `Value` should be).
 - Training diverges (loss grows)? The learning rate is too big. Try 0.05, then adjust, as in lesson 09.
 
@@ -79,7 +79,7 @@ cd work/22-micrograd-backpropagation
 
 ## Project 2 — Own the engine: extend micrograd
 
-**Goal:** Add `exp`, `log`, `sigmoid`, `relu` and division to the engine, each with a correct backward pass, and *prove* each one right with numerical gradient checking. Copying along with a video is one skill; extending the code alone is the real test of understanding. This project is where micrograd becomes the learner's own.
+**Goal:** Add `log`, `sigmoid` and `relu` to the engine, each with a correct backward pass, and *prove* every operation right with numerical gradient checking. That includes `exp`, `**`, subtraction and division, which the video already built in Project 1: for those, re-derive each backward pass without looking at the video and let the gradient check confirm it. Copying along with a video is one skill; extending the code alone is the real test of understanding. This project is where micrograd becomes the learner's own.
 
 **Milestones**
 
@@ -92,7 +92,7 @@ def numeric_grad(f, x, h=1e-6):
 ```
 
 - [ ] **`exp` and `log`.** Two classic derivatives: `d/dx e^x = e^x` and `d/dx ln(x) = 1/x`. Use `math.exp` and `math.log` for the forward pass. Checkpoint: the gradient check passes with relative error below **1e-4** for each, at a few different input values.
-- [ ] **`__pow__`, `__neg__`, `__sub__`, `__truediv__`.** Support `a ** 2` (power rule from lesson 09: `n * x**(n-1)`), then get subtraction and division nearly free: `a - b` is `a + (-b)`, and `a / b` is `a * b**-1`. This composition trick (new ops out of old ops) is how real frameworks stay small. Checkpoint: `(Value(4.0) / Value(2.0)).data == 2.0` and the gradient check passes.
+- [ ] **`__pow__`, `__neg__`, `__sub__`, `__truediv__`.** Support `a ** 2` (power rule: the derivative of `x**n` is `n * x**(n-1)`; for `n = 2` that is the `2x` checked in lesson 09), then get subtraction and division nearly free: `a - b` is `a + (-b)`, and `a / b` is `a * b**-1`. This composition trick (new ops out of old ops) is how real frameworks stay small. Checkpoint: `(Value(4.0) / Value(2.0)).data == 2.0` and the gradient check passes.
 - [ ] **`sigmoid`.** The squashing function from lesson 13 (logistic regression): `1 / (1 + e^-x)`, local gradient `s * (1 - s)`. Implement it directly, or compose it from `exp` and division and let backprop handle it automatically. Do both and confirm that they match. That comparison is the whole point of an autograd engine.
 - [ ] **`relu`.** The simplest activation in deep learning: `max(0, x)`, which passes positives through and zeroes negatives. Gradient: 1 if the input was positive, else 0. Checkpoint: the gradient check passes at `x=2.0` and `x=-2.0` (skip `x=0.0`: the derivative does not exist exactly there, and that is fine).
 - [ ] **Torture test.** Gradient-check one ugly compound expression that uses *all* the new ops in one graph, with multiple inputs, including an input used twice. Checkpoint: every input's relative error is below **1e-4**.
@@ -114,8 +114,8 @@ def numeric_grad(f, x, h=1e-6):
 
 **Milestones**
 
-- [ ] **XOR, finally solved.** Four inputs `[0,0],[0,1],[1,0],[1,1]`, targets `[-1, 1, 1, -1]` (tanh outputs live in -1..1, so use ±1 targets). Train an `MLP(2, [4, 1])` with MSE loss. Checkpoint: all four predictions have the **correct sign**, and loss is below 0.05. In lesson 21 this failed with a single perceptron; the hidden layer plus backprop is what fixed it.
-- [ ] **Load moons.** In a new script, generate the dataset and look at it before training; always look at the data (lesson 07):
+- [ ] **XOR, now with backprop.** Four inputs `[0,0],[0,1],[1,0],[1,1]`, targets `[-1, 1, 1, -1]` (tanh outputs live in -1..1, so use ±1 targets). Train an `MLP(2, [4, 1])` with MSE loss. Checkpoint: all four predictions have the **correct sign**, and loss is below 0.05. In lesson 21 a single perceptron failed at this, and the hidden-layer network that solved it needed slow numeric gradients, one nudge per parameter; here one `backward()` call computes every gradient.
+- [ ] **Load moons.** In a new script, `train_moons.py`, generate the dataset and look at it before training; always look at the data (lesson 07):
 
 ```python
 from sklearn.datasets import make_moons
@@ -126,7 +126,7 @@ plt.scatter(X[:, 0], X[:, 1], c=y, cmap="coolwarm"); plt.savefig("moons.png")
 ```
 
 - [ ] **Train on moons.** `MLP(2, [16, 16, 1])`, MSE loss over all 100 points per step. A warning about speed: the engine builds a Python object per number, so one step takes a second or two. That slowness is a *lesson*, and it is why lesson 23 moves to NumPy and lesson 24 to PyTorch. Print loss every 10 steps. Checkpoint: loss drops steadily; after ~100-300 steps, **accuracy above 0.90** (a prediction is correct when `sign(output) == label`).
-- [ ] **Plot the decision boundary.** Build a grid of points covering the plot area (`np.meshgrid` from lesson 05, ~50×50 is plenty), run each grid point through the trained MLP, color by predicted sign, then scatter the real data on top. Checkpoint: the plot shows a **curved boundary snaking between the two crescents**: a shape learned, not programmed, by ~300 lines of hand-written Python.
+- [ ] **Plot the decision boundary.** Build a grid of points covering the plot area (`np.meshgrid`, as in the decision-boundary plots of lessons 13 and 21; ~50×50 is plenty), run each grid point through the trained MLP, color by predicted sign, then scatter the real data on top. Checkpoint: the plot shows a **curved boundary snaking between the two crescents**: a shape learned, not programmed, by ~300 lines of hand-written Python.
 - [ ] **Last step: read the original.** Now, after building and not before, go to [karpathy/micrograd](https://github.com/karpathy/micrograd) on GitHub and read the actual repo. Compare his `engine.py` with the home-built one. Note what he did differently (he uses `relu`, his engine is ~100 lines). Reading someone else's solution *after* solving the problem is one of the fastest ways to improve.
 
 <details><summary>Hints</summary>
@@ -143,7 +143,7 @@ plt.scatter(X[:, 0], X[:, 1], c=y, cmap="coolwarm"); plt.savefig("moons.png")
 ## Stretch goals
 
 - **Batching and speed:** time the moons training with `time python3 train_moons.py`, then find and optimize the slowest part (Python's `cProfile` can show it). How fast can pure-Python micrograd get?
-- **Better loss:** replace MSE with max-margin (hinge) loss like the micrograd repo's demo notebook uses, and add L2 regularization (a small penalty on weight sizes, from lesson 13). Does the boundary get smoother?
+- **Better loss:** replace MSE with max-margin (hinge) loss like the micrograd repo's demo notebook uses, and add L2 regularization (a small penalty on weight sizes, the idea behind Ridge in lesson 19). Does the boundary get smoother?
 - **A real optimizer:** implement momentum (lesson 09's stretch goal) as an update rule on the parameters. Compare steps-to-convergence on moons with and without it.
 - **Draw the graph of a whole MLP:** if graphviz is working, render the full computational graph of a 2-neuron network's loss. Notice how big it already is, and remember that GPT is the same idea with billions of nodes.
 
@@ -168,7 +168,7 @@ plt.scatter(X[:, 0], X[:, 1], c=y, cmap="coolwarm"); plt.savefig("moons.png")
 - [ ] I can add a brand-new operation to an autograd engine and write its backward pass unaided.
 - [ ] I can verify any gradient with numerical gradient checking and interpret the relative error.
 - [ ] I can build a neuron, layer and MLP out of scalar Values and train them with a loop I wrote.
-- [ ] I know what `zero_grad` is for, because I have watched training break without it.
+- [ ] I know what `zero_grad` is for, because I have seen what happens without it.
 - [ ] Backpropagation is no longer a mystery to me.
 
 ## Next up

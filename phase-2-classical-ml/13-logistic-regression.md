@@ -102,15 +102,16 @@ No downloads are needed: Project 1 generates its own data, and seaborn fetches t
 
   Checkpoint: 891 rows, and about 0.38 of passengers survived.
 - [ ] **Establish the dumb baseline first.** A "model" that predicts *died* for everyone gets `1 - 0.38 ≈ 0.62` accuracy: 62% with zero intelligence. Write this number down. Any model scoring near 62% has learned nothing, whatever its accuracy sounds like. From this lesson on, every project starts by computing the dumbest possible baseline.
-- [ ] Prepare four features by hand (no library does the work here; that comes in lesson 19):
+- [ ] Prepare four features by hand with pandas and NumPy (no scikit-learn preprocessing here; that comes in lesson 19):
   - `sex` → a 0/1 column (e.g. male=0, female=1). Models need numbers, not strings.
   - `pclass` (ticket class 1/2/3) → **one-hot encode** it: three 0/1 columns, `class_1`, `class_2`, `class_3`, one per category, exactly one "hot" per row. Why not keep 1/2/3 as-is? That claims third class is "three times" first class on some scale: an invented ordering and spacing. One-hot makes no such claim. (`pd.get_dummies(df["pclass"], prefix="class")` does it.)
-  - `age` → it has missing values (check `df["age"].isna().sum()`); fill them with the median age, and note in a comment what was done and why.
-  - `fare` → scale it as in lesson 12: subtract the mean, divide by the standard deviation. Fares run 0–512 while the other columns are 0/1; unscaled, fare's gradient dwarfs everything else.
-- [ ] Assemble `X` (shape (891, 6): sex, three class columns, age scaled too, fare) and `y = df["survived"].values`. Convert with `.astype(float)`, because one-hot columns come out as True/False.
+  - `age` → it has missing values (check `df["age"].isna().sum()`); fill them with the median age, and note in a comment what was done and why. Age is scaled after the split, together with fare.
+  - `fare` → leave it raw for now; it is scaled right after the split. Fares run 0–512 while the other columns are 0/1; unscaled, fare's gradient dwarfs everything else.
+- [ ] Assemble `X` (shape (891, 6): sex, three class columns, age, fare) and `y = df["survived"].values`. Convert with `.astype(float)`, because one-hot columns come out as True/False.
 - [ ] Split before training: shuffle the row indices with `np.random.default_rng(42)`, take ~80% for training and hold out ~20% as a **test set** that the model never sees during training. This test set is the honesty check (lesson 12's train/test idea, now a habit).
+- [ ] Scale `age` and `fare` as in lesson 12: subtract the mean, divide by the standard deviation, computing both numbers on the training rows only and applying those same numbers to both splits.
 - [ ] Train the Project 1 model on the training split: same code, just 6 weights instead of 2. Checkpoint: the loss starts near 0.693 and drops to roughly 0.45–0.50.
-- [ ] Evaluate on the test split at threshold 0.5. Checkpoint: test accuracy around 0.78–0.80, clearly above the 0.62 baseline. Always print both numbers side by side.
+- [ ] Evaluate on the test split at threshold 0.5. Checkpoint: test accuracy roughly 0.75–0.85, clearly above the ~0.62 baseline. The exact value depends on which passengers land in the ~179-row test set; with `default_rng(42)` and the first 80% of the shuffled indices for training, it comes out near 0.76. Always print both numbers side by side.
 - [ ] Play with the threshold: at 0.3 the model predicts "survived" more freely; at 0.7, only when very confident. Print accuracy at thresholds 0.3, 0.5 and 0.7. The trade-off that shows up here (catching more survivors vs. fewer false alarms) gets proper names in [lesson 14](14-model-evaluation.md): precision and recall.
 
 <details><summary>Hints</summary>
@@ -122,7 +123,7 @@ No downloads are needed: Project 1 generates its own data, and seaborn fetches t
 
 </details>
 
-**Definition of done:** a script that prints the baseline (~0.62) and the test accuracy (~0.78+), trained on features prepared entirely by hand, evaluated only on rows the model never trained on.
+**Definition of done:** a script that prints the baseline (~0.62) and the test accuracy (well above the baseline, roughly 0.75–0.85), trained on features prepared entirely by hand, evaluated only on rows the model never trained on.
 
 ## Project 3 — sklearn and the story in the weights
 
@@ -139,10 +140,10 @@ No downloads are needed: Project 1 generates its own data, and seaborn fetches t
   print(model.score(X_test, y_test))
   ```
 
-  Checkpoint: accuracy within a couple of points of the scratch model (~0.78–0.81). Understanding took weeks; the library takes three lines. This is the pattern for the rest of the curriculum: scratch first, library after.
+  Checkpoint: accuracy within a couple of points of the scratch model on the same split. Understanding took weeks; the library takes three lines. This is the pattern for the rest of the curriculum: scratch first, library after.
 - [ ] Extract the learned weights: `model.coef_[0]` (one weight per feature) and `model.intercept_`. Print each next to its feature name.
 - [ ] Interpret the signs. A positive weight pushes the survival probability up as that feature grows; a negative one pushes it down. Checkpoint: `sex` (female=1) has the largest positive weight, and `class_3` is clearly negative.
-- [ ] Compare with the scratch model's weights. Checkpoint: every feature has the same *sign* in both models (magnitudes may differ: sklearn applies regularization, a deliberate shrinking of weights that [lesson 19](19-feature-engineering-pipelines.md) covers properly).
+- [ ] Compare with the scratch model's weights. Checkpoint: the large weights (`sex`, `class_1`, `class_3`, `age`) have the same *sign* in both models. Weights near zero, such as `class_2` and `fare`, can flip sign: the three class columns always add up to 1, so weight can shift between them and the intercept without changing any prediction. Magnitudes may differ too: sklearn applies regularization, a deliberate shrinking of weights that [lesson 19](19-feature-engineering-pipelines.md) covers properly.
 - [ ] Write the story. In `titanic_story.md` (5–10 sentences, plain English, no jargon): who was likely to survive the Titanic and why, according to the model? Which feature mattered most? Does it match the known history ("women and children first", class-segregated deck access)? One sentence on what the model *cannot* say: weights show correlation in this data, not causation.
 
 <details><summary>Hints</summary>
@@ -158,7 +159,7 @@ No downloads are needed: Project 1 generates its own data, and seaborn fetches t
 
 - Add features: `sibsp + parch` (family size aboard), or a 0/1 `is_child` flag for age < 16. Try to push test accuracy past 0.80. Report baseline, before, and after.
 - Plot survival probability vs. age for a 3rd-class male vs. a 1st-class female, holding other features fixed: two sigmoid-shaped curves that make the model's beliefs visible.
-- On the moons data, add hand-crafted features `x1²`, `x2²`, and `x1·x2` as extra columns and retrain. The boundary is now curved and accuracy jumps above 0.95: a straight line in a *bigger* feature space bends in the original one. This trick is the core idea of kernels (lesson 17) and, in spirit, of neural networks (lesson 21).
+- On the moons data, add hand-crafted features `x1²`, `x2²`, `x1·x2`, `x1³` and `x2³` as extra columns, scale them as in lesson 12, and retrain with a learning rate near 1. The boundary is now curved and accuracy jumps above 0.95 (squares and the cross term alone leave it near 0.85: the crescents need a curve that bends more than once): a straight line in a *bigger* feature space bends in the original one. This trick is the core idea of kernel methods (such as kernel SVMs, not covered in this course) and, in spirit, of neural networks (lesson 21).
 - Implement mini-batch gradient descent (update on random chunks of ~32 rows instead of the full dataset each step) and compare the loss curves. This is a preview of how all deep learning trains.
 
 ## Getting unstuck

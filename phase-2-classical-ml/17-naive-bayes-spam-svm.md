@@ -36,7 +36,7 @@ mkdir -p work/17-naive-bayes-spam
 cd work/17-naive-bayes-spam
 ```
 
-Download the dataset of 5,572 real SMS messages labeled spam or ham ("ham" = not spam):
+Download the dataset of 5,574 real SMS messages labeled spam or ham ("ham" = not spam):
 
 ```bash
 curl -L -o smsspam.zip "https://archive.ics.uci.edu/static/public/228/sms+spam+collection.zip"
@@ -60,21 +60,21 @@ cp ../14-model-evaluation/mymetrics.py .
 
 **Milestones**
 
-- [ ] **Load the data.** Read `SMSSpamCollection` line by line and split each line on the tab character into `(label, message)`. Checkpoint: the loaded data holds 5,572 messages, and counting labels gives 4,825 ham and 747 spam (about 13% spam: an imbalanced dataset, of the kind lesson 14 warned about).
+- [ ] **Load the data.** Read `SMSSpamCollection` line by line and split each line on the tab character into `(label, message)`. Checkpoint: the loaded data holds 5,574 messages, and counting labels gives 4,827 ham and 747 spam (about 13% spam: an imbalanced dataset, of the kind lesson 14 warned about).
 
   ```python
   with open("SMSSpamCollection", encoding="utf-8") as f:
       pairs = [line.rstrip("\n").split("\t", 1) for line in f]
   ```
 
-- [ ] **Split train/test.** Shuffle with a fixed seed (`random.seed(42)`) and hold out 20% for testing, exactly as in lesson 14. From now on, *only* the training set may influence the model. Checkpoint: ~4,457 training and ~1,115 test messages.
+- [ ] **Split train/test.** Shuffle with a fixed seed (`random.seed(42)`) and hold out 20% for testing, exactly as in lesson 14. From now on, *only* the training set may influence the model. Checkpoint: ~4,459 training and ~1,115 test messages.
 - [ ] **Tokenize.** Write `tokenize(text)` that lowercases the message and splits it into words (start simple: keep runs of letters/digits, drop punctuation). This is the **bag of words** step, which keeps the counts of words and throws away their order: "WIN a FREE prize!!" becomes `["win", "a", "free", "prize"]`. Checkpoint: `tokenize("Free entry!! Win FREE tickets")` returns `free` twice.
 - [ ] **Count everything (this *is* training).** From the training set only, build: the two class priors `P(spam)` and `P(ham)` (fractions of messages in each class); a dict of word counts for spam and another for ham; the total word count in each class; and the vocabulary (every distinct training word). Naive Bayes has no gradient descent; training is literally counting. Checkpoint: the vocabulary size is somewhere in the 7,000–9,000 range (it depends on the tokenizer), and `spam_counts["free"]` is much larger than expected for 13% of the data.
 - [ ] **Write down the classifier before coding it.** Bayes' rule from lesson 10, turned into a classifier: `P(spam | words) ∝ P(spam) · P(words | spam)`. The **naive** part: assume the words are independent given the class, so `P(words | spam)` is just the product of `P(word | spam)` for each word, where `P(word | spam) = count(word in spam) / total words in spam`. This assumption is false ("free" and "prize" travel together), but it turns an impossible estimation problem into simple counting, and it works remarkably well. Say the whole formula out loud in plain English before writing any code.
 - [ ] **Hit the zero problem, then fix it with Laplace smoothing.** Try scoring a test message containing a word that appears in ham training data but never in spam. Its `P(word | spam)` is 0, and one zero in a product wipes out all other evidence: one unseen word would veto the whole message. **Laplace smoothing** fixes this by pretending that every vocabulary word was seen once more than it was: `P(word | class) = (count + 1) / (total_words_in_class + vocab_size)`. Checkpoint: with smoothing, no word in the vocabulary has probability 0 for either class.
-- [ ] **Hit the underflow problem, then fix it with logs.** Run this in a Python shell: `0.001 ** 400` → `0.0`. A 40-word message means multiplying ~40 numbers each around 0.0001, and floats silently underflow to zero, so both classes score 0.0 and the comparison is garbage. Fix: compare **log-probabilities** instead. Since `log(a·b) = log(a) + log(b)`, replace the product with a sum: `log P(spam) + Σ log P(word|spam)`, using `math.log`. The scores become manageable negative numbers, and whichever is larger wins. Checkpoint: scores are roughly in the −20 to −300 range, never 0.0 or `-inf`.
+- [ ] **Hit the underflow problem, then fix it with logs.** Run this in a Python shell: `0.001 ** 400` → `0.0`. A 100-word message means multiplying ~100 numbers each around 0.0001 (about 1e-400, below the smallest number a float can hold), and floats silently underflow to zero, so both classes score 0.0 and the comparison is garbage. Fix: compare **log-probabilities** instead. Since `log(a·b) = log(a) + log(b)`, replace the product with a sum: `log P(spam) + Σ log P(word|spam)`, using `math.log`. The scores become manageable negative numbers, and whichever is larger wins. Checkpoint: scores are roughly in the −20 to −300 range, never 0.0 or `-inf`.
 - [ ] **Predict.** Write `predict(message)` that tokenizes, sums log-probabilities under each class, and returns the class with the higher score. Decide what to do with words not in the vocabulary at all (see Hints). Checkpoint: `predict("WINNER!! You have won a free prize, txt CLAIM to 81010")` → spam; `predict("ok, see you at 7 for dinner")` → ham.
-- [ ] **Evaluate with the home-made metrics library.** On the test set, compute accuracy, the confusion matrix, and precision and recall *for the spam class*, using the lesson 14 code. Checkpoint: accuracy ≥ 0.97, spam precision ≥ 0.95.
+- [ ] **Evaluate with the home-made metrics library.** On the test set, compute accuracy, the confusion matrix, and precision and recall *for the spam class*, using the lesson 14 code. The lesson 14 functions expect 1 = positive and 0 = negative, and given the strings `"spam"`/`"ham"` the confusion matrix, precision and recall silently come out as zeros. Convert both the true labels and the predictions first, with spam as the positive class: `np.array([1 if lab == "spam" else 0 for lab in labels])`. Apply the same conversion to every model's predictions in Project 3. Checkpoint: accuracy ≥ 0.97, spam precision ≥ 0.95.
 - [ ] **Think about the cost of mistakes.** Look at the confusion matrix. A false positive here means a real message from a friend lands in the spam folder, which is much worse than letting one spam through. Which metric measures that? (Precision on spam.) Read the actual misclassified messages and note in a comment which errors are the most troubling.
 
 <details><summary>Hints</summary>
@@ -95,18 +95,18 @@ cp ../14-model-evaluation/mymetrics.py .
 **Milestones**
 
 - [ ] **Compute a likelihood ratio per word.** For each vocabulary word, compute `P(word | spam) / P(word | ham)` using the *smoothed* probabilities (unsmoothed ones divide by zero). A ratio far above 1 means "seeing this word is strong evidence of spam"; far below 1 means strong ham evidence. Working in logs, this is just `log P(word|spam) − log P(word|ham)`.
-- [ ] **Print the top 15 spam-indicative words** (highest ratio) and **top 15 ham-indicative words** (lowest ratio), each with its ratio, nicely formatted. Checkpoint: the spam list is dominated by words like `free`, `win`/`winner`, `txt`, `claim`, `prize`, `mobile`, `150p`: SMS-scam vocabulary. The ham list looks like ordinary chat between friends.
+- [ ] **Print the top 15 spam-indicative words** (highest ratio) and **top 15 ham-indicative words** (lowest ratio), each with its ratio, nicely formatted. Checkpoint: the spam list is dominated by SMS-scam vocabulary such as `claim`, `prize`, `150p`, `guaranteed`, `awarded`, `ringtone` and `www`, plus prize amounts like `500` and `1000`. Common spam words such as `free`, `win` and `txt` rank much lower, because they also turn up in ordinary chat and the ratio rewards words that are rare in ham. The ham list looks like ordinary chat between friends.
 - [ ] **Stress-test the explanation.** Pick one word from the spam list and verify its ratio by hand from the raw counts. Then write two new messages, one stuffed with spam-list words and one with ham-list words, and confirm that `predict` classifies both the way the word lists predict.
 - [ ] **Reflect (one paragraph, as a comment or in personal notes).** The model "understands" nothing: it has never seen word order or meaning, only counts. Yet the word lists look meaningful. In [lesson 30](../phase-4-nlp-transformers/30-embeddings-word2vec.md), bag-of-words is replaced by **embeddings**, a representation where words get coordinates and "free" and "gratis" land near each other. Richer representations of text are coming; counting is just the first rung.
 
 <details><summary>Hints</summary>
 
 - Project 1 already computed every number needed here. This project is sorting a dictionary, not new modeling: `sorted(vocab, key=..., reverse=True)[:15]`.
-- If the top spam words look like garbage tokens (single letters, numbers), the tokenizer is the cause. Filtering out words seen fewer than ~5 times in training cleans the list up nicely.
+- If the top spam words look like garbage tokens (single letters, word fragments), the tokenizer is the cause. Numbers such as `500`, `1000` and `18` are real signals here: prize amounts and age limits in scam texts. Filtering out words seen fewer than ~5 times in training cleans the list up nicely.
 
 </details>
 
-**Definition of done**: Running `python explain.py` prints two clean 15-word tables, and the spam table passes the "free/win/txt" sanity check.
+**Definition of done**: Running `python explain.py` prints two clean 15-word tables, and the spam table passes the "claim/prize/150p" sanity check.
 
 ## Project 3 — sklearn text pipeline
 
@@ -126,16 +126,16 @@ cp ../14-model-evaluation/mymetrics.py .
   model.fit(train_texts, train_labels)   # raw strings in — the pipeline does the rest
   ```
 
-- [ ] **Swap in TF-IDF.** Replace `CountVectorizer` with `TfidfVectorizer`. **TF-IDF** (term frequency – inverse document frequency) re-weights the counts: a word scores high in a message if it is frequent *in that message* but rare *across all messages*. Words like "the" and "to" appear everywhere, so they carry almost no information about spam-ness. TF-IDF shrinks them toward zero automatically, with no need to filter them out by hand. Checkpoint: accuracy is in the same ~0.96–0.98 neighborhood (on short SMS messages TF-IDF may not beat raw counts; that is a legitimate finding, not a bug).
+- [ ] **Swap in TF-IDF.** Replace `CountVectorizer` with `TfidfVectorizer`. **TF-IDF** (term frequency – inverse document frequency) re-weights the counts: a word scores high in a message if it is frequent *in that message* but rare *across all messages*. Words like "the" and "to" appear everywhere, so they carry almost no information about spam-ness. TF-IDF shrinks them toward zero automatically, with no need to filter them out by hand. Checkpoint: accuracy lands around 0.95–0.97, below raw counts, and spam recall drops to roughly 0.65–0.80 while spam precision stays near 1.0. TF-IDF values are small fractions, so the default `alpha=1.0` smoothing swamps them; `MultinomialNB(alpha=0.1)` recovers most of the gap. On short SMS messages TF-IDF may not beat raw counts; that is a legitimate finding, not a bug.
 - [ ] **Try a linear SVM.** Pipeline: `TfidfVectorizer` + `LinearSVC`. A **Support Vector Machine** takes a completely different route from Naive Bayes: no probabilities, pure geometry. Each message is now a point in ~8,000-dimensional space (one axis per word). Many boundaries could separate spam from ham points; the SVM picks the one with the **maximum margin**, the widest empty buffer zone between the boundary and the nearest points on each side. Those nearest points are the "support vectors": the borderline messages that alone define the boundary. A wider buffer means safer generalization. That is the whole intuition, with no difficult math required. High-dimensional sparse text is the classic terrain where linear SVMs shine. Checkpoint: this is likely the best model in the lesson, around 0.98–0.99 accuracy.
-- [ ] **Build the results table.** Give it one row per approach: the from-scratch NB, CountVectorizer+NB, TfidfVectorizer+NB and TfidfVectorizer+LinearSVC. The columns are accuracy, spam precision and spam recall, all computed with the lesson 14 metrics on the same test set. Print it aligned. Checkpoint: every model ≥ 0.96 accuracy, and one sentence explains which model to actually deploy and why (remember: false positives are costly, so precision may outrank raw accuracy).
+- [ ] **Build the results table.** Give it one row per approach: the from-scratch NB, CountVectorizer+NB, TfidfVectorizer+NB and TfidfVectorizer+LinearSVC. The columns are accuracy, spam precision and spam recall, all computed with the lesson 14 metrics on the same test set. Print it aligned. Checkpoint: every model scores about 0.95 accuracy or better (TF-IDF + NB with the default `alpha` is the weakest), and one sentence explains which model to actually deploy and why (remember: false positives are costly, so precision may outrank raw accuracy).
 - [ ] **Attack the filter.** Hand-craft the best spammy message possible and run it through all models. Then try to *evade* them: reword it ("fr3e", "w1n") until some model calls it ham. Reworded messages like these are adversarial inputs, and they explain why real spam looks the way it does.
 
 <details><summary>Hints</summary>
 
-- In `model.predict(["your message here"])`, the input must be a list of strings, not a bare string. If a cryptic error about the input shape appears, that is why.
+- In `model.predict(["your message here"])`, the input must be a list of strings, not a bare string. A bare string raises `ValueError: Iterable over raw text documents expected, string object received.`
 - To keep the comparison fair, split the raw *texts* once, then feed identical train/test lists to every pipeline (and to the Project 1 code).
-- If the pipelines get confusing, the sklearn text tutorial linked in Resources walks through exactly this vectorizer + classifier pattern.
+- If the pipelines get confusing, the sklearn text-classification example linked in Resources walks through this vectorizer + classifier pattern.
 
 </details>
 
@@ -144,14 +144,14 @@ cp ../14-model-evaluation/mymetrics.py .
 ## Stretch goals
 
 - **Bigrams.** Pass `ngram_range=(1, 2)` to the vectorizer so that "free entry" counts as a feature alongside "free" and "entry", a small step back toward word order. Does it help?
-- **Tune the smoothing.** Loop `alpha` over `0.01, 0.1, 0.5, 1, 2, 5, 10` in the from-scratch model and plot accuracy vs alpha (log-scale x-axis, lesson 07 skills). This is hyperparameter tuning by hand.
+- **Tune the smoothing.** Loop `alpha` over `0.01, 0.1, 0.5, 1, 2, 5, 10` in the from-scratch model and plot accuracy vs alpha with a log-scale x-axis (`plt.xscale("log")`, as in lesson 10). This is hyperparameter tuning by hand.
 - **Ship it as a CLI.** `python spam_check.py "some message"` prints SPAM or HAM plus the top 3 words that drove the decision: Project 1 and Project 2 glued into a tool.
 - **A harder dataset.** Rerun the whole comparison on a different text classification problem (e.g. sklearn's built-in `fetch_20newsgroups`, no download account needed) and see which conclusions survive.
 
 ## Getting unstuck
 
 - **Accuracy stuck near 0.87?** That is exactly the ham fraction, so the model is predicting ham for everything. Usual suspects: mixed-up spam/ham counts, or comparing a log-score against a raw probability.
-- **Scores are `-inf` or `nan`?** The code took `log(0)` somewhere: a word slipped past smoothing, or the counts were smoothed without the adjusted denominator. Print `P(word|class)` for the offending word.
+- **`ValueError: math domain error` (or `-inf` scores when using `np.log`)?** The code took `log(0)` somewhere: a word slipped past smoothing (for example, one code path uses the raw count, or the precomputed table covers only the words seen in that class). Print `P(word|class)` for the offending word.
 - **From-scratch and sklearn NB disagree wildly (>3 points)?** Different tokenizers. Print `CountVectorizer().build_analyzer()("Free entry!! Win")` and compare it with `tokenize` on the same string.
 - Standing advice: read error tracebacks bottom-up (the last line names the real error), print intermediate values (counts, vocab size, one message's per-word log-probs) instead of staring at code, ask an AI assistant for a hint ("what concept am I missing?"), never for the solution, and type every line by hand. Copy-pasted code teaches nothing.
 
@@ -159,7 +159,8 @@ cp ../14-model-evaluation/mymetrics.py .
 
 - **StatQuest: Naive Bayes** — the clearest visual walkthrough of exactly the classifier built in this lesson; search YouTube for "StatQuest Naive Bayes, Clearly Explained". Watch it *after* a first attempt at Project 1.
 - **StatQuest: Support Vector Machines** — margins and support vectors with pictures; search YouTube for "StatQuest Support Vector Machines". Pairs with Project 3.
-- **sklearn — Working with text data**: <https://scikit-learn.org/stable/tutorial/text_analytics/working_with_text_data.html> — the official tutorial behind Project 3's vectorizer + classifier pattern.
+- **sklearn — Text feature extraction**: <https://scikit-learn.org/stable/modules/feature_extraction.html#text-feature-extraction> — the user-guide section on `CountVectorizer` and `TfidfVectorizer`.
+- **sklearn — Classification of text documents using sparse features**: <https://scikit-learn.org/stable/auto_examples/text/plot_document_classification_20newsgroups.html> — the official text-classification example of Project 3's vectorizer + classifier pattern.
 - **UCI SMS Spam Collection**: <https://archive.ics.uci.edu/dataset/228/sms+spam+collection> — the dataset's home page, with the original paper describing how it was collected.
 
 ## Skills unlocked
