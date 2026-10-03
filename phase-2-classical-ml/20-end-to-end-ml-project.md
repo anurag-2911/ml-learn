@@ -1,6 +1,6 @@
 # 20 · Capstone: End-to-End ML Project (Kaggle)
 
-**Phase 2 — Classical ML** · Estimated time: 2 weeks · Prerequisites: [14 · Model Evaluation](14-model-evaluation.md), [16 · Ensembles](16-ensembles-random-forest-boosting.md), [19 · Feature Engineering and Pipelines](19-feature-engineering-pipelines.md)
+**Phase 2 — Classical Machine Learning** · Estimated time: 2 weeks · Prerequisites: [14 · Model Evaluation](14-model-evaluation.md), [16 · Ensembles](16-ensembles-random-forest-boosting.md), [19 · Feature Engineering and Pipelines](19-feature-engineering-pipelines.md)
 
 > This capstone lesson moves from doing exercises to doing machine learning. The project is an entry in a real Kaggle competition: a public contest where thousands of people build models on the same dataset, and a leaderboard ranks everyone's predictions. The work follows the steps a professional takes: frame the problem, explore the data, submit a deliberately dumb baseline, then climb past it one idea at a time, keeping score the whole way. The result is a public, well-documented project that can be shown to anyone. **MILESTONE: anyone who finishes this lesson can genuinely be called a junior ML practitioner.**
 

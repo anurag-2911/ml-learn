@@ -1,6 +1,6 @@
 # 16 · Ensembles: Random Forests and Gradient Boosting
 
-**Phase 2 — Classical ML** · Estimated time: 1-2 weeks · Prerequisites: [15 · Decision Trees from Scratch](15-decision-trees.md), [14 · Model Evaluation](14-model-evaluation.md), [13 · Logistic Regression](13-logistic-regression.md)
+**Phase 2 — Classical Machine Learning** · Estimated time: 1-2 weeks · Prerequisites: [15 · Decision Trees from Scratch](15-decision-trees.md), [14 · Model Evaluation](14-model-evaluation.md), [13 · Logistic Regression](13-logistic-regression.md)
 
 > The decision tree from lesson 15 memorized noise as soon as it was allowed to grow deep. This lesson fixes that in an unusual way: instead of building one better model, it builds a hundred mediocre ones and lets them vote. That idea, the **ensemble** (a group of models combined into one), powers random forests and gradient boosting. Practitioners in industry know that for most tabular business data (spreadsheet-shaped rows and columns), gradient boosting is *still* the strongest tool there is. Deep learning wins at perception (images, audio, text), but on tables the models built in this lesson routinely beat neural networks, as Kaggle leaderboards prove year after year.
 

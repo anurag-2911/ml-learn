@@ -2,7 +2,7 @@
 
 **Phase 4 — NLP and Transformers** · Estimated time: 2 weeks · Prerequisites: [25 · Training Deep Nets](../phase-3-deep-learning/25-training-deep-nets.md), [26 · Convolutional Neural Networks](../phase-3-deep-learning/26-cnns-computer-vision.md), [28 · makemore](28-language-models-makemore.md), [29 · RNNs and LSTMs](29-rnn-lstm-char-generation.md), [30 · Embeddings](30-embeddings-word2vec.md)
 
-> This lesson is the summit of the from-scratch track: it builds a transformer, typed line by line, and trains it to write Shakespeare-flavored text. The transformer is the architecture behind GPT, ChatGPT, Claude, and essentially all modern AI. Every ingredient is already familiar from earlier lessons: matrix multiplication (lesson 08), gradients and backprop (09, 22), embeddings (28, 30), layernorm (25), and residual (skip) connections (26). The lesson puts them together with one new idea called *attention*. Plan for two focused weeks.
+> This lesson is the summit of the from-scratch track: it builds a transformer, typed line by line, and trains it to write Shakespeare-flavored text. The transformer is the architecture behind GPT, ChatGPT, Claude, and essentially all modern AI. Every ingredient is already familiar from earlier lessons: matrix multiplication (lesson 08), gradients and backprop (09, 22), embeddings (28, 30), normalization layers (25), and residual (skip) connections (26). The lesson puts them together with one new idea called *attention*. Plan for two focused weeks.
 
 ## What this lesson builds
 
@@ -23,7 +23,7 @@
 
 ## Before starting
 
-Check the prerequisites honestly. Lessons 25 and 26 should be finished, with a clear idea of what layernorm (lesson 25) and skip connections (lesson 26) are *for*. Lesson 28 should be finished too, with a trained character-level language model and a sense of what "loss ≈ 2.5" feels like. Lesson 29 should have left an LSTM with its loss written down, because this lesson needs that number.
+Check the prerequisites honestly. Lessons 25 and 26 should be finished, with a clear idea of what normalization layers (lesson 25's BatchNorm; layernorm is its close relative) and skip connections (lesson 26) are *for*. Lesson 28 should be finished too, with a trained character-level language model and a sense of what "loss ≈ 2.5" feels like. Lesson 29 should have left an LSTM with its loss written down, because this lesson needs that number.
 
 Activate the venv from lesson 01, check that PyTorch (installed in lesson 24) imports and prints its version, and create the work folder:
 

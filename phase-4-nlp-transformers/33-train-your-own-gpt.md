@@ -1,6 +1,6 @@
 # 33 · Train Your Own GPT (nanoGPT, Karpathy 9)
 
-**Phase 4 — NLP & Transformers** · Estimated time: 2 weeks · Prerequisites: [31 · Attention and the Transformer](31-attention-build-gpt.md), [32 · Tokenization: Build the GPT Tokenizer](32-tokenization-bpe.md), [25 · The Dark Arts of Training Deep Networks](../phase-3-deep-learning/25-training-deep-nets.md)
+**Phase 4 — NLP and Transformers** · Estimated time: 2 weeks · Prerequisites: [31 · Attention and the Transformer](31-attention-build-gpt.md), [32 · Tokenization: Build the GPT Tokenizer](32-tokenization-bpe.md), [25 · The Dark Arts of Training Deep Networks](../phase-3-deep-learning/25-training-deep-nets.md)
 
 > Lesson 31 built a character-level GPT that babbles in the style of Shakespeare, but it was a toy. This lesson moves past the toy stage. It assembles a real text corpus of genuine personal interest, tokenizes it properly, and carries out a multi-million-parameter training run with everything a professional run has: checkpoints, a learning-rate schedule, a validation curve, and sample generations that are unmistakably in the style of the data. It is also the summit of the Karpathy arc that began in lesson 22. Finishing it gives a hands-on, end-to-end understanding of how the engines of modern AI are built.
 

@@ -32,7 +32,7 @@ Programming from absolute zero, learned by building games and analyzing real dat
 | 06 | [Pandas: Interrogating Real Datasets](phase-0-foundations/06-pandas.md) | 1 week |
 | 07 | [Data Visualization: Charts That Answer Questions](phase-0-foundations/07-data-visualization.md) | 4–5 days |
 
-### Phase 1 — Math by Building *(≈ 3–4 weeks)*
+### Phase 1 — Math by Building *(≈ 3–5 weeks)*
 Only the math ML actually uses, learned by coding it, visualizing it and simulating it. No proofs, no drills.
 
 | # | Lesson | Time |
@@ -41,7 +41,7 @@ Only the math ML actually uses, learned by coding it, visualizing it and simulat
 | 09 | [Calculus You Can Run: Gradient Descent](phase-1-math/09-calculus-and-gradient-descent.md) | 1 week |
 | 10 | [Probability and Statistics by Simulation](phase-1-math/10-probability-statistics.md) | 1–2 weeks |
 
-### Phase 2 — Classical Machine Learning *(≈ 10–12 weeks)*
+### Phase 2 — Classical Machine Learning *(≈ 11–14 weeks)*
 Every classic algorithm built from scratch, then put to work with scikit-learn. Ends with a real Kaggle competition.
 
 | # | Lesson | Time |
@@ -74,7 +74,7 @@ Backpropagation from scratch (micrograd), a neural net in raw NumPy, then PyTorc
 
 **Milestone:** lesson 27 *ships* a working AI product with a public demo.
 
-### Phase 4 — NLP and Transformers *(≈ 8–9 weeks)*
+### Phase 4 — NLP and Transformers *(≈ 8–10 weeks)*
 From counting letter pairs to building and training a GPT.
 
 | # | Lesson | Time |
@@ -98,7 +98,7 @@ Building *with* large models: APIs and prompting, RAG, fine-tuning with LoRA, an
 | 36 | [Fine-Tuning Open Models with LoRA](phase-5-llms/36-fine-tuning-open-models.md) | 2 weeks |
 | 37 | [AI Agents: Tool Use, Loops and Evaluation](phase-5-llms/37-ai-agents-tool-use.md) | 1–2 weeks |
 
-### Phase 6 — Special Topics *(choose by interest, ≈ 2–3 weeks each)*
+### Phase 6 — Special Topics *(choose by interest, ≈ 1–3 weeks each)*
 Optional deep dives. Do at least one, or all three.
 
 | # | Lesson | Time |

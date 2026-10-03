@@ -1,6 +1,6 @@
 # 12 · Linear Regression from Scratch
 
-**Phase 2 — Classical ML** · Estimated time: 1 week · Prerequisites: [09 · Calculus You Can Run: Gradient Descent](../phase-1-math/09-calculus-and-gradient-descent.md), [11 · Your First ML Model: k-Nearest Neighbors from Scratch](11-first-model-knn.md)
+**Phase 2 — Classical Machine Learning** · Estimated time: 1 week · Prerequisites: [09 · Calculus You Can Run: Gradient Descent](../phase-1-math/09-calculus-and-gradient-descent.md), [11 · Your First ML Model: k-Nearest Neighbors from Scratch](11-first-model-knn.md)
 
 > The kNN model in lesson 11 never actually *learned* anything; it only memorized the training data. This lesson builds the first model that learns: it starts with wrong numbers, measures how wrong it is, and nudges the numbers to be less wrong, thousands of times, until it can predict California house prices from census data. This loop of **predict, measure, differentiate, update** is the single most important pattern in all of machine learning. The GPT model in lesson 33 is trained by this *exact same loop*; only the model in the middle is more complex. Here the loop runs on a model simple enough to see through, and everything after this lesson is a variation on it.
 

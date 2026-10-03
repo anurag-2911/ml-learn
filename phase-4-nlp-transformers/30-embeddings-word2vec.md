@@ -1,6 +1,6 @@
 # 30 · Embeddings: Meaning as Geometry (word2vec from Scratch)
 
-**Phase 4 — NLP & Transformers** · Estimated time: 1 week · Prerequisites: [28 · Language Models 101: makemore](28-language-models-makemore.md), [24 · PyTorch Fundamentals](../phase-3-deep-learning/24-pytorch-fundamentals.md), [18 · Unsupervised Learning: k-Means and PCA](../phase-2-classical-ml/18-unsupervised-kmeans-pca.md), [08 · Linear Algebra by Writing Your Own](../phase-1-math/08-linear-algebra-by-code.md)
+**Phase 4 — NLP and Transformers** · Estimated time: 1 week · Prerequisites: [28 · Language Models 101: makemore](28-language-models-makemore.md), [24 · PyTorch Fundamentals](../phase-3-deep-learning/24-pytorch-fundamentals.md), [18 · Unsupervised Learning: k-Means and PCA](../phase-2-classical-ml/18-unsupervised-kmeans-pca.md), [08 · Linear Algebra by Writing Your Own](../phase-1-math/08-linear-algebra-by-code.md)
 
 > In makemore, the lookup table `C` turned each character into a learned vector, and lesson 29's LSTM did the same with `nn.Embedding`; both simply worked. This lesson answers the question they left open: *why do those learned vectors capture meaning?* It trains a small network on a few novels until the word vectors arrange themselves so that geometric distance equals semantic similarity, and then computes `king - man + woman` to get `queen` out of pure arithmetic. This idea is the direct ancestor of the embeddings that power semantic search and RAG (lesson 35) inside every modern LLM system.
 

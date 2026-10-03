@@ -1,6 +1,6 @@
 # 13 · Logistic Regression from Scratch
 
-**Phase 2 — Classical ML** · Estimated time: 1 week · Prerequisites: [12 · Linear Regression from Scratch](12-linear-regression.md), [09 · Calculus You Can Run: Gradient Descent](../phase-1-math/09-calculus-and-gradient-descent.md), [06 · Pandas: Interrogating Real Datasets](../phase-0-foundations/06-pandas.md)
+**Phase 2 — Classical Machine Learning** · Estimated time: 1 week · Prerequisites: [12 · Linear Regression from Scratch](12-linear-regression.md), [09 · Calculus You Can Run: Gradient Descent](../phase-1-math/09-calculus-and-gradient-descent.md), [06 · Pandas: Interrogating Real Datasets](../phase-0-foundations/06-pandas.md)
 
 > The linear regression in lesson 12 predicted *numbers*, but most interesting questions are yes/no: whether a passenger will survive, whether an email is spam, or whether a customer will leave. This lesson turns linear regression into a **classifier**: a model that answers yes/no questions with a probability attached. The classifier is built from scratch with just NumPy. It draws a literal line between two clouds of points and then predicts who survived the Titanic. Along the way, the lesson introduces two ideas that power every neural network built from here on: the sigmoid function and cross-entropy loss.
 

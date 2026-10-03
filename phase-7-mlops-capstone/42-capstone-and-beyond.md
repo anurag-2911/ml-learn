@@ -1,6 +1,6 @@
 # 42 · Capstone: Your Hero Project (and What Comes Next)
 
-**Phase 7 — MLOps & Capstone** · Estimated time: 4-6 weeks · Prerequisites: [41 · MLOps: Track, Serve, Containerize, Deploy](41-mlops-ship-your-models.md) and all earlier lessons (in Phase 6, at least one of lessons 38-40)
+**Phase 7 — MLOps and Capstone** · Estimated time: 4-6 weeks · Prerequisites: [41 · MLOps: Track, Serve, Containerize, Deploy](41-mlops-ship-your-models.md) and all earlier lessons (in Phase 6, at least one of lessons 38-40)
 
 > This final lesson is the graduation project of the curriculum. [Lesson 01](../phase-0-foundations/01-environment-setup.md) started with a first Python script that printed a sentence. Since then, the lessons have built a gradient descent optimizer from a math formula, a k-NN classifier from scratch, a spam filter, a Kaggle pipeline, micrograd, a neural network in pure NumPy that reads handwritten digits, a CNN that sees, a GPT made layer by layer and then [trained](../phase-4-nlp-transformers/33-train-your-own-gpt.md), a RAG app that chats with personal documents, an AI agent, and a containerized model running behind a real API. Here the step-by-step lessons stop, and the work is a single substantial, self-chosen project: scoped, specced, built, deployed, and written up so well that it serves as proof of the whole journey. The lesson also covers scoping, one-page specs, weekly milestones, blog-style write-ups and sharing work in public, and it ends with a map of the specializations that come after the fundamentals.
 

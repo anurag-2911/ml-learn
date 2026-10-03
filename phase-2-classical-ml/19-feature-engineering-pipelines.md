@@ -1,6 +1,6 @@
 # 19 · Feature Engineering and Pipelines
 
-**Phase 2 — Classical ML** · Estimated time: 1 week · Prerequisites: [16 · Ensembles](16-ensembles-random-forest-boosting.md), [14 · Model Evaluation](14-model-evaluation.md), [06 · Pandas](../phase-0-foundations/06-pandas.md)
+**Phase 2 — Classical Machine Learning** · Estimated time: 1 week · Prerequisites: [16 · Ensembles](16-ensembles-random-forest-boosting.md), [14 · Model Evaluation](14-model-evaluation.md), [06 · Pandas](../phase-0-foundations/06-pandas.md)
 
 > On tabular data (data in rows and columns, like spreadsheets), the winning move in applied machine learning is rarely a fancier model. It is better *features*, the input columns fed to the model, plus the discipline to measure them honestly. This lesson teaches both. It invents new features for the Titanic dataset and proves with numbers which ones help, hunts down three subtle data leaks that make models look better than they are, and then wraps everything into a single leak-proof sklearn Pipeline object that the capstone reuses. This unglamorous skill wins Kaggle competitions and real jobs alike.
 

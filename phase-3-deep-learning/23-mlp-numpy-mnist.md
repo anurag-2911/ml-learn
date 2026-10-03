@@ -1,6 +1,6 @@
 # 23 · Neural Network in Pure NumPy: MNIST Digits
 
-**Phase 3 — Deep Learning** · Estimated time: 1-2 weeks · Prerequisites: [05 · NumPy](../phase-0-foundations/05-numpy.md), [09 · Calculus and Gradient Descent](../phase-1-math/09-calculus-and-gradient-descent.md), [14 · Model Evaluation](../phase-2-classical-ml/14-model-evaluation.md), [22 · Build micrograd](22-micrograd-backpropagation.md)
+**Phase 3 — Deep Learning** · Estimated time: 1-2 weeks · Prerequisites: [05 · NumPy](../phase-0-foundations/05-numpy.md), [08 · Linear Algebra by Code](../phase-1-math/08-linear-algebra-by-code.md), [09 · Calculus and Gradient Descent](../phase-1-math/09-calculus-and-gradient-descent.md), [14 · Model Evaluation](../phase-2-classical-ml/14-model-evaluation.md), [22 · Build micrograd](22-micrograd-backpropagation.md)
 
 > Lesson 22 built backpropagation one scalar at a time, which makes the idea clear but is far too slow for real use. Real networks process thousands of numbers at once using matrix multiplication, and that vectorized version is exactly what PyTorch and every other framework does under the hood. This lesson builds it in raw NumPy: a full neural network that reads handwritten digits with 95%+ accuracy, using softmax, cross-entropy, matrix-form backprop and minibatch SGD. Building it by hand before using a framework shows exactly what every line of PyTorch does.
 
