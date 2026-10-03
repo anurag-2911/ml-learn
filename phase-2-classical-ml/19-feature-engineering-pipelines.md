@@ -8,7 +8,7 @@
 
 - **Project 1 — Feature workshop:** a Titanic feature-engineering script plus a scoreboard table proving exactly how many accuracy points each new feature is worth.
 - **Project 2 — The leak hunt:** written diagnoses and fixed versions of three subtly-broken preprocessing snippets, each hiding a data leak.
-- **Project 3 — One pipeline to rule them all:** a single reusable `Pipeline` object (imputing + scaling + encoding + model) tuned end-to-end with `GridSearchCV` and used as the template for lesson 20.
+- **Project 3 — One pipeline to rule them all:** a single reusable `Pipeline` object (imputing + scaling + encoding + model) tuned end-to-end with `GridSearchCV` and used as the template for lesson 20, plus a side-by-side comparison of plain, Ridge and Lasso linear regression.
 
 ## Concepts covered
 
@@ -160,6 +160,9 @@ preprocess = ColumnTransformer([
 - [ ] Tune preprocessing and model together. In a pipeline, parameters are addressed as `stepname__substep__param` (double underscores walk down the tree). Grid-search at least: `preprocess__num__imputer__strategy` (`"median"` vs `"mean"`), `model__n_estimators` (e.g. 100, 300), and `model__max_depth` (e.g. 5, 10, None). Print `grid.best_params_` and `grid.best_score_`. Checkpoint: `GridSearchCV(clf, param_grid, cv=5)` runs without errors and `best_score_` matches or beats the plain CV score.
 - [ ] Prove reusability: with `joblib.dump(grid.best_estimator_, "titanic_pipeline.joblib")`, save the fitted pipeline, reload it in a fresh Python session, build a hand-made dataframe with one imaginary passenger in the `train.csv` columns, run it through the Project 1 feature-engineering code (the pipeline expects `title`, `family_size`, `deck` and `fare_per_person` to exist already), and call `.predict()` on it. Checkpoint: one `.predict()` call returns 0 or 1, with no manual imputing, scaling or encoding. (The first stretch goal starts moving the feature engineering inside the pipeline too.)
 - [ ] Swap `RandomForestClassifier` for another model from earlier lessons (logistic regression, gradient boosting) by changing **one line**. Notice that scaling now actually matters for logistic regression ([lesson 12](12-linear-regression.md) foreshadowed this: gradient-based and distance-based models care about feature scale; trees do not). Then swap `StandardScaler` for `MinMaxScaler` in the numeric transformer (`MinMaxScaler` squeezes each column into the range 0 to 1; `StandardScaler` centers it at mean 0 with standard deviation 1) and compare the CV scores of logistic regression and the random forest.
+- [ ] **Regularization — Ridge and Lasso:** **Ridge** is linear regression plus a penalty on the size of the weights. The penalty *shrinks* them, which tames overfitting. **Lasso**'s penalty can shrink a weight all the way to zero, deleting a useless feature automatically. In `regularization.py`, load the California housing data from [lesson 12](12-linear-regression.md) with `fetch_california_housing(as_frame=True, return_X_y=True)`, split it with `train_test_split(X, y, test_size=0.2, random_state=42)`, and fit `LinearRegression()`, `Ridge(alpha=1000)` and `Lasso(alpha=0.01)` (all in `sklearn.linear_model`), each inside `make_pipeline(StandardScaler(), model)`. The scaler matters here: the penalty charges every weight the same price, so without scaling, a feature's units would decide how hard its weight is shrunk. Print the three models' weights side by side, one row per feature, and each model's test R². Checkpoint: Lasso sets the `Population` weight to exactly zero (it may print as `-0.000000`), Ridge pulls `Latitude` and `Longitude` from about -0.9 to about -0.5, and the three test R² scores land within about 0.03 of each other.
+
+  Why no real gain? With 8 features and over 16,000 training rows there is little overfitting to tame. Regularization pays off when features are many compared with rows, like the many one-hot columns of lesson 20, which uses `Ridge` from its first pipeline. The same penalty has also been at work inside `LogisticRegression` since lesson 13: its `C` parameter is the inverse of the penalty strength, so a smaller `C` shrinks the weights harder.
 
 <details><summary>Hints</summary>
 
@@ -167,14 +170,15 @@ preprocess = ColumnTransformer([
 - If `ColumnTransformer` complains about column names, compare the names its error lists (it lists every missing one at once) with `X.columns.tolist()` to find typos or engineered columns that were never created.
 - `grid.cv_results_` is a dict that can be loaded into `pd.DataFrame` to see every combination's score, not just the winner.
 - Keep the grid small (≤ 24 combinations) or a 5-fold search gets slow; widen it once it works.
+- `pipe[-1]` is the last step of a pipeline, so `pipe[-1].coef_` holds the fitted model's weights. `pd.DataFrame({"linear": ..., "ridge": ..., "lasso": ...}, index=X.columns)` lines the three sets of weights up by feature name.
+- Ridge limits the *total* size of the weights, not each weight separately, so a small weight such as `HouseAge` can grow a little while the large ones fall.
 </details>
 
-**Definition of done:** `pipeline.py` produces a tuned, saved, reloadable pipeline that predicts in one call from a dataframe that has the Project 1 columns, and the reason it cannot leak can be explained.
+**Definition of done:** `pipeline.py` produces a tuned, saved, reloadable pipeline that predicts in one call from a dataframe that has the Project 1 columns, and the reason it cannot leak can be explained. `regularization.py` prints the three models' weights side by side, with Lasso's zero visible.
 
 ## Stretch goals
 
 - Add a custom transformer: write a class with `fit` and `transform` methods (or use `FunctionTransformer`) that does the title-extraction *inside* the pipeline, so even feature engineering happens per-fold.
-- **Meet regularization at last:** on the California housing data from [lesson 12](12-linear-regression.md), compare `LinearRegression` against `Ridge(alpha=1000)` and `Lasso(alpha=0.01)` (all in `sklearn.linear_model`), each inside a scaling pipeline. **Ridge** is linear regression plus a penalty on the size of the weights. The penalty *shrinks* them, which tames overfitting. **Lasso**'s penalty can shrink a weight all the way to zero, deleting useless features automatically. Print the three models' coefficients side by side and watch the shrinkage happen. Lesson 20 uses `Ridge` and assumes it is already familiar.
 - Try `OrdinalEncoder` instead of one-hot for `deck` and `Pclass` and measure the difference. Then write two sentences on when an ordinal (ordered) encoding is justified.
 - Add a `missing_Age` indicator column (1 if `Age` was missing) via `SimpleImputer(add_indicator=True)` and check whether missingness itself predicts survival.
 - Do the [Kaggle feature engineering course](https://www.kaggle.com/learn/feature-engineering) and apply one technique it teaches (e.g. mutual information ranking) to the Titanic features.
@@ -194,6 +198,7 @@ preprocess = ColumnTransformer([
 ## Skills unlocked
 
 - [ ] I can explain the difference between StandardScaler and MinMaxScaler, and name which models need scaling and which do not.
+- [ ] I can explain what Ridge and Lasso add to linear regression, and why only Lasso can delete a feature.
 - [ ] I can choose between one-hot and ordinal encoding and justify the choice.
 - [ ] I can impute missing values without leaking, and I know when missingness itself is a feature.
 - [ ] I can invent features from domain sense (ratios, interactions, extracted text) and measure their worth with cross-validation instead of guessing.
