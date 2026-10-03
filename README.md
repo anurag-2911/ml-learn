@@ -11,6 +11,7 @@ Inspired by Andrej Karpathy's [Neural Networks: Zero to Hero](https://www.youtub
 - **42 lessons in 8 phases.** Each lesson is one markdown file built around 2–3 small projects with milestone checklists, verifiable checkpoints, hints, and a "skills unlocked" self-test.
 - **You build everything.** Concepts are explained inside the projects, exactly when you need them. No lesson asks you to read a textbook chapter first.
 - **From scratch first, framework second.** You'll write your own kNN, linear regression, decision tree, autograd engine, neural network, tokenizer, and GPT — *then* use scikit-learn and PyTorch, understanding exactly what they automate.
+- **Works on macOS, Windows and Linux.** [Lesson 01](phase-0-foundations/01-environment-setup.md) sets up the same workshop on any of them (Windows through WSL2): Python 3.13, VS Code, git, and a fork of this repository.
 - **Your code lives in `work/`.** For each lesson, create `work/<NN>-<slug>/` (e.g. `work/12-linear-regression/`) and build there. The lesson files guide you; the `work/` folders are your portfolio.
 - **Track yourself in [PROGRESS.md](PROGRESS.md).** Check off lessons as you complete them. Commit and push your work after every session — your git history becomes the story of your journey.
 
@@ -114,7 +115,7 @@ Ship models like an engineer, then build the hero project that proves the whole 
 | 41 | [MLOps: Track, Serve, Containerize, Deploy](phase-7-mlops-capstone/41-mlops-ship-your-models.md) | 2 weeks |
 | 42 | [Capstone: Your Hero Project (and What Comes Next)](phase-7-mlops-capstone/42-capstone-and-beyond.md) | 4–6 weeks |
 
-**Final milestone:** a shipped, original AI project with a public demo and a write-up — your credential.
+**Final milestone:** a shipped, original AI project with a public demo and a write-up.
 
 ---
 
