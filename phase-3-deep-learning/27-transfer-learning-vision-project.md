@@ -8,7 +8,7 @@
 
 - **Project 1 — A personal dataset:** a folder of 2-5 image classes collected by hand (50-150 photos each), organized into `train/` and `val/`, loading cleanly through PyTorch's `ImageFolder` with augmentation.
 - **Project 2 — A fine-tuned ResNet18:** a pretrained network with its final layer swapped for the dataset's classes, trained in two stages (head-only, then full fine-tune), hitting 90%+ validation accuracy in minutes, plus a from-scratch baseline that proves why transfer learning wins.
-- **Project 3 — A live web demo:** a Gradio app (upload an image → top-3 predictions with confidence bars) deployed free on Hugging Face Spaces, with a shareable public link.
+- **Project 3 — A live web demo:** a Gradio app (upload an image → top-3 predictions with confidence bars) behind a free public link that anyone can open, with a permanent home on Hugging Face Spaces as an optional extra.
 
 ## Concepts covered
 
@@ -17,7 +17,7 @@
 - Small-data tricks: data augmentation, and using a lower learning rate for pretrained layers than for new ones.
 - The `torchvision.models` and `torchvision.transforms` toolkits: loading pretrained weights and matching their expected preprocessing.
 - Building a web UI in a few lines of Python with Gradio.
-- Deploying a demo for free on Hugging Face Spaces.
+- Sharing a demo through a free public link, and what hosting it permanently on Hugging Face Spaces involves.
 
 ## Before starting
 
@@ -33,7 +33,7 @@
 
    (torch and torchvision are already installed from lesson 24. Their line is only there so that a fresh machine works too, and it leaves an existing install as it is, even a GPU build.) As in lesson 24, that line uses PyTorch's own package index, which has no gradio, so gradio gets a plain `pip install` line of its own. On an Intel Mac the torch line fails, because current PyTorch has no Intel Mac version: collect and sort the photos on the Mac, zip the folder (`zip -r data.zip data`), upload `data.zip` to a Google Colab notebook, unpack it there with `!unzip -q data.zip`, and run the code there, as in lesson 26 (in Colab, `demo.launch()` shows the app inside the notebook). Before closing the notebook, download `model.pt` with `from google.colab import files; files.download("model.pt")`, because Colab deletes the session's files when it ends.
 3. **No dataset download this time: the dataset comes from personal photos.** Collecting it takes a phone and ~1-2 hours of photo taking or photo-library digging. Think now about which 2-5 things to classify.
-4. **Accounts:** Projects 1 and 2 need no account. Project 3 needs a free Hugging Face account (sign up at [huggingface.co](https://huggingface.co); it is the standard hub for sharing ML models and demos, and the free tier is enough).
+4. **Accounts:** none are needed. Only the optional last part of Project 3, which hosts the demo permanently on Hugging Face Spaces, needs a Hugging Face account ([huggingface.co](https://huggingface.co) is the standard hub for sharing ML models and demos), and Project 3 explains what that costs.
 5. **Create the work folder:**
 
    ```bash
@@ -116,7 +116,7 @@
 
 ## Project 3 — Ship it
 
-**Goal:** Wrap the model in a web app and deploy it publicly for free. This is the milestone: a working AI product with a URL that can be texted to a friend.
+**Goal:** Wrap the model in a web app and put it on the public internet for free. This is the milestone: a working AI product with a URL that can be texted to a friend.
 
 **Milestones**
 
@@ -138,29 +138,36 @@
 
   `gr.Label` renders a probability dict as confidence bars automatically. Run `python app.py` and open the printed `http://127.0.0.1:7860` in a browser (on Windows, WSL2 forwards it automatically). Checkpoint: uploading a photo shows top-3 predictions with bars.
 - [ ] Polish: add a description telling strangers what the model expects ("upload a photo of X, Y or Z"), and add 2-3 bundled sample images via the `examples=` argument so visitors can try it in one click. Make a `samples` folder (`mkdir samples`), then make each sample with `ImageOps.exif_transpose(Image.open(PATH)).convert("RGB").save("samples/NAME.jpg")` (after `from PIL import Image, ImageOps`); saving through PIL this way drops the EXIF data, including any GPS location, and `exif_transpose` first turns the photo upright, because the rotation a phone records is part of that EXIF data.
-- [ ] Create the deployment target. On [huggingface.co](https://huggingface.co) (free account; this is the one signup of the lesson), create a new **Space**: a free container that runs the app on Hugging Face's servers. Choose the **Gradio** SDK and CPU hardware (free). A Space is a git repo. Clone it into a *separate* folder outside this repo.
+- [ ] **Go public with a share link.** In `app.py`, change the last line to `demo.launch(share=True)` and run `python app.py` again. Besides the local URL, Gradio now prints a public one, such as `https://823f0b90fe8b52f9c1.gradio.live`. The app still runs on this computer; Gradio only passes each visitor's request through to it. So the link works while `python app.py` is running and the computer is awake and online, it stops when the script stops, and it expires after at most 1 week (run the script again for a new link). No account is needed. Anyone who has the link can use the app, so send it only to people who are meant to try it. (In Colab the public link is printed too, and it works while the notebook cell is running.) Checkpoint: the public link opens on a phone that is on mobile data, not on the home Wi-Fi, and a photo uploaded there gets a prediction.
+- [ ] **Send the link to a friend or family member** while `app.py` is still running. Have them upload their own photo. When their reply comes back, that is the milestone: a real, working AI product has been shipped. Getting there took four steps: collecting the data, training the model, building the interface and putting it online. Most people who "know ML" have never done all four.
+- [ ] Commit the work folder to the learning repo. The `.gitignore` from Before starting keeps `data/`, `data.zip` and `model.pt` out; code, README and the sample images go in.
+
+*Optional — a permanent address on Hugging Face Spaces*
+
+A share link stops working when the script stops. A **Space** on [huggingface.co](https://huggingface.co) is a container that runs the app on Hugging Face's servers, at an address that stays up. It is no longer free for a new account: creating a Gradio Space needs the paid PRO plan ($9 per month when this was written). The one free route is **ZeroGPU** hardware, open to accounts that are at least 30 days old and have a verified email address (up to 2 Spaces). It needs the changes that the [ZeroGPU docs](https://huggingface.co/docs/hub/spaces-zerogpu) list: Python 3.12 instead of 3.13, a torch version from their supported list, and `@spaces.GPU` on the prediction function. (The message Gradio prints next to a share link still calls Spaces free; it is older than this change.) The three milestones below are written for a PRO account. Without one, skip them: the lesson is complete with the share link.
+
+- [ ] Create the deployment target. On [huggingface.co](https://huggingface.co), sign up and subscribe to PRO, then create a new **Space**. Choose the **Gradio** SDK and the CPU Basic hardware, which adds no hourly cost. A Space is a git repo. Clone it into a *separate* folder outside this repo. (`share=True` can stay in `app.py`; a Space ignores it.)
 - [ ] Add the files to the Space repo: `app.py`, `predict.py`, `model.pt`, sample images, and a `requirements.txt` listing `torch`, `torchvision`, `gradio`. Three deployment gotchas: the Space runs `app.py` on CPU, so load with `torch.load("model.pt", map_location="cpu")`; a Space runs Python 3.10 unless its `README.md` says otherwise, so add the line `python_version: "3.13"` between the two `---` lines at the top of that file, to match the venv; and Hugging Face rejects a push that contains binary files such as `model.pt` (~45 MB) or full-size phone photos unless Git LFS stores them, so run `git lfs install` and then `git lfs track "*.pt" "*.jpg" "*.jpeg" "*.png"` before adding, and add the updated `.gitattributes` together with the other files (the Spaces docs cover this; ask an AI assistant if LFS causes trouble). Git LFS is a separate program that does not come with git, so install it before those two commands:
 
   - **macOS:** `brew install git-lfs` if Homebrew is installed. On a Mac without it (an Intel Mac, or macOS 14 or older), download the Mac version that matches the chip (Apple Silicon or Intel) from [git-lfs.com](https://git-lfs.com), double-click the downloaded `.zip` if the browser has not unpacked it already, and run `sudo ~/Downloads/git-lfs-*/install.sh` (it asks for the Mac password).
   - **Windows (WSL2) and Linux:** `sudo apt install -y git-lfs` (other distributions have a `git-lfs` package too).
 - [ ] Hugging Face does not accept the account password for git. Create a token at huggingface.co/settings/tokens (**Create new token**, type **Write**), and when `git push` asks for a password, paste the token instead (the username is the Hugging Face username). Never put the token in the remote URL or in any file in the repo; anyone who sees it can push to the account. Then `git push`, and watch the build log on the Space page. The first build takes a few minutes. Debug until the status turns green and the app loads. Checkpoint: the app works at `https://huggingface.co/spaces/YOUR-USERNAME/YOUR-SPACE-NAME` in a browser, on the public internet, running on remote hardware.
-- [ ] **Send the link to a friend or family member.** Have them upload their own photo. When their reply comes back, that is the milestone: a real, working AI product has been shipped. Getting there took four steps: collecting the data, training the model, building the interface and deploying it. Most people who "know ML" have never done all four.
-- [ ] Commit the work folder to the learning repo. The `.gitignore` from Before starting keeps `data/`, `data.zip` and `model.pt` out; code, README and the sample images go in.
 
 <details><summary>Hints</summary>
 
-- Test locally in "deployment mode" first: fresh terminal, CPU-only load, `python app.py`. 90% of Space build failures are just a missing package in `requirements.txt`, and the build log names it.
+- No public URL after `share=True`, only a "Could not create share link" message? The first time, Gradio downloads a small helper program, and an antivirus or firewall can block that download. The message names the file, where to download it by hand, and the folder to put it in.
+- Before pushing to a Space, test locally in "deployment mode" first: fresh terminal, CPU-only load, `python app.py`. 90% of Space build failures are just a missing package in `requirements.txt`, and the build log names it.
 - If the Space builds but crashes at runtime, open its log tab: it shows the same kind of Python traceback seen since lesson 02, so read it bottom-up as always.
 - Gradio changes its API between major versions. If an argument from a tutorial errors, trust the current docs at the Gradio quickstart (Resources) over any blog post.
 - Keep the Space repo and the learning repo separate; nesting git repos causes trouble.
 
 </details>
 
-**Definition of done:** A public Hugging Face Spaces URL that serves the model, and at least one other human has used it.
+**Definition of done:** A public link (a Gradio share link or a Space URL) that serves the model, and at least one other human has used it.
 
 ## Stretch goals
 
-- **Confusion-matrix upgrade:** compute a confusion matrix (as in lesson 26) on the validation set and add it as an image on the Space page. Real products document their failure modes.
+- **Confusion-matrix upgrade:** compute a confusion matrix (as in lesson 26) on the validation set and add it as an image to the work folder's `README.md` (and to the Space page, if there is one). Real products document their failure modes.
 - **Try bigger backbones:** swap ResNet18 for `resnet50` or a `convnext_tiny` from `torchvision.models`. Measure: accuracy gain vs model size vs prediction speed on CPU. Is bigger worth it for this data?
 - **Webcam mode:** change the Gradio input to `gr.Image(sources=["webcam"])` and classify live snapshots. This is a good fit for the hand-gestures dataset.
 - **Grad-CAM:** search for "Grad-CAM PyTorch" and overlay a heatmap of *where* the model looked when deciding. The heatmap can show the model looking at the cat's face (and not the sofa), and sometimes it reveals that the model learned the wrong thing.
@@ -177,7 +184,8 @@
 
 - [PyTorch transfer learning tutorial](https://docs.pytorch.org/tutorials/beginner/transfer_learning_tutorial.html) — the official walkthrough of fine-tuning and feature extraction with ResNet18, as two separate runs; read it after attempting the projects, to compare approaches.
 - [Gradio quickstart](https://www.gradio.app/guides/quickstart) — everything for Project 3's UI, and the current API when tutorials disagree.
-- [Hugging Face Spaces](https://huggingface.co/spaces) — where the demo lives; browse other people's Spaces for inspiration on what a good demo page looks like.
+- [Gradio's guide to sharing an app](https://www.gradio.app/guides/sharing-your-app) — how share links work and what their limits are.
+- [Hugging Face Spaces](https://huggingface.co/spaces) — where demos get a permanent home; browse other people's Spaces for inspiration on what a good demo page looks like.
 - fast.ai course, lessons 1-2 — a famous free course that starts with exactly this fine-tune-and-deploy workflow; a good parallel take (search for "fast.ai practical deep learning").
 
 ## Skills unlocked
@@ -188,7 +196,7 @@
 - [ ] I can run the two-stage recipe: train the head, then fine-tune everything at a lower learning rate.
 - [ ] I can demonstrate with a controlled experiment why transfer learning beats training from scratch on small data.
 - [ ] I can wrap a model in a Gradio interface and run it locally.
-- [ ] I have deployed a model to Hugging Face Spaces and another person has used it.
+- [ ] I have put a model behind a public link, and another person has used it.
 
 ## Next up
 

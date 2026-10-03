@@ -26,7 +26,7 @@
 Check the prerequisites. All of these should be true:
 
 - [Lesson 41](41-mlops-ship-your-models.md) is finished, and at least one model has been deployed behind an API.
-- There is a public demo from [lesson 27](../phase-3-deep-learning/27-transfer-learning-vision-project.md) on Hugging Face Spaces, and it is clear how to put up another one.
+- A demo from [lesson 27](../phase-3-deep-learning/27-transfer-learning-vision-project.md) has been shared through a public link, and it is clear how to put up another one.
 - A project can be started from an empty folder without a lesson saying what to type. (That is exactly what this lesson proves.)
 
 Set up the workspace:
@@ -38,7 +38,9 @@ mkdir -p work/42-capstone
 cd work/42-capstone
 ```
 
-There is no fixed pip install list this time, because the dependencies depend on the chosen project. Install each package when it is needed (inside the venv), and record every install in a `requirements.txt` from day one:
+`work/42-capstone` holds only the planning notes (`SPEC.md` and, later, `NEXT.md`). The project's code lives in its own folder outside this repo, which Project 1 creates; the venv stays active there too.
+
+There is no fixed pip install list this time, because the dependencies depend on the chosen project. Install each package when it is needed (inside the venv), and from the first install on, record every install in a `requirements.txt` in the project folder:
 
 ```bash
 pip install WHATEVER-YOU-NEED
@@ -89,7 +91,7 @@ One warning before beginning: the capstone will feel different from every lesson
   ```
 
 - [ ] Stress-test the spec: ask an AI assistant to play a skeptical reviewer and find the three biggest risks in it. Do not let it rewrite the spec. Argue with it, then revise the spec without its help. Checkpoint: the week-2 milestone says some version of "crude end-to-end pipeline works".
-- [ ] Create the project's own public GitHub repo (separate from this learning repo), commit `SPEC.md` as its first commit, and add the spec's problem statement as the repo description. The learning repo's `.gitignore` does not apply to the new repo, so give it its own before adding any code: `.venv/`, `__pycache__/`, `.ipynb_checkpoints/`, `.DS_Store`, `.env` (the API key from lesson 34), the data folder and the model files (for example `*.pt`). Checkpoint: `git status -u` lists none of them.
+- [ ] Create the project's own public GitHub repo (separate from this learning repo) and clone it into a folder *outside* the learning repo, for example with `git clone git@github.com:YOUR-USERNAME/PROJECT-NAME.git ~/ml/PROJECT-NAME`. A git repo inside another git repo causes trouble; lesson 27 gives the same advice for a Space repo. Copy `SPEC.md` into the new folder, commit it as the first commit, and add the spec's problem statement as the repo description. From here on, all project code, `requirements.txt` and `LOG.md` go in that folder. The learning repo's `.gitignore` does not apply to the new repo, so give it its own before adding any code: `.venv/`, `__pycache__/`, `.ipynb_checkpoints/`, `.DS_Store`, `.env` (the API key from lesson 34), the data folder and the model files (for example `*.pt`). Checkpoint: `git status -u` lists none of them.
 
 <details><summary>Hints</summary>
 
@@ -112,7 +114,7 @@ One warning before beginning: the capstone will feel different from every lesson
 - [ ] **Week 2: End-to-end skeleton.** Wire the whole pipeline: data in → model (even a bad small one) → output → minimal demo (a bare Gradio page or FastAPI endpoint counts). Every piece can be crude; no piece may be missing. Checkpoint: the builder (or a friend) can open a URL or run one command and get a real prediction from real data.
 - [ ] **Mid-project review.** Stop and check honestly: (1) skeleton runs end to end, (2) current metric vs. baseline vs. target written down, (3) riskiest remaining piece named, (4) scope still finishable in two weeks (if not, cut features now and say so later in the README; cutting scope mid-project is a professional skill, not a failure). Checkpoint: the biggest remaining risk can be stated in one sentence.
 - [ ] **Week 3: Depth.** Attack the weakest link only: better model, better features, fine-tuning, hyperparameter search, whichever the metric says matters most. Track experiments as in [lesson 41](41-mlops-ship-your-models.md). Checkpoint: the metric improved over week 2, and the reason can be stated in one sentence per change.
-- [ ] **Week 4: Deploy and harden.** Ship the demo properly: Hugging Face Spaces for a UI (a free account is needed, and the Space's `README.md` needs the line `python_version: "3.13"`, as in lesson 27), or the lesson-41 container for an API. That container only runs on localhost; to make it public, create a Space with the **Docker** SDK, push the `Dockerfile`, the service code, the model (through Git LFS, as in lesson 27) and `requirements.txt` to it, and add `app_port: 8000` to the settings block at the top of the Space's `README.md`, because Docker Spaces expect port 7860 unless told otherwise. Handle the three ugliest inputs that come to mind (empty input, wrong file type, absurd values), and ask two real people to break it. Checkpoint: the public link works from a phone that has never seen the code.
+- [ ] **Week 4: Deploy and harden.** Ship the demo properly. The free route is the lesson-27 share link (`demo.launch(share=True)`). It works only while the app is running and lasts at most a week, so start a fresh link whenever someone is about to try the demo, and let the recorded GIF from Project 3 stand in the rest of the time. For an address that stays up, use Hugging Face Spaces, which needs an account that can create Spaces (lesson 27 explains the cost): a Gradio Space for a UI (its `README.md` needs the line `python_version: "3.13"`, as in lesson 27), or a Space with the **Docker** SDK for the lesson-41 container, which otherwise only runs on localhost. For the Docker Space, push the `Dockerfile`, the service code, the model (through Git LFS, as in lesson 27) and `requirements.txt` to it, and add `app_port: 8000` to the settings block at the top of the Space's `README.md`, because Docker Spaces expect port 7860 unless told otherwise. Handle the three ugliest inputs that come to mind (empty input, wrong file type, absurd values), and ask two real people to break it. Checkpoint: the public link works from a phone that has never seen the code.
 
 <details><summary>Hints</summary>
 
@@ -131,7 +133,7 @@ One warning before beginning: the capstone will feel different from every lesson
 
 **Milestones**
 
-- [ ] Write the blog-style README with exactly these sections: **Problem** (why anyone should care, 1 paragraph), **Data** (what, where from, how much, what was messy), **Approach** (what was built and *why*, including the dead ends), **Results** (a small table: baseline vs. final on the metric, plus one honest plot made with the skills from [lesson 07](../phase-0-foundations/07-data-visualization.md)), **Demo** (the live link + a GIF or screenshot), **Limitations**, **Lessons learned**. Checkpoint: a friend who knows no ML can read it and explain back what was built and how well it works.
+- [ ] Write the blog-style README with exactly these sections: **Problem** (why anyone should care, 1 paragraph), **Data** (what, where from, how much, what was messy), **Approach** (what was built and *why*, including the dead ends), **Results** (a small table: baseline vs. final on the metric, plus one honest plot made with the skills from [lesson 07](../phase-0-foundations/07-data-visualization.md)), **Demo** (the live link + a GIF or screenshot; a share link changes every week, so with that route the GIF carries the section), **Limitations**, **Lessons learned**. Checkpoint: a friend who knows no ML can read it and explain back what was built and how well it works.
 - [ ] Write the **three honest limitations**: real ones ("only trained on daytime photos, fails at night"), not humble-brags ("could be even more accurate"). Then add a short **"With 10x time I would..."** paragraph. It shows reviewers that the author sees the road ahead, which reads as expertise.
 - [ ] Clean the repo as if someone's hiring decision depends on it (it might): `README.md`, `requirements.txt`, `.gitignore`, a `src/` folder, no dead files, no notebooks named `Untitled3.ipynb`, and a one-command way to run it locally.
 - [ ] Post it somewhere real: LinkedIn or X with the demo link and one result number, a lightning talk at a local Python/ML meetup, or a relevant community. Keep it to one genuine paragraph: what was built, one number, one limitation, the link. Checkpoint: at least one stranger has clicked the demo.

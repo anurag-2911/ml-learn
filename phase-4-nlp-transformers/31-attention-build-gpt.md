@@ -7,7 +7,7 @@
 ## What this lesson builds
 
 - **Project 1 — Attention on paper:** a NumPy notebook that computes queries, keys, values, attention weights and outputs by hand for a 4-token toy example, printing every intermediate matrix.
-- **Project 2 — A hand-built GPT:** a working GPT (`gpt.py`), built step by step alongside Karpathy's "Let's build GPT" video and trained on tiny Shakespeare, with generated samples and a loss log that beats the lesson-29 LSTM.
+- **Project 2 — A hand-built GPT:** a working GPT (`gpt.py`), built step by step alongside Karpathy's "Let's build GPT" video and trained on tiny Shakespeare, with generated samples and a loss log compared against the lesson-29 LSTM.
 - **Project 3 — Ablation lab:** a set of deliberately broken GPT variants (no residuals, no positional embeddings, 1 head vs 6) plus a written finding for each, as proof of understanding *why* each piece exists.
 
 ## Concepts covered
@@ -23,7 +23,7 @@
 
 ## Before starting
 
-Check the prerequisites honestly. Lessons 25 and 26 should be finished, with a clear idea of what normalization layers (lesson 25's BatchNorm; layernorm is its close relative) and skip connections (lesson 26) are *for*. Lesson 28 should be finished too, with a trained character-level language model and a sense of what "loss ≈ 2.5" feels like. Lesson 29 should have left an LSTM with its loss written down, because this lesson needs that number.
+Check the prerequisites honestly. Lessons 25 and 26 should be finished, with a clear idea of what normalization layers (lesson 25's BatchNorm; layernorm is its close relative) and skip connections (lesson 26) are *for*. Lesson 28 should be finished too, with a trained character-level language model and a sense of what "loss ≈ 2.5" feels like. Lesson 29 should have left an LSTM with its val loss and parameter count written down, because this lesson compares against those two numbers.
 
 Activate the venv from lesson 01, check that PyTorch (installed in lesson 24) imports and prints its version, and create the work folder:
 
@@ -90,7 +90,7 @@ curl -L -o input.txt https://raw.githubusercontent.com/karpathy/char-rnn/master/
 - [ ] **Feedforward layer:** add the per-token MLP (the "think about what was gathered" step after attention's "gather"). Checkpoint: loss improves again, roughly **2.24**.
 - [ ] **Blocks, residuals, layernorm:** stack `Block`s of attention + MLP. First watch it *fail*: deep stacks without help train badly (lesson 25 predicted this). Then add residual connections and layernorm (pre-norm, as in the video), plus projection layers. Checkpoint: train loss dips just below **2.0** and val loss lands around **2.05–2.1**. Val loss falls clearly below 2.0 only after the scale-up in the next step.
 - [ ] **Scale up:** add dropout, then grow to the video's config (`n_embd=384, n_head=6, n_layer=6, block_size=256, batch_size=64`). On the video's A100 GPU this trains in ~15 min to val loss around **1.48**; a free Colab GPU is slower, so expect it to take noticeably longer. CPU-only? Use `n_embd=128, n_head=4, n_layer=4, block_size=64` and expect ~1.8 in under an hour, which is still dramatically better than bigram.
-- [ ] **The showdown:** generate 1000 characters. Then look up the lesson-29 LSTM's val loss and parameter count (`sum(p.numel() for p in model.parameters())`). Checkpoint: at comparable size, the GPT's val loss is lower and its samples look more like a play script (character names, line breaks, dialogue structure). Record both numbers in a comment at the top of `gpt.py`.
+- [ ] **The showdown:** generate 1000 characters. Then look up the val loss and parameter count that lesson 29 recorded for its LSTM (about 1.55 and 350,593), and count the GPT's parameters the same way (`sum(p.numel() for p in model.parameters())`). Both models held out the same last 10% of the same file, so the two val losses can be compared directly. Checkpoint: both val losses and both parameter counts are recorded in a comment at the top of `gpt.py`, and the GPT's samples look like a play script (character names, line breaks, dialogue structure). With the video's config (about 10.8M parameters) the GPT wins, at about 1.48. With the small CPU config (about 0.8M parameters) the result can go either way: at this size and with this little training, an LSTM is a strong model, and the transformer's advantage shows up as it scales. Either result is a finding, so record what was measured.
 - [ ] **Why the parallelism matters:** write a 5-line comment in the learner's own words: the LSTM had to process T characters in T sequential steps (each hidden state waits for the previous one); the transformer computes all T positions in one batched matmul, which is exactly what GPUs are good at. That is why transformers scaled and RNNs did not.
 
 <details><summary>Hints</summary>
@@ -103,7 +103,7 @@ curl -L -o input.txt https://raw.githubusercontent.com/karpathy/char-rnn/master/
 
 </details>
 
-**Definition of done:** `gpt.py` runs top to bottom, trains, prints train/val loss every few hundred steps, saves a 1000-character sample to `sample.txt`, and beats the lesson-29 LSTM's val loss at comparable parameter count, with the comparison numbers recorded in the file.
+**Definition of done:** `gpt.py` runs top to bottom, trains, prints train/val loss every few hundred steps, saves a 1000-character sample to `sample.txt`, and records its val loss and parameter count next to those of the lesson-29 LSTM in the file.
 
 ## Project 3 — Ablation lab
 
@@ -156,7 +156,7 @@ curl -L -o input.txt https://raw.githubusercontent.com/karpathy/char-rnn/master/
 - [ ] I can write scaled dot-product attention in NumPy from memory and say why the scaling factor is there.
 - [ ] I can explain causal masking and implement it with a triangular matrix and `-inf`.
 - [ ] I can assemble a full transformer block and state in one sentence what attention, the MLP, residuals and layernorm each contribute.
-- [ ] I can train a character-level GPT that beats the lesson-29 LSTM at the same parameter count, and I have the loss numbers to show it.
+- [ ] I can train a character-level GPT and compare it with the lesson-29 LSTM on val loss and parameter count, and I have the numbers to show it.
 - [ ] I can predict what breaks when residuals, positional embeddings or extra heads are removed, because I broke them and wrote it down.
 - [ ] I can explain why transformers train in parallel and RNNs cannot, and why that mattered for the history of AI.
 

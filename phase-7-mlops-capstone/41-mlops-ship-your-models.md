@@ -8,7 +8,7 @@
 
 - **Project 1 — Instrumented training runs:** the lesson-26 CIFAR CNN (or the lesson-20 tabular model) retrained 4+ times with every parameter, metric and model file logged to MLflow or W&B, plus a screenshot of the comparison dashboard.
 - **Project 2 — Model as a service:** a FastAPI app with a validated `/predict` endpoint and a `/health` endpoint, a pytest test suite, and a Docker image that can be reached with `curl` from outside the container.
-- **Project 3 — Public demo + drift drill:** a Gradio demo of the model live on Hugging Face Spaces, and a `drift_check.py` script that flags shifted feature distributions with one plot.
+- **Project 3 — Public demo + drift drill:** a Gradio demo of the model behind a public link, and a `drift_check.py` script that flags shifted feature distributions with one plot.
 
 ## Concepts covered
 
@@ -19,14 +19,14 @@
 - Docker: packaging the API into a container that runs anywhere
 - Testing an ML service with pytest: schema checks and sanity predictions
 - Monitoring, in miniature: detecting data drift in one plot
-- The deploy menu: free demo hosting (HF Spaces) vs renting a real VM
+- The deploy menu: a free share link vs hosted demos (HF Spaces) vs renting a real VM
 
 ## Before starting
 
 Requirements:
 
 - A trained model from earlier lessons: the CIFAR CNN from lesson 26 **or** the tabular model from lesson 20 (the drift drill in Project 3 needs the tabular one either way).
-- The Hugging Face account from lesson 27 (Spaces needs it; it is free).
+- Optional: a Hugging Face account that can create Spaces, for hosting the Project 3 demo permanently (lesson 27 explains the cost). The free share link from lesson 27 works without it.
 - Git working in the repo (Project 3's stretch goal uses GitHub).
 
 Install the tools inside the repo-root venv:
@@ -88,7 +88,7 @@ cd work/41-mlops-ship-your-models
   Checkpoint: after one run, an `mlflow.db` file (MLflow's local database of runs) exists next to the script. (An `mlruns/` folder appears beside it later, once a file is logged as an artifact.)
 - [ ] Serialize the model correctly and log it as an artifact. **Serialization** means saving a live Python object to a file. For PyTorch, save `model.state_dict()` (just the weights; rebuild the architecture in code when loading), not the whole model object. For scikit-learn, use `joblib.dump(pipeline, "model.joblib")` and save the *whole pipeline* including preprocessing, not just the estimator. Log the file with `mlflow.log_artifact(...)`. Checkpoint: the saved file loads in a fresh Python session and predicts on one example.
 - [ ] Launch the dashboard with `mlflow ui --port 5001` and open http://localhost:5001 in a browser (on Windows, WSL2 forwards localhost to Windows automatically). MLflow's default port, 5000, is used by AirPlay on Macs, so this lesson uses 5001 everywhere. Checkpoint: the run appears with its params and a metric curve.
-- [ ] Run at least 4 experiments that vary something meaningful, e.g. lr ∈ {0.01, 0.001}, batch size ∈ {32, 128}. Select all runs in the UI and click Compare. Checkpoint: a chart shows val_accuracy across runs, and it is clear which run won and what its exact settings were.
+- [ ] Run at least 4 experiments that vary something meaningful, e.g. lr ∈ {0.01, 0.001}, batch size ∈ {32, 128} (for the lesson-20 model, four values of its own setting, such as Ridge's `alpha`). Select all runs in the UI and click Compare. Checkpoint: a chart shows val_accuracy across runs, and it is clear which run won and what its exact settings were.
 - [ ] Screenshot the comparison view and save it as `experiments.png` in the work folder. Write 3 sentences in a `NOTES.md`: which config won, by how much, and one hypothesis why.
 
 <details><summary>Hints</summary>
@@ -106,13 +106,13 @@ cd work/41-mlops-ship-your-models
 
 **Goal:** Wrap the model in a web API (a program that other programs can call over the network), then prove that it works with automated tests, and package the whole thing into a Docker container.
 
-**Which model to serve:** use the lesson-20 tabular model here, even if Project 1 tracked the CNN. The CNN was for tracking practice, and every milestone below (the pydantic schema, the JSON curl call) assumes tabular input: a few named numbers per request. Serving the CNN instead is a stretch option; images travel as file uploads, not JSON (see the `UploadFile` hint below).
+**Which model to serve:** use the lesson-20 house-price model here, even if Project 1 tracked the CNN. The CNN was for tracking practice, and every milestone below (the pydantic schema, the JSON curl call) assumes tabular input: a few named numbers per request. The full lesson-20 pipeline expects all 79 columns of the Kaggle file, far too many for one request, so serve a small version of it: the same kind of pipeline (median imputer, scaler, `Ridge` on `np.log1p(SalePrice)`) fitted on five numeric columns, `OverallQual`, `GrLivArea`, `YearBuilt`, `TotalBsmtSF` and `GarageCars`. It predicts the log of the price, so the endpoint returns `np.expm1` of the model's output, which is the price in dollars. Serving the CNN instead is a stretch option; images travel as file uploads, not JSON (see the `UploadFile` hint below).
 
 **Milestones**
 
 *Stage 1 — freeze the environment*
 
-- [ ] Create a fresh folder `work/41-mlops-ship-your-models/service/` and put the serialized model to be served inside it (retrain and serialize the lesson-20 model here if Project 1 tracked the CNN). Write `requirements.txt` listing only what serving needs (fastapi, uvicorn, pydantic, plus every package the app and the saved model import: scikit-learn, joblib and pandas for the lesson-20 pipeline, which picks columns by name and so needs a pandas DataFrame, plus xgboost or lightgbm if the pipeline uses one; or torch, torchvision, pillow and python-multipart for the CNN, since FastAPI needs python-multipart for file uploads), then pin versions using the ones `pip freeze` reports. Pinning means writing `fastapi==...` so that the exact same versions install anywhere. Checkpoint: `pip install -r requirements.txt` succeeds in a brand-new throwaway venv.
+- [ ] Create a fresh folder `work/41-mlops-ship-your-models/service/` and put the serialized model to be served inside it: fit the small five-column pipeline described above on the lesson-20 training data (from this folder, `../../20-end-to-end-ml-project/data/train.csv`) and save it with `joblib.dump(pipeline, "model.joblib")`. Checkpoint: its cross-validated RMSE on the log price is around 0.18, worse than the full lesson-20 model, which is the price of using 5 columns instead of 79. Write `requirements.txt` listing only what serving needs (fastapi, uvicorn, pydantic, plus every package the app and the saved model import: scikit-learn, joblib, numpy and pandas for the house-price pipeline, which is fitted on named columns and so needs a pandas DataFrame at prediction time too; or torch, torchvision, pillow and python-multipart for the CNN, since FastAPI needs python-multipart for file uploads), then pin versions using the ones `pip freeze` reports. Pinning means writing `fastapi==...` so that the exact same versions install anywhere. Checkpoint: `pip install -r requirements.txt` succeeds in a brand-new throwaway venv.
 
 *Stage 2 — the API works*
 
@@ -124,7 +124,7 @@ cd work/41-mlops-ship-your-models
 
   class PredictRequest(BaseModel):
       # one field per model input, e.g.:
-      age: float = Field(ge=0, le=120)
+      GrLivArea: float = Field(gt=0, le=10000)   # living area in square feet
 
   app = FastAPI()
   # load the model ONCE here, at startup — not inside the endpoint
@@ -135,7 +135,7 @@ cd work/41-mlops-ship-your-models
 
   @app.post("/predict")
   def predict(req: PredictRequest):
-      ...  # run the model, return {"prediction": ..., "score": ...}
+      ...  # run the model, return {"prediction": price_in_dollars}
   ```
 
 - [ ] Run it with `uvicorn app:app --reload` and open http://localhost:8000/docs, an interactive page for the API that FastAPI generates automatically. Checkpoint: `/health` returns `{"status":"ok"}` and a `/predict` call from the docs page returns a JSON prediction.
@@ -144,14 +144,14 @@ cd work/41-mlops-ship-your-models
   ```bash
   curl -X POST http://localhost:8000/predict \
     -H "Content-Type: application/json" \
-    -d '{"age": 34, ...}'
+    -d '{"OverallQual": 7, "GrLivArea": 1500, "YearBuilt": 2000, "TotalBsmtSF": 900, "GarageCars": 2}'
   ```
 
-  Then send garbage (a string where a number belongs, a missing field). Checkpoint: valid input returns a prediction; garbage returns HTTP 422 with an error message that nobody had to write. That is pydantic validation at work.
+  Then send garbage (a string where a number belongs, a missing field). Checkpoint: valid input returns a prediction (for this house, a price somewhere near $195,000); garbage returns HTTP 422 with an error message that nobody had to write. That is pydantic validation at work.
 
 *Stage 3 — tests pass*
 
-- [ ] Write `test_app.py` using pytest and FastAPI's `TestClient` (which calls the app in-process, no server needed). Test at least: `/health` returns 200; `/predict` on one known-good example returns 200 with the expected fields; an invalid payload returns 422; and one **sanity prediction**: an input whose answer is roughly known in advance (e.g. a clearly-survived passenger, an obvious digit) actually gets that answer. Checkpoint: `pytest -v` shows 4+ tests passing.
+- [ ] Write `test_app.py` using pytest and FastAPI's `TestClient` (which calls the app in-process, no server needed). Test at least: `/health` returns 200; `/predict` on one known-good example returns 200 with the expected fields; an invalid payload returns 422; and one **sanity prediction**: an input whose answer is roughly known in advance actually gets that answer (e.g. a large, new, top-quality house is priced above the training median of $163,000 and a small, old, low-quality one below it; for the CNN, an obvious image gets its class). Checkpoint: `pytest -v` shows 4+ tests passing.
 
 *Stage 4 — the container works*
 
@@ -183,7 +183,7 @@ cd work/41-mlops-ship-your-models
 - To serve the CNN anyway, swap the pydantic schema for FastAPI's file-upload pattern: `from fastapi import File, UploadFile`, then `@app.post("/predict")` with `async def predict(file: UploadFile = File(...))`, read the bytes with `await file.read()`, open them with PIL (`Image.open(io.BytesIO(data))`), apply the model's test-time transforms and predict. Test it with `curl -F "file=@some_image.png" http://localhost:8000/predict`. Note that `-F` sends a form upload, not a JSON body.
 - `--host 0.0.0.0` in the CMD matters: it makes the server listen on all network interfaces so traffic from outside the container can reach it. The default `127.0.0.1` only listens inside.
 - Container builds but curl hangs? Check the `-p 8000:8000` port mapping and that the CMD actually starts uvicorn (`docker logs CONTAINER-ID`, with the ID from `docker ps -a`).
-- Container stops at once with `libgomp.so.1: cannot open shared object file`? The model uses LightGBM, which needs the OpenMP library that the slim image lacks (the same `libgomp1` package that lesson 20 installs on Ubuntu). Add `RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 && rm -rf /var/lib/apt/lists/*` to the `Dockerfile` right after the `FROM` line.
+- Serving a LightGBM model instead of the Ridge pipeline, and the container stops at once with `libgomp.so.1: cannot open shared object file`? LightGBM needs the OpenMP library that the slim image lacks (the same `libgomp1` package that lesson 20 installs on Ubuntu). Add `RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 && rm -rf /var/lib/apt/lists/*` to the `Dockerfile` right after the `FROM` line.
 
 </details>
 
@@ -198,11 +198,11 @@ cd work/41-mlops-ship-your-models
 *Part A — public demo*
 
 - [ ] Build `demo.py`: a Gradio interface (the same library used in lesson 27) that takes the model's inputs via simple widgets and shows the prediction. Checkpoint: `python demo.py` prints a local URL, and opening the printed `http://127.0.0.1:7860` in a browser shows a working demo (on Windows, WSL2 forwards it automatically).
-- [ ] Deploy it to Hugging Face Spaces (free, needs the HF account): create a new Space at https://huggingface.co, choose the Gradio SDK, and push `demo.py`, the model file and a `requirements.txt` to it with git, exactly as in lesson 27. Before pushing, edit the settings block between the `---` lines at the top of the Space's `README.md`. Set `app_file: demo.py`, because the Space runs the file named there. Add the line `python_version: "3.13"`, because Spaces use Python 3.10 unless told otherwise, which is too old for the package versions in the venv. Checkpoint: the public URL works. Send it to a friend and have them get a prediction on their phone.
+- [ ] Make it public, as in lesson 27: end `demo.py` with `demo.launch(share=True)`, run it, and use the `gradio.live` link it prints. The link works while the script is running. Optional, for an account that can create Spaces (lesson 27 explains the cost): host it on Hugging Face Spaces instead. Create a new Space at https://huggingface.co, choose the Gradio SDK, and push `demo.py`, the model file and a `requirements.txt` to it with git, exactly as in lesson 27. Before pushing, edit the settings block between the `---` lines at the top of the Space's `README.md`. Set `app_file: demo.py`, because the Space runs the file named there. Add the line `python_version: "3.13"`, because Spaces use Python 3.10 unless told otherwise, which is too old for the package versions in the venv. Checkpoint: the public URL works. Send it to a friend and have them get a prediction on their phone.
 
 *Part B — drift drill*
 
-- [ ] **Data drift** is when the data a deployed model receives shifts away from the data it was trained on. It quietly ruins production models, because the service keeps returning confident answers that slowly go wrong. Take the lesson-20 tabular training set and create a drifted copy in pandas: add an offset to one numeric feature (e.g. everyone is suddenly 15 years older), scale another (incomes ×3), and leave the rest untouched.
+- [ ] **Data drift** is when the data a deployed model receives shifts away from the data it was trained on. It quietly ruins production models, because the service keeps returning confident answers that slowly go wrong. Take the lesson-20 tabular training set and create a drifted copy in pandas: add an offset to one numeric feature (e.g. every house gains 500 square feet of `GrLivArea`), scale another (`LotArea` ×3), and leave the rest untouched.
 - [ ] Write `drift_check.py`: for each numeric feature, compare the new-data mean with the training mean, in units of the training standard deviation:
 
   ```python
@@ -215,13 +215,14 @@ cd work/41-mlops-ship-your-models
 
 <details><summary>Hints</summary>
 
-- Spaces builds fail most often on `requirements.txt`: it must list every import that `demo.py` makes *and* every package the saved model needs to load: for the tabular model `scikit-learn`, `joblib` and `pandas`, plus `xgboost` or `lightgbm` if the pipeline uses one (pinned to the same versions as `service/requirements.txt`), for the CNN `torch` and `torchvision`.
+- On the Spaces route, builds fail most often on `requirements.txt`: it must list every import that `demo.py` makes *and* every package the saved model needs to load: for the house-price model `scikit-learn`, `joblib`, `numpy` and `pandas` (pinned to the same versions as `service/requirements.txt`), for the CNN `torch` and `torchvision`.
+- The drift drill needs a real shift to find: an offset much smaller than the feature's standard deviation stays under the threshold. Making every house 15 years older, for example, scores 0.497 on `YearBuilt` and raises no flag.
 - Keep the drift math honest: compute train mean/std once from the training set and save them (e.g. to JSON). The check must not peek at the new data to define "normal".
 - Mean-shift is the simplest drift signal and misses some shifts (e.g. variance changes with equal means). Noticing that limitation is part of the lesson, so put it in the notes.
 
 </details>
 
-**Definition of done:** a public HF Spaces URL anyone can use, plus a drift script and plot that flag the simulated shift and stay quiet on clean data.
+**Definition of done:** a public link (a Gradio share link or a Space URL) that someone else has used, plus a drift script and plot that flag the simulated shift and stay quiet on clean data.
 
 ## Stretch goals
 
@@ -243,7 +244,7 @@ cd work/41-mlops-ship-your-models
 - MLflow — https://mlflow.org — the local experiment tracker for Project 1; see its Tracking quickstart.
 - Weights & Biases — https://wandb.ai — the hosted alternative tracker (free tier, account required).
 - Get Docker — https://docs.docker.com/get-started/get-docker/ — Docker's install guides for macOS, Windows and Linux (on Linux, follow its link to Docker Engine); on Windows, also the WSL2 backend guide at https://docs.docker.com/desktop/features/wsl/.
-- Hugging Face — https://huggingface.co — where the Space lives; their Spaces docs cover the Gradio SDK setup.
+- Hugging Face — https://huggingface.co — where a Space lives, on the optional hosted route; their Spaces docs cover the Gradio SDK setup.
 - Gradio docs — search for "Gradio documentation" — reference for demo widgets beyond what lesson 27 used.
 
 ## Skills unlocked
@@ -254,7 +255,7 @@ cd work/41-mlops-ship-your-models
 - [ ] I can wrap a model in a FastAPI service with validated inputs and a health check.
 - [ ] I can write pytest tests for an ML service, including a sanity-prediction test.
 - [ ] I can containerize a service with Docker and call it from outside the container.
-- [ ] I can deploy a free public demo on Hugging Face Spaces.
+- [ ] I can put a demo of a model behind a public link.
 - [ ] I can detect feature-mean drift against a saved training baseline and explain what to do when the alarm fires.
 
 ## Next up

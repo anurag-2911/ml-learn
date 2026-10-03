@@ -63,7 +63,7 @@ Everything trains fine on CPU if the model stays modest (hidden size 128-256). E
 
 **Milestones**
 
-- [ ] Load `input.txt` into one Python string. Build the vocabulary: the sorted list of unique characters, plus two dicts `stoi` (char → int) and `itos` (int → char), exactly like lesson 28. Encode the whole text as one long tensor of ints. Checkpoint: vocab size is 65, and `itos[stoi['a']] == 'a'`.
+- [ ] Load `input.txt` into one Python string. Build the vocabulary: the sorted list of unique characters, plus two dicts `stoi` (char → int) and `itos` (int → char), exactly like lesson 28. Encode the whole text as one long tensor of ints, `data`. Then hold out the last 10% for validation: `n = int(0.9 * len(data))`, `train_data = data[:n]`, `val_data = data[n:]`. The model trains only on `train_data`; `val_data` shows how it does on text it has never seen, like the dev split in lesson 28. Checkpoint: vocab size is 65, `itos[stoi['a']] == 'a'`, and `len(train_data)` is 1,003,854.
 - [ ] Build the data pipeline: a function that returns a batch of random `(chunk, target)` pairs, where `chunk` is `seq_len` consecutive encoded characters and `target` is the same window shifted one character right. That shift is the whole supervision trick: at every position, the label is simply "the next character". Checkpoint: decode one pair and check that the target text is the input text moved over by one letter.
 
 ```python
@@ -76,11 +76,11 @@ def get_batch(data, batch_size=64, seq_len=100):
 
 - [ ] Define the model as an `nn.Module` with three layers: `nn.Embedding(vocab_size, emb_dim)` to turn char ids into vectors, `nn.LSTM(emb_dim, hidden_size, batch_first=True)`, and `nn.Linear(hidden_size, vocab_size)` to produce logits for every position. `forward` should accept and return the hidden state, so that memory can be carried between calls. Start with `emb_dim=64, hidden_size=256`. Checkpoint: feeding a `(64, 100)` batch returns logits of shape `(64, 100, 65)`.
 - [ ] Before training, compute the loss on one batch. Checkpoint: it is close to `ln(65) ≈ 4.17`, the loss of pure random guessing over 65 characters. (This is the same sanity check as in lesson 25.)
-- [ ] Train with the lesson-24 loop: cross-entropy on the logits (reshape `(B, T, 65)` → `(B*T, 65)` and the targets to `(B*T,)`), Adam with `lr=3e-3`, and define one "epoch" as `len(data) // (batch_size * seq_len)` batches (one full pass worth of text). Print the loss every 100 steps. Checkpoint: the loss drops below 2.0 within the first epoch and keeps falling; below ~1.5 after 20 epochs is a good run.
+- [ ] Train with the lesson-24 loop on batches from `train_data`: cross-entropy on the logits (reshape `(B, T, 65)` → `(B*T, 65)` and the targets to `(B*T,)`), Adam with `lr=3e-3`, and define one "epoch" as `len(train_data) // (batch_size * seq_len)` batches (one full pass worth of text). Print the loss every 100 steps, and after each epoch print the **val loss**: the average loss over 20 batches from `val_data`, computed inside `torch.no_grad()`. Checkpoint: the training loss drops below 2.0 within the first epoch and keeps falling; below ~1.5 after 20 epochs is a good run (about 1.26 is typical). The val loss levels off between about 1.53 and 1.58 from about epoch 10 while the training loss keeps falling. That growing gap is overfitting, the train/dev gap from lesson 28.
 - [ ] Pause to understand what the machinery is doing. The LSTM applies the *same* weights at every one of the 100 time steps, passing a hidden vector forward, and backprop *unrolls* that loop into a 100-layer-deep chain and pushes gradients back through it. That is backprop through time. A plain `nn.RNN` multiplies the gradient by roughly the same matrix at each of those steps, so it shrinks toward zero: the vanishing-gradient problem from lesson 25, once per character. The LSTM's gates (little learned sigmoids deciding "keep this, forget that") give gradients a protected path, which is why it can remember an opening quote 80 characters later.
 - [ ] Write a `sample(model, length)` function: start from a newline character, run one step, softmax the logits into probabilities, pick the next char with `torch.multinomial`, feed it back in and, crucially, keep passing the hidden state forward. Wrap it in `torch.no_grad()`. Checkpoint: it returns text without crashing, even from an untrained model (the text will be noise).
 - [ ] Generate and save a ~1000-character sample after epoch 1, epoch 5, and epoch 20 into `samples_epoch01.txt`, `samples_epoch05.txt`, `samples_epoch20.txt`. After epoch 20, also save the weights with `torch.save(model.state_dict(), "shakespeare_lstm.pt")` (lesson 24); Project 2 loads them. Checkpoint: epoch 1 is gibberish, perhaps with some short real words; epoch 5 has mostly real English words and line structure; epoch 20 has Shakespeare-shaped dialogue (speaker names, mostly CAPITALIZED, on their own line and followed by a colon, then a few lines of verse), even though the sentences are nonsense. Tiny Shakespeare contains no stage directions, so none appear in the samples.
-- [ ] Put the three samples side by side in a short note in the work folder. What did the model learn first: spelling, words, or structure? (If the Karpathy blog post is still unread, read it now; its samples section will feel like déjà vu.)
+- [ ] Put the three samples side by side in a short note in the work folder. What did the model learn first: spelling, words, or structure? In the same note, write down the final val loss and the model's parameter count (`sum(p.numel() for p in model.parameters())`, which is 350,593 for these sizes). Lesson 31 compares its GPT against these two numbers. (If the Karpathy blog post is still unread, read it now; its samples section will feel like déjà vu.)
 
 <details><summary>Hints</summary>
 
@@ -91,7 +91,7 @@ def get_batch(data, batch_size=64, seq_len=100):
 
 </details>
 
-**Definition of done:** Three saved sample files showing clear progression from noise to structured pseudo-Shakespeare, and a training run whose final loss is under ~1.6.
+**Definition of done:** Three saved sample files showing clear progression from noise to structured pseudo-Shakespeare, a training run whose final training loss is under ~1.6, and the final val loss and parameter count written down.
 
 ## Project 2 — The temperature dial
 
