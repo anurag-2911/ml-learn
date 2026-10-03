@@ -1,6 +1,6 @@
 # My Progress
 
-Check off each lesson when its "Skills unlocked" list is complete. Add the date and one line about what you built — future you will love reading this.
+Check off each lesson when its "Skills unlocked" list is complete, and add the date and one line about what was built.
 
 ## Phase 0 — Foundations
 - [ ] 01 · Set Up Your ML Workshop — *date:* — *built:*

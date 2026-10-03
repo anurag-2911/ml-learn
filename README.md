@@ -1,26 +1,26 @@
 # ML Zero to Hero
 
-**A project-based curriculum that takes you from zero programming knowledge to building GPTs, RAG systems, and AI agents — by building small projects**
+**A project-based curriculum that goes from zero programming knowledge to building GPTs, RAG systems and AI agents, by building small projects.**
 
-Inspired by Andrej Karpathy's [Neural Networks: Zero to Hero](https://www.youtube.com/playlist?list=PLAqhIrjkxbuWI23v9cThsA9GvCAUhRvKZ) — the deep learning phases follow his videos directly, and the *entire* curriculum follows his philosophy: **you understand what you build from scratch.**
+Inspired by Andrej Karpathy's [Neural Networks: Zero to Hero](https://www.youtube.com/playlist?list=PLAqhIrjkxbuWI23v9cThsA9GvCAUhRvKZ). The lessons marked (K) in the map follow his videos directly, and the *entire* curriculum follows his philosophy: **to understand something, build it from scratch.**
 
 ---
 
 ## How this works
 
-- **42 lessons in 8 phases.** Each lesson is one markdown file built around 2–3 small projects with milestone checklists, verifiable checkpoints, hints, and a "skills unlocked" self-test.
-- **You build everything.** Concepts are explained inside the projects, exactly when you need them. No lesson asks you to read a textbook chapter first.
-- **From scratch first, framework second.** You'll write your own kNN, linear regression, decision tree, autograd engine, neural network, tokenizer, and GPT — *then* use scikit-learn and PyTorch, understanding exactly what they automate.
+- **42 lessons in 8 phases.** Each lesson is one markdown file built around small projects (three in most lessons) with milestone checklists, verifiable checkpoints, hints, and a "skills unlocked" self-test.
+- **Everything is built by hand.** Each concept is explained inside a project, at the moment it is needed. No lesson requires reading a textbook chapter first.
+- **From scratch first, framework second.** kNN, linear regression, a decision tree, an autograd engine, a neural network, a tokenizer and a GPT are all written by hand first. Only *then* do scikit-learn and PyTorch take over, and by that point it is clear exactly what they automate.
 - **Works on macOS, Windows and Linux.** [Lesson 01](phase-0-foundations/01-environment-setup.md) sets up the same workshop on any of them (Windows through WSL2): Python 3.13, VS Code, git, and a fork of this repository.
-- **Your code lives in `work/`.** For each lesson, create `work/<NN>-<slug>/` (e.g. `work/12-linear-regression/`) and build there. The lesson files guide you; the `work/` folders are your portfolio.
-- **Track yourself in [PROGRESS.md](PROGRESS.md).** Check off lessons as you complete them. Commit and push your work after every session — your git history becomes the story of your journey.
+- **Code lives in `work/`.** Each lesson gets its own folder, `work/<NN>-<slug>/` (e.g. `work/12-linear-regression/`). The lesson files are the guide; the `work/` folders become the portfolio.
+- **Progress goes in [PROGRESS.md](PROGRESS.md).** Tick off each lesson when it is complete. Commit and push after every session, so the git history tells the story of the whole journey.
 
 ---
 
 ## The map
 
 ### Phase 0 — Foundations: Python, NumPy, Pandas *(≈ 5–6 weeks)*
-Learn programming from absolute zero by building games and analyzing real data.
+Programming from absolute zero, learned by building games and analyzing real data.
 
 | # | Lesson | Time |
 |---|--------|------|
@@ -33,7 +33,7 @@ Learn programming from absolute zero by building games and analyzing real data.
 | 07 | [Data Visualization: Charts That Answer Questions](phase-0-foundations/07-data-visualization.md) | 4–5 days |
 
 ### Phase 1 — Math by Building *(≈ 3–4 weeks)*
-Just the math ML actually uses — learned by coding it, visualizing it, and simulating it. No proofs, no drills.
+Only the math ML actually uses, learned by coding it, visualizing it and simulating it. No proofs, no drills.
 
 | # | Lesson | Time |
 |---|--------|------|
@@ -42,7 +42,7 @@ Just the math ML actually uses — learned by coding it, visualizing it, and sim
 | 10 | [Probability and Statistics by Simulation](phase-1-math/10-probability-statistics.md) | 1–2 weeks |
 
 ### Phase 2 — Classical Machine Learning *(≈ 10–12 weeks)*
-Build every classic algorithm from scratch, then wield scikit-learn like a pro. Ends with a real Kaggle competition.
+Every classic algorithm built from scratch, then put to work with scikit-learn. Ends with a real Kaggle competition.
 
 | # | Lesson | Time |
 |---|--------|------|
@@ -57,10 +57,10 @@ Build every classic algorithm from scratch, then wield scikit-learn like a pro. 
 | 19 | [Feature Engineering and Pipelines](phase-2-classical-ml/19-feature-engineering-pipelines.md) | 1 week |
 | 20 | [Capstone: End-to-End ML Project (Kaggle)](phase-2-classical-ml/20-end-to-end-ml-project.md) | 2 weeks |
 
-**Milestone:** After lesson 20, you are a working junior ML practitioner.
+**Milestone:** after lesson 20, the skills match those of a working junior ML practitioner.
 
-### Phase 3 — Deep Learning *(≈ 8–10 weeks)* 
-Build backpropagation from scratch (micrograd), a neural net in raw NumPy, then master PyTorch and computer vision.
+### Phase 3 — Deep Learning *(≈ 8–10 weeks)*
+Backpropagation from scratch (micrograd), a neural net in raw NumPy, then PyTorch and computer vision.
 
 | # | Lesson | Time |
 |---|--------|------|
@@ -72,10 +72,10 @@ Build backpropagation from scratch (micrograd), a neural net in raw NumPy, then 
 | 26 | [Convolutional Neural Networks: Teaching Machines to See](phase-3-deep-learning/26-cnns-computer-vision.md) | 2 weeks |
 | 27 | [Transfer Learning: A Custom Image Classifier + Demo](phase-3-deep-learning/27-transfer-learning-vision-project.md) | 1 week |
 
-**Milestone:** after lesson 27 you have *shipped* a working AI product with a public demo.
+**Milestone:** lesson 27 *ships* a working AI product with a public demo.
 
 ### Phase 4 — NLP and Transformers *(≈ 8–9 weeks)*
-From counting letter pairs to building and training your own GPT.
+From counting letter pairs to building and training a GPT.
 
 | # | Lesson | Time |
 |---|--------|------|
@@ -86,10 +86,10 @@ From counting letter pairs to building and training your own GPT.
 | 32 | [Tokenization: Build the GPT Tokenizer](phase-4-nlp-transformers/32-tokenization-bpe.md) (K) | 1 week |
 | 33 | [Train Your Own GPT (nanoGPT)](phase-4-nlp-transformers/33-train-your-own-gpt.md) (K) | 2 weeks |
 
-**Milestone:** After lesson 33, you understand, end to end, how the engines of modern AI are built — because you built one.
+**Milestone:** lesson 33 completes a GPT built and trained end to end, the same kind of engine that runs modern AI.
 
 ### Phase 5 — Modern AI: LLMs in Practice *(≈ 5–7 weeks)*
-Build *with* large models: APIs and prompting, RAG, fine-tuning with LoRA, and AI agents.
+Building *with* large models: APIs and prompting, RAG, fine-tuning with LoRA, and AI agents.
 
 | # | Lesson | Time |
 |---|--------|------|
@@ -98,8 +98,8 @@ Build *with* large models: APIs and prompting, RAG, fine-tuning with LoRA, and A
 | 36 | [Fine-Tuning Open Models with LoRA](phase-5-llms/36-fine-tuning-open-models.md) | 2 weeks |
 | 37 | [AI Agents: Tool Use, Loops and Evaluation](phase-5-llms/37-ai-agents-tool-use.md) | 1–2 weeks |
 
-### Phase 6 — Special Topics *(pick what excites you, ≈ 2–3 weeks each)*
-Optional deep dives. Do at least one; do all three if you're having fun.
+### Phase 6 — Special Topics *(choose by interest, ≈ 2–3 weeks each)*
+Optional deep dives. Do at least one, or all three.
 
 | # | Lesson | Time |
 |---|--------|------|
@@ -108,7 +108,7 @@ Optional deep dives. Do at least one; do all three if you're having fun.
 | 40 | [Recommender Systems: Matrix Factorization on MovieLens](phase-6-special-topics/40-recommender-systems.md) | 1–2 weeks |
 
 ### Phase 7 — MLOps and Capstone *(≈ 6–8 weeks)*
-Ship models like an engineer, then build the hero project that proves the whole journey.
+Shipping models the way engineers do, then a hero project that proves the whole journey.
 
 | # | Lesson | Time |
 |---|--------|------|
@@ -116,10 +116,6 @@ Ship models like an engineer, then build the hero project that proves the whole 
 | 42 | [Capstone: Your Hero Project (and What Comes Next)](phase-7-mlops-capstone/42-capstone-and-beyond.md) | 4–6 weeks |
 
 **Final milestone:** a shipped, original AI project with a public demo and a write-up.
-
----
-
-
 
 ---
 
