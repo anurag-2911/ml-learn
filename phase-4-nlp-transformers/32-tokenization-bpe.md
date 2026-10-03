@@ -118,7 +118,7 @@ Watch Karpathy's "Let's build the GPT Tokenizer" from the [Zero to Hero playlist
 <details><summary>Hints</summary>
 
 - Encoding 1MB of text with the naive `encode` from Project 1 can take a few minutes. That is fine: do it once and save the ids. (Speeding it up is a stretch goal.)
-- If sampling crashes on decode with a `KeyError`, the model produced an id that `vocab` does not contain, usually the special token's id (`vocab_size`). Add an entry for each special token to `vocab`, or skip special ids when decoding. If the text shows replacement characters (`�`), the ids are being decoded one at a time; batch all generated ids into a single `decode` call.
+- If sampling crashes on decode with a `KeyError`, the model produced an id that `vocab` does not contain, usually the special token's id (`vocab_size`). Add an entry for each special token to `vocab`, or skip special ids when decoding. Also batch all generated ids into a single `decode` call: decoding one id at a time can split a multi-byte character into replacement characters (`�`).
 - If the loss barely drops, check that the model's `vocab_size` really matches the tokenizer's. A mismatch of a few ids from special tokens causes silent index errors or wasted rows.
 
 </details>
